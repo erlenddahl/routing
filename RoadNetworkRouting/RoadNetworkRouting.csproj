@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Routing\Routing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Extensions">
+      <HintPath>D:\Nextcloud\Mine program\C#\Extensions\Extensions\bin\Release\netstandard2.0\Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="SpeedModule">
+      <HintPath>..\..\EnergyModule\Fartsmodell\bin\Release\SpeedModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

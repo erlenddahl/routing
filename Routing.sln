@@ -3,9 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31005.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Routing", "Routing\Routing.csproj", "{29F16E8B-4143-42BF-9C92-49817BCE5B11}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Routing", "Routing\Routing.csproj", "{29F16E8B-4143-42BF-9C92-49817BCE5B11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Routing.Npgsql", "Routing.Npgsql\Routing.Npgsql.csproj", "{4F5A7DB3-910D-42E7-B34F-DED554F1E42F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Routing.Npgsql", "Routing.Npgsql\Routing.Npgsql.csproj", "{4F5A7DB3-910D-42E7-B34F-DED554F1E42F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkGenerator", "NetworkGenerator\NetworkGenerator.csproj", "{9E5DF3C7-9EDD-426F-96B4-9DAF65CA51CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoadNetworkRouting", "RoadNetworkRouting\RoadNetworkRouting.csproj", "{C20A9888-0295-4BD4-9022-B801198AA61B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleNetworkGenerator", "ConsoleNetworkGenerator\ConsoleNetworkGenerator.csproj", "{FD108A24-0C5D-4A2B-981B-80BA8F8C6BC7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +27,18 @@ Global
 		{4F5A7DB3-910D-42E7-B34F-DED554F1E42F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F5A7DB3-910D-42E7-B34F-DED554F1E42F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F5A7DB3-910D-42E7-B34F-DED554F1E42F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E5DF3C7-9EDD-426F-96B4-9DAF65CA51CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E5DF3C7-9EDD-426F-96B4-9DAF65CA51CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E5DF3C7-9EDD-426F-96B4-9DAF65CA51CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E5DF3C7-9EDD-426F-96B4-9DAF65CA51CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C20A9888-0295-4BD4-9022-B801198AA61B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C20A9888-0295-4BD4-9022-B801198AA61B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C20A9888-0295-4BD4-9022-B801198AA61B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C20A9888-0295-4BD4-9022-B801198AA61B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD108A24-0C5D-4A2B-981B-80BA8F8C6BC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD108A24-0C5D-4A2B-981B-80BA8F8C6BC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD108A24-0C5D-4A2B-981B-80BA8F8C6BC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD108A24-0C5D-4A2B-981B-80BA8F8C6BC7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

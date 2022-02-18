@@ -41,7 +41,7 @@ namespace RoutingCli
             using var cip = new ConsoleInformationPanel();
 
             RoadNetworkRouter router;
-            int largestNetworkSegment;
+            NetworkNode[] largestNetworkSegmentVertices;
             using (var _ = cip.SetUnknownProgress("Loading router"))
             {
                 for (var i = 0; i < Searches.Length; i++)
@@ -51,12 +51,13 @@ namespace RoutingCli
 
                 var analysis = GetGraphAnalysis(router, cip);
                 router.SetVertexGroups(analysis);
-                largestNetworkSegment = analysis.VertexIdGroup
+                var largestNetworkSegment = analysis.VertexIdGroup
                     .GroupBy(p => p.Value)
                     .Select(p => new { GroupId = p.Key, Count = p.Count() })
                     .OrderByDescending(p => p.Count)
                     .First()
                     .GroupId;
+                largestNetworkSegmentVertices = router.Vertices.Values.Where(p => p.VertexGroup == largestNetworkSegment).ToArray();
             }
 
             var results = new SearchResult[Searches.Length];
@@ -80,8 +81,8 @@ namespace RoutingCli
                     },
                     ConsumeAction = (search, graph) =>
                     {
-                        var source = router.GetNearestVertex(largestNetworkSegment, search.Source[0], search.Source[1]);
-                        var target = router.GetNearestVertex(largestNetworkSegment, search.Target[0], search.Target[1]);
+                        var source = router.GetNearestVertex(largestNetworkSegmentVertices, search.Source[0], search.Source[1]);
+                        var target = router.GetNearestVertex(largestNetworkSegmentVertices, search.Target[0], search.Target[1]);
                         var res = graph.GetShortestPathQuickly(source.vertex, target.vertex);
                         var links = router.GetLinkReferences(res.Items);
 

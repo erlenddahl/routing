@@ -224,7 +224,7 @@ namespace RoadNetworkRouting
             return (n.Id, Distance(n.X, n.Y, x, y));
         }
 
-        private (int vertex, double distance) GetNearestVertex(IEnumerable<NetworkNode> vertices, double x, double y)
+        public (int vertex, double distance) GetNearestVertex(IEnumerable<NetworkNode> vertices, double x, double y)
         {
             var nearby = vertices.Where(p => Math.Abs(p.Y - y) < 500 && Math.Abs(p.X - x) < 500).ToArray();
             if (nearby.Any())

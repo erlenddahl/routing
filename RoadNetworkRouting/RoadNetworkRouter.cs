@@ -282,7 +282,7 @@ namespace RoadNetworkRouting
 
         public void ExportLinks(string shpPath)
         {
-            var shp = new FeatureSet(FeatureType.Point);
+            var shp = new FeatureSet(FeatureType.Line);
 
             var table = shp.DataTable;
             table.Columns.Add("Reference", typeof(string));

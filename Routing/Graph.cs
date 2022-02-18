@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Routing
 {
@@ -37,6 +38,19 @@ namespace Routing
             var (vertex, tries) = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId);
             stopwatch.Stop();
             var result = new GraphSearchResult(vertex, stopwatch.Elapsed, tries);
+
+            ResetVertices();
+
+            return result;
+        }
+
+        public QuickGraphSearchResult GetShortestPathQuickly(int sourceVertexId, int targetVertexId)
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var (vertex, tries) = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId);
+            stopwatch.Stop();
+            var result = new QuickGraphSearchResult(Vertices[sourceVertexId], vertex);
 
             ResetVertices();
 

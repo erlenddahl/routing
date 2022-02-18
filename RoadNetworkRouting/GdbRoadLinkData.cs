@@ -1,4 +1,5 @@
-﻿using no.sintef.SpeedModule.Geometry;
+﻿using System.Collections.Generic;
+using no.sintef.SpeedModule.Geometry;
 
 namespace RoadNetworkRouting
 {

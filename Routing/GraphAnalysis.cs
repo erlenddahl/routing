@@ -6,6 +6,7 @@ namespace Routing
 {
     public class GraphAnalysis
     {
+        public Graph Graph { get; set; }
         public int Vertices { get; set; }
         public int Edges { get; set; }
         public int TotalNumberOfGroups { get; set; }
@@ -13,6 +14,7 @@ namespace Routing
 
         public GraphAnalysis(Graph graph)
         {
+            Graph = graph;
             var groupIx = 0;
             var groups = new Dictionary<int, int>();
             foreach (var v in graph.Vertices.Values)

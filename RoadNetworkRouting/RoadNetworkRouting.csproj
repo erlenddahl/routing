@@ -17,10 +17,10 @@
 
   <ItemGroup>
     <Reference Include="Extensions">
-      <HintPath>D:\Nextcloud\Mine program\C#\Extensions\Extensions\bin\Release\netstandard2.0\Extensions.dll</HintPath>
+      <HintPath>..\Lib\Extensions.dll</HintPath>
     </Reference>
     <Reference Include="SpeedModule">
-      <HintPath>..\..\EnergyModule\Fartsmodell\bin\Release\SpeedModule.dll</HintPath>
+      <HintPath>..\Lib\SpeedModule.dll</HintPath>
     </Reference>
   </ItemGroup>
 

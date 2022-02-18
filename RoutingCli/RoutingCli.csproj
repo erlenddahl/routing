@@ -15,13 +15,13 @@
 
   <ItemGroup>
     <Reference Include="ConsoleUtilities">
-      <HintPath>D:\Nextcloud\Mine program\C#\Extensions\ConsoleUtilities\bin\Release\ConsoleUtilities.dll</HintPath>
+      <HintPath>..\Lib\ConsoleUtilities.dll</HintPath>
     </Reference>
     <Reference Include="DataflowUtilities">
-      <HintPath>D:\Nextcloud\Mine program\C#\Extensions\DataflowUtilities\bin\Release\DataflowUtilities.dll</HintPath>
+      <HintPath>..\Lib\DataflowUtilities.dll</HintPath>
     </Reference>
     <Reference Include="SpeedModule">
-      <HintPath>..\..\EnergyModule\Fartsmodell\bin\Release\SpeedModule.dll</HintPath>
+      <HintPath>..\Lib\SpeedModule.dll</HintPath>
     </Reference>
   </ItemGroup>
 

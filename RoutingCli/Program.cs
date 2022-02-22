@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using ConsoleUtilities;
 using ConsoleUtilities.ConsoleInfoPanel;
@@ -15,7 +16,7 @@ namespace RoutingCli
     {
         static void Main(string[] args)
         {
-            args = new[] { @"C:\Code\Routing\test.json" };
+            //args = new[] { @"C:\Code\Routing\test.json" };
 
             new ConsoleConfigHelper(args)
                 .AutoResize()
@@ -39,6 +40,9 @@ namespace RoutingCli
         public void Run()
         {
             using var cip = new ConsoleInformationPanel();
+
+            cip.Set("Processing threads", ThreadCount);
+            cip.Set("Road network", Path.GetFileName(NetworkPath));
 
             RoadNetworkRouter router;
             NetworkNode[] largestNetworkSegmentVertices;

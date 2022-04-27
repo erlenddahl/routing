@@ -19,6 +19,7 @@ namespace RoutingApi.Helpers
         private static Dictionary<long, InternalLinkRepresentation> _links = null;
         private static InternalVertixRepresentation[] _vertices;
         private static GraphAnalysis _analysis;
+        public static string NetworkFile { get; set; }
 
         public static RoutingService FromLatLng(List<LatLng> coordinates)
         {
@@ -65,7 +66,7 @@ namespace RoutingApi.Helpers
             {
                 if (_graph == null)
                 {
-                    var (links, vertices, graphItems) = LoadFrom(@"C:\vegnettRuteplan_FGDB_20210528_tolerance-0001.bin");
+                    var (links, vertices, graphItems) = LoadFrom(NetworkFile);
                     _graph = Graph.Create(graphItems);
                     _analysis = _graph.Analyze();
 

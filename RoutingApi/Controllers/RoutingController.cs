@@ -1,19 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Http;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using RoutingApi.Geometry;
 using RoutingApi.Helpers;
 
 namespace RoutingApi.Controllers
 {
-    [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
+    [Route("api/[controller]")]
     public class RoutingController : Controller
     {
-        // GET api/values
-        [Microsoft.AspNetCore.Mvc.HttpGet]
+        public RoutingController(IConfiguration config)
+        {
+            LocalDijkstraRoutingService.NetworkFile = config.GetValue<string>("RoadNetworkLocation");
+        }
+
+        [HttpGet]
         public object Get()
         {
             return new
@@ -23,13 +27,12 @@ namespace RoutingApi.Controllers
             };
         }
 
-        // POST api/values
-        [Microsoft.AspNetCore.Mvc.HttpPost]
+        [HttpPost]
         [EnableCors("AllowAll")]
-        [Microsoft.AspNetCore.Mvc.Route("")]
-        [Microsoft.AspNetCore.Mvc.Route("GetRoute")]
-        [Microsoft.AspNetCore.Mvc.AcceptVerbs("POST")]
-        public object FindRoute([Microsoft.AspNetCore.Mvc.FromBody] List<LatLng> coordinates)
+        [Route("")]
+        [Route("GetRoute")]
+        [AcceptVerbs("POST")]
+        public object FindRoute([FromBody] List<LatLng> coordinates)
         {
             RoutingService service = null;
             try

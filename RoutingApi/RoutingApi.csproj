@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <AssemblyName>SpeedModuleGeneralRestApi</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>SpeedModuleGeneralRestApi</PackageId>
+    <UserSecretsId>22d28b50-1c83-406d-a8e1-1dca7ad2ffec</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Update="wwwroot\**\*">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.2.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Routing" Version="1.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.IISIntegration" Version="1.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="1.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Npgsql" Version="5.0.3" />
+    <PackageReference Include="Npgsql.NetTopologySuite" Version="5.0.3" />
+    <PackageReference Include="ProjNet" Version="2.0.0" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.113.7" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Routing\Routing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Extensions">
+      <HintPath>..\Lib\Extensions.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

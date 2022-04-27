@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Routing.Npgsql", "Routing.N
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoadNetworkRouting", "RoadNetworkRouting\RoadNetworkRouting.csproj", "{C20A9888-0295-4BD4-9022-B801198AA61B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoutingCli", "RoutingCli\RoutingCli.csproj", "{D2C401CF-9971-4888-9062-E5BC8071B236}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoutingCli", "RoutingCli\RoutingCli.csproj", "{D2C401CF-9971-4888-9062-E5BC8071B236}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoutingApi", "RoutingApi\RoutingApi.csproj", "{79FA0878-8CB1-4581-BBD4-15BEC05A831C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{D2C401CF-9971-4888-9062-E5BC8071B236}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2C401CF-9971-4888-9062-E5BC8071B236}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2C401CF-9971-4888-9062-E5BC8071B236}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79FA0878-8CB1-4581-BBD4-15BEC05A831C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79FA0878-8CB1-4581-BBD4-15BEC05A831C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79FA0878-8CB1-4581-BBD4-15BEC05A831C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79FA0878-8CB1-4581-BBD4-15BEC05A831C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

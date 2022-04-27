@@ -58,7 +58,7 @@ Warning: must be run with custom binary encoded road network file, which can be 
 
 Start it using Visual Studio/IIS, and use it by sending POST requests with a list of coordinates (at least two). The API will handle any extra coordinates as waypoints.
 
-Make sure to update the road network file location in web.config.
+Make sure to update the road network file location in appsettings.json.
 
 Returns an object containing a list of WGS84 coordinates for the best route, as well as road link references that can be used to fetch more road data from the road network.
 

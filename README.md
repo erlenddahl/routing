@@ -1,14 +1,16 @@
+Note: Only the three projects Routing, RoutingCli and RoutingApi are relevant for external users. The rest are for internal use, and can safely be removed from the solution.
+
 # Routing
 
 Efficient library for finding the best route between two points in a (road) network. Uses Dijkstra. RoutingCLI and RoutingApi are two different wrappers around the library, superfluously documented below.
 
-# RoutingCLI
+# RoutingCli
 
 Command line interface for finding routes between one or more coordinate pairs.
 
 Warning: must be run with custom binary encoded road network file, which can be downloaded from here: http://mobilitet.sintef.no/energimodul/roadnetworks/
 
-Run RoutingCLI.exe "C:\path\to\config.json".
+Run RoutingCli.exe "C:\path\to\config.json".
 
 Example config:
 
@@ -61,6 +63,8 @@ Start it using Visual Studio/IIS, and use it by sending POST requests with a lis
 Make sure to update the road network file location in appsettings.json.
 
 Returns an object containing a list of WGS84 coordinates for the best route, as well as road link references that can be used to fetch more road data from the road network.
+
+Note: the road network will be loaded into memory on the first request. The first request will therefore take longer time than subsequent requests.
 
 Example POST request:
 

@@ -21,9 +21,9 @@ namespace RoutingApi.Helpers
         private static GraphAnalysis _analysis;
         public static string NetworkFile { get; set; }
 
-        public static RoutingService FromLatLng(List<LatLng> coordinates)
+        public static RoutingResponse FromLatLng(List<LatLng> coordinates)
         {
-            var utmCoordinates = coordinates.Select(p => new PointWgs84(p.Lat, p.Lng).ToUtm33()).ToList();
+            var utmCoordinates = coordinates.Select(p => new PointWgs84(p.Lat, p.Lng).ToUtm33()).ToArray();
             return FromUtm(utmCoordinates);
         }
 
@@ -60,7 +60,7 @@ namespace RoutingApi.Helpers
             }
         }
 
-        public static RoutingService FromUtm(List<PointUtm33> coordinates)
+        public static void Initialize()
         {
             lock (_lockObject)
             {
@@ -74,13 +74,18 @@ namespace RoutingApi.Helpers
                     _vertices = vertices;
                 }
             }
+        }
 
-            var rs = new RoutingService
+        public static RoutingResponse FromUtm(PointUtm33[] coordinates)
+        {
+            Initialize();
+
+            var rs = new RoutingResponse
             {
                 WayPoints = coordinates
             };
 
-            for (var i = 1; i < coordinates.Count; i++)
+            for (var i = 1; i < coordinates.Length; i++)
             {
                 var fromCoord = coordinates[i - 1];
                 var toCoord = coordinates[i];

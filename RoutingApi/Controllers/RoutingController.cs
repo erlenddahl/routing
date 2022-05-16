@@ -14,7 +14,8 @@ namespace RoutingApi.Controllers
     {
         public RoutingController(IConfiguration config)
         {
-            LocalDijkstraRoutingService.NetworkFile = config.GetValue<string>("RoadNetworkLocation");
+            if (config != null)
+                LocalDijkstraRoutingService.NetworkFile = config.GetValue<string>("RoadNetworkLocation");
         }
 
         [HttpGet]
@@ -30,14 +31,21 @@ namespace RoutingApi.Controllers
         [HttpPost]
         [EnableCors("AllowAll")]
         [Route("")]
-        [Route("GetRoute")]
         [AcceptVerbs("POST")]
-        public object FindRoute([FromBody] List<LatLng> coordinates)
+        public object FindRoute([FromBody] RoutingRequest request)
         {
-            RoutingService service = null;
+            if (request == null) return new { message = "Please provide a non-empty routing request." };
+            if (request.Request != null && request.Requests != null) return new { message = "Must submit either a single Request, or multiple Requests, not Both." };
+
+            if (request.Request != null) return RouteSingle(request.Request);
+            return request.Requests.Select(RouteSingle);
+        }
+
+        private object RouteSingle(LatLng[] coordinates)
+        {
             try
             {
-                service = RoutingService.FromLatLng(coordinates);
+                var service = RoutingResponse.FromLatLng(coordinates);
 
                 return new
                 {
@@ -58,5 +66,11 @@ namespace RoutingApi.Controllers
                 };
             }
         }
+    }
+
+    public class RoutingRequest
+    {
+        public LatLng[] Request { get; set; }
+        public LatLng[][] Requests { get; set; }
     }
 }

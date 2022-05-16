@@ -17,7 +17,7 @@ namespace RoutingApi.Helpers
         private static object _lockObject = new object();
         private static Graph _graph = null;
         private static Dictionary<long, InternalLinkRepresentation> _links = null;
-        private static InternalVertixRepresentation[] _vertices;
+        private static InternalVertexRepresentation[] _vertices;
         private static GraphAnalysis _analysis;
         public static string NetworkFile { get; set; }
 
@@ -46,13 +46,13 @@ namespace RoutingApi.Helpers
             public LinkReference Reference;
         }
 
-        private struct InternalVertixRepresentation
+        private struct InternalVertexRepresentation
         {
             public int Id { get; set; }
             public float X{ get; set; }
             public float Y { get; set; }
 
-            public InternalVertixRepresentation(int id, double x, double y)
+            public InternalVertexRepresentation(int id, double x, double y)
             {
                 Id = id;
                 X = (float)x;
@@ -168,7 +168,7 @@ namespace RoutingApi.Helpers
             return nearest.Id;
         }
 
-        private static InternalVertixRepresentation GetNearestVertex(double x, double y, int vertexGroup)
+        private static InternalVertexRepresentation GetNearestVertex(double x, double y, int vertexGroup)
         {
             var nearest = _vertices
                 .Where(p => _analysis.VertexIdGroup.TryGetValue(p.Id, out var gid) && gid == vertexGroup)
@@ -176,13 +176,13 @@ namespace RoutingApi.Helpers
             return nearest;
         }
 
-        private static (Dictionary<long, InternalLinkRepresentation> links, InternalVertixRepresentation[] vertices, GraphDataItem[] graphItems) LoadFrom(string file)
+        private static (Dictionary<long, InternalLinkRepresentation> links, InternalVertexRepresentation[] vertices, GraphDataItem[] graphItems) LoadFrom(string file)
         {
             using (var reader = new BinaryReader(File.OpenRead(file)))
             {
                 var vertexCount = reader.ReadInt32();
 
-                var vertices = new InternalVertixRepresentation[vertexCount];
+                var vertices = new InternalVertexRepresentation[vertexCount];
 
                 var itemSize = 4 + 8 + 8 + 4;
                 var buffer = new byte[vertexCount * itemSize];
@@ -191,7 +191,7 @@ namespace RoutingApi.Helpers
                 {
                     var pos = i * itemSize;
                     var id = BitConverter.ToInt32(buffer, pos);
-                    vertices[i] = new InternalVertixRepresentation(id, BitConverter.ToDouble(buffer, pos + 4), BitConverter.ToDouble(buffer, pos + 12));
+                    vertices[i] = new InternalVertexRepresentation(id, BitConverter.ToDouble(buffer, pos + 4), BitConverter.ToDouble(buffer, pos + 12));
                 }
 
                 var linkCount = reader.ReadInt32();

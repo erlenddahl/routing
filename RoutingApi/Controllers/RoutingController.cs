@@ -62,6 +62,7 @@ namespace RoutingApi.Controllers
                     distance = PointUtm33.Distance(service.Route),
                     coordinates = service.Route.Select(p => p.ToWgs84()).Select(p => new[] { Math.Round(p.Lat, 5), Math.Round(p.Lng, 5) }),
                     linkReferences = service.LinkReferences.Select(p => p.ToShortRepresentation()),
+                    request = coordinates,
                     service.WayPointIndices,
                     service.SecsDijkstra,
                     service.SecsRetrieveLinks,

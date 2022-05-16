@@ -45,6 +45,7 @@ namespace RoutingCli
             cip.Set("Road network", Path.GetFileName(NetworkPath));
 
             RoadNetworkRouter router;
+            Graph graph;
             NetworkNode[] largestNetworkSegmentVertices;
             using (var _ = cip.SetUnknownProgress("Loading router"))
             {
@@ -62,28 +63,17 @@ namespace RoutingCli
                     .First()
                     .GroupId;
                 largestNetworkSegmentVertices = router.Vertices.Values.Where(p => p.VertexGroup == largestNetworkSegment).ToArray();
+                graph = router.GetGraph();
             }
 
             var results = new SearchResult[Searches.Length];
-            var pbStateGeneration = cip.SetProgress("Creating road network graphs", max: ThreadCount);
             using (var pbTotal = cip.SetProgress("Finding shortest routes", max: Searches.Length, started:false))
             {
-                var consumers = new StateConsumerCollection<CoordinateSearch, Graph>()
+                var consumers = new ConsumerCollection<CoordinateSearch>()
                 {
                     ConsumerCount = ThreadCount,
                     MaxBufferItemsPerConsumer = 50,
-                    StateGenerator = () =>
-                    {
-                        var g = router.GetGraph();
-                        pbStateGeneration.Increment();
-                        if (pbStateGeneration.Current == pbStateGeneration.Max)
-                        {
-                            pbStateGeneration.Finish();
-                            pbTotal.Start();
-                        }
-                        return g;
-                    },
-                    ConsumeAction = (search, graph) =>
+                    ConsumeAction = search =>
                     {
                         var source = router.GetNearestVertex(largestNetworkSegmentVertices, search.Source[0], search.Source[1]);
                         var target = router.GetNearestVertex(largestNetworkSegmentVertices, search.Target[0], search.Target[1]);
@@ -113,7 +103,7 @@ namespace RoutingCli
                 consumers.Complete();
             }
 
-            System.IO.File.WriteAllText(ResultsPath, JsonConvert.SerializeObject(results, Formatting.None));
+            File.WriteAllText(ResultsPath, JsonConvert.SerializeObject(results, Formatting.None));
         }
 
         private static GraphAnalysis GetGraphAnalysis(RoadNetworkRouter router, ConsoleInformationPanel cip)

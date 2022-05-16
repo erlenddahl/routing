@@ -67,7 +67,11 @@ namespace Routing
             var source = Vertices[sourceVertexId];
             foreach (var v in Vertices)
             {
-                if (v.Value == vertex || v.Value.PreviousEdge == null || relevantVertices?.Contains(v.Value.Id) == false)
+                if (relevantVertices?.Contains(v.Value.Id) == false)
+                {
+                    continue;
+                }
+                if (v.Value == vertex || v.Value.PreviousEdge == null)
                 {
                     yield return null;
                     continue;

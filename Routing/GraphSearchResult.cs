@@ -7,8 +7,9 @@ namespace Routing
     {
         private readonly List<GraphDataItem> _items = new List<GraphDataItem>();
 
-        public GraphSearchResult(Vertex vertex, TimeSpan time, int tries)
+        public GraphSearchResult(DijkstraResult dr)
         {
+            var vertex = dr.Target;
             Vertex = vertex;
             while (vertex?.PreviousEdge != null)
             {
@@ -24,11 +25,11 @@ namespace Routing
                 _items[i].Num = i + 1;
 
             PathFound = vertex != null;
-            TimeSpent = time;
-            Tries = tries;
+            TimeSpent = dr.ElapsedTime;
+            Tries = dr.Tries;
         }
 
-        public Vertex Vertex { get; private set; }
+        public VertexData Vertex { get; private set; }
         public bool PathFound { get; private set; }
         public TimeSpan TimeSpent { get; private set; }
         public int Tries { get; private set; }

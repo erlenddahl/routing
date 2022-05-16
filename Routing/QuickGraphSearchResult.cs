@@ -12,12 +12,12 @@ namespace Routing
 
         }
 
-        public QuickGraphSearchResult(Vertex source, Vertex target)
+        public QuickGraphSearchResult(DijkstraResult dr)
         {
-            Source = source;
-            Target = target;
+            Source = dr.Source;
+            Target = dr.Target;
 
-            var vertex = target;
+            var vertex = dr.Target;
             Items = new int[vertex.VertexCount];
             var ix = Items.Length - 1;
             while (vertex?.PreviousEdge != null)
@@ -27,7 +27,7 @@ namespace Routing
             }
         }
 
-        public Vertex Source { get; }
-        public Vertex Target { get; }
+        public VertexData Source { get; }
+        public VertexData Target { get; }
     }
 }

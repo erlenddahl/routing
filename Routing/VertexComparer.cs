@@ -2,12 +2,12 @@
 
 namespace Routing
 {
-    public class VertexComparer : IComparer<Vertex>
+    public class VertexDataComparer : IComparer<VertexData>
     {
-        public int Compare(Vertex x, Vertex y)
+        public int Compare(VertexData x, VertexData y)
         {
             var comp = x.Cost.CompareTo(y.Cost);
-            if (comp == 0) return x.Id.CompareTo(y.Id);
+            if (comp == 0) return x.Vertex.Id.CompareTo(y.Vertex.Id);
             return comp;
         }
     }

@@ -33,36 +33,23 @@ namespace Routing
 
         public GraphSearchResult GetShortestPath(int sourceVertexId, int targetVertexId)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            var (vertex, tries) = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId);
-            stopwatch.Stop();
-            var result = new GraphSearchResult(vertex, stopwatch.Elapsed, tries);
-
-            ResetVertices();
+            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId);
+            var result = new GraphSearchResult(dr);
 
             return result;
         }
 
         public QuickGraphSearchResult GetShortestPathQuickly(int sourceVertexId, int targetVertexId)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            var (vertex, tries) = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId);
-            stopwatch.Stop();
-            var result = new QuickGraphSearchResult(Vertices[sourceVertexId], vertex);
-
-            ResetVertices();
+            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId);
+            var result = new QuickGraphSearchResult(dr);
 
             return result;
         }
 
         public IEnumerable<QuickGraphSearchResult> GetShortestPathToAll(int sourceVertexId, HashSet<int> relevantVertices = null)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            var (vertex, tries) = Dijkstra.GetShortestPath(this, sourceVertexId, -1);
-            stopwatch.Stop();
+            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, -1);
 
             var source = Vertices[sourceVertexId];
             foreach (var v in Vertices)
@@ -71,46 +58,27 @@ namespace Routing
                 {
                     continue;
                 }
-                if (v.Value == vertex || v.Value.PreviousEdge == null)
+                if (v.Value == dr.Target.Vertex || !dr.HasVisitedVertex(v.Key))
                 {
                     yield return null;
                     continue;
                 }
-                yield return new QuickGraphSearchResult(source, v.Value);
+                yield return new QuickGraphSearchResult(dr);
             }
-
-            ResetVertices();
         }
 
         public IEnumerable<Vertex> GetShortestPathToAllVertices(int sourceVertexId)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            var (vertex, tries) = Dijkstra.GetShortestPath(this, sourceVertexId, -1);
-            stopwatch.Stop();
+            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, -1);
 
             foreach (var v in Vertices)
             {
-                if (v.Value == vertex || v.Value.PreviousEdge == null)
+                if (v.Value == dr.Target.Vertex || !dr.HasVisitedVertex(v.Key))
                 {
                     yield return null;
                     continue;
                 }
                 yield return v.Value;
-            }
-
-            ResetVertices();
-        }
-
-        public void ResetVertices()
-        {
-            foreach (var item in Vertices.Values)
-            {
-                item.Visited = false;
-                item.Cost = double.PositiveInfinity;
-                item.PreviousVertex = null;
-                item.PreviousEdge = null;
-                item.VertexCount = 0;
             }
         }
 

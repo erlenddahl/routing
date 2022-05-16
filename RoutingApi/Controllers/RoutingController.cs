@@ -38,7 +38,17 @@ namespace RoutingApi.Controllers
             if (request.Request != null && request.Requests != null) return new { message = "Must submit either a single Request, or multiple Requests, not Both." };
 
             if (request.Request != null) return RouteSingle(request.Request);
-            return request.Requests.Select(RouteSingle);
+
+            var ix = 0;
+            return request.Requests.Select(p => new
+                {
+                    sequence = ix++,
+                    request = p
+                })
+                .AsParallel()
+                .Select(p => new { p.sequence, result = RouteSingle(p.request) })
+                .OrderBy(p => p.sequence)
+                .Select(p => p.result);
         }
 
         private object RouteSingle(LatLng[] coordinates)

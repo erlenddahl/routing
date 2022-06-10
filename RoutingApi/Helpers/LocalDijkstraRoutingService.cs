@@ -230,7 +230,7 @@ namespace RoutingApi.Helpers
                     var edge = new InternalLinkRepresentation()
                     {
                         EdgeId = link.EdgeId,
-                        Reference = new LinkReference() {S = link.Id},
+                        Reference = LinkReference.FromShortStringRepresentation(link.Id),
                         Geometry = new FloatPoint[pointCount]
                     };
 

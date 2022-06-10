@@ -10,6 +10,7 @@ using RoutingApi.Helpers;
 namespace RoutingApi.Controllers
 {
     [Route("api/[controller]")]
+    [EnableCors]
     public class RoutingController : Controller
     {
         public RoutingController(IConfiguration config)
@@ -29,13 +30,12 @@ namespace RoutingApi.Controllers
         }
 
         [HttpPost]
-        [EnableCors("AllowAll")]
-        [Route("")]
         [AcceptVerbs("POST")]
         public object FindRoute([FromBody] RoutingRequest request)
         {
             if (request == null) return new { message = "Please provide a non-empty routing request." };
             if (request.Request != null && request.Requests != null) return new { message = "Must submit either a single Request, or multiple Requests, not Both." };
+            if (request.Request == null && request.Requests == null) return new { message = "Must submit either a single Request, or multiple Requests." };
 
             if (request.Request != null) return RouteSingle(request.Request);
 

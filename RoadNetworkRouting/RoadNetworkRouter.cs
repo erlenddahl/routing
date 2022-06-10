@@ -13,8 +13,8 @@ namespace RoadNetworkRouting
 {
     public class RoadNetworkRouter
     {
-        public Dictionary<int, GdbRoadLinkData> Links { get; } = null;
-        public Dictionary<int, NetworkNode> Vertices { get; }
+        public Dictionary<int, GdbRoadLinkData> Links { get; private set; } = null;
+        public Dictionary<int, NetworkNode> Vertices { get; private set; }
 
         public Graph GetGraph()
         {
@@ -27,6 +27,38 @@ namespace RoadNetworkRouting
                 SourceVertexId = p.FromNodeId,
                 TargetVertexId = p.ToNodeId
             }));
+        }
+
+        public static RoadNetworkRouter Build(IEnumerable<GdbRoadLinkData> links)
+        {
+            var router = new RoadNetworkRouter()
+            {
+                Links = links.ToDictionary(k => k.LinkId, v => v)
+            };
+
+            var vertices = new Dictionary<int, NetworkNode>();
+            foreach (var link in router.Links)
+            {
+                if (vertices.TryGetValue(link.Value.FromNodeId, out var node))
+                    node.Edges++;
+                else
+                {
+                    var point = link.Value.Geometry.Points.First();
+                    vertices.Add(link.Value.FromNodeId, new NetworkNode(point.X, point.Y, link.Value.FromNodeId));
+                }
+
+                if (vertices.TryGetValue(link.Value.ToNodeId, out node))
+                    node.Edges++;
+                else
+                {
+                    var point = link.Value.Geometry.Points.Last();
+                    vertices.Add(link.Value.ToNodeId, new NetworkNode(point.X, point.Y, link.Value.ToNodeId));
+                }
+            }
+
+            router.Vertices = vertices;
+
+            return router;
         }
 
         private RoadNetworkRouter()
@@ -45,7 +77,6 @@ namespace RoadNetworkRouting
         {
             using (var reader = new BinaryReader(File.OpenRead(file)))
             {
-
                 var router = new RoadNetworkRouter();
 
                 var vertexCount = reader.ReadInt32();

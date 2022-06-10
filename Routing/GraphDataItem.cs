@@ -15,7 +15,7 @@
         {
             return new GraphDataItem
             {
-                Id=Id,
+                Id = Id,
                 EdgeId = EdgeId,
                 SourceVertexId = SourceVertexId,
                 TargetVertexId = TargetVertexId,

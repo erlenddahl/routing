@@ -26,10 +26,4 @@ namespace RoutingApi.Helpers
             return LocalDijkstraRoutingService.FromUtm(coordinates);
         }
     }
-
-    public class WayPointIndex
-    {
-        public int CoordinateIndex { get; set; }
-        public int LinkReferenceIndex { get; set; }
-    }
 }

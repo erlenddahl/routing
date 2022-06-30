@@ -5,6 +5,8 @@ using System.Linq;
 using DotSpatial.Data;
 using DotSpatial.Topology;
 using Extensions.IEnumerableExtensions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using no.sintef.SpeedModule.Geometry;
 using no.sintef.SpeedModule.Geometry.SimpleStructures;
 using Routing;
@@ -71,6 +73,42 @@ namespace RoadNetworkRouting
         {
             Links = links;
             Vertices = vertices;
+        }
+
+        public static RoadNetworkRouter BuildFromGeoJson(string file)
+        {
+            var json = JObject.Parse(File.ReadAllText(file));
+            var features = json["features"] as JArray;
+            if (features == null) throw new Exception("Invalid GeoJSON (missing features).");
+            return Build(features.Select(feature =>
+            {
+                var properties = feature["properties"];
+
+                if (properties["FromNodeID"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("FromNodeID"))) return null;
+                if (properties["ToNodeID"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("ToNodeID"))) return null;
+
+                var geometry = feature["geometry"];
+                if (features == null) throw new Exception("Invalid GeoJSON (feature missing properties).");
+                if (geometry == null) throw new Exception("Invalid GeoJSON (feature missing geometry).");
+
+                var geometryType = geometry.Value<string>("type");
+                if (geometryType != "MultiLineString") throw new Exception("Invalid GeoJSON (geometry type must be MultiLineString).");
+
+                var coordinates = geometry["coordinates"][0].ToObject<double[][]>();
+
+                var data = new GdbRoadLinkData();
+                data.LinkId = properties.Value<int>("OBJECT_ID");
+                data.Reference = properties.Value<double>("FROM_M") + "-" + properties.Value<double>("ROUTEID") + "@" + properties.Value<double>("TO_M");
+                data.FromNodeId = properties.Value<int>("FromNodeID");
+                data.ToNodeId = properties.Value<int>("ToNodeID");
+                data.RoadType = properties.Value<string>("VEGTYPE");
+                data.SpeedLimit = properties.Value<int>("FT_Fart");
+                data.SpeedLimitReversed = properties.Value<int>("TF_Fart");
+                data.FromRelativeLength = properties.Value<double>("FROM_M");
+                data.ToRelativeLength = properties.Value<double>("TO_M");
+                data.Geometry = new PolyLineZ(coordinates.Select(p => new Point3D(p[0], p[1], p[2])), true);
+                return data;
+            }).Where(p => p != null));
         }
 
         public static RoadNetworkRouter LoadFrom(string file)

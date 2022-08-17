@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using EnergyModule.Geometry;
+using EnergyModule.Geometry.SimpleStructures;
 using Extensions.IEnumerableExtensions;
 using Routing;
 using RoutingApi.Geometry;
@@ -17,7 +20,7 @@ namespace RoutingApi.Helpers
         private static object _lockObject = new object();
         private static Graph _graph = null;
         private static Dictionary<long, InternalLinkRepresentation> _links = null;
-        private static InternalVertexRepresentation[] _vertices;
+        private static Dictionary<int, InternalVertexRepresentation> _vertices;
         private static GraphAnalysis _analysis;
         public static string NetworkFile { get; set; }
 
@@ -27,22 +30,10 @@ namespace RoutingApi.Helpers
             return FromUtm(utmCoordinates);
         }
 
-        private struct FloatPoint
-        {
-            public float X;
-            public float Y;
-
-            public FloatPoint(float x, float y)
-            {
-                X = x;
-                Y = y;
-            }
-        }
-
         private struct InternalLinkRepresentation
         {
-            public FloatPoint[] Geometry;
-            public long EdgeId;
+            public Point3D[] Geometry;
+            public GraphDataItem Edge;
             public LinkReference Reference;
         }
 
@@ -71,7 +62,7 @@ namespace RoutingApi.Helpers
                     _analysis = _graph.Analyze();
 
                     _links = links;
-                    _vertices = vertices;
+                    _vertices = vertices.ToDictionary(k => k.Id, v => v);
                 }
             }
         }
@@ -96,36 +87,35 @@ namespace RoutingApi.Helpers
                 });
 
                 // Find nearest vertices:
-                var fromVertex = GetNearestVertex(fromCoord.X, fromCoord.Y);
-                var toVertex = GetNearestVertex(toCoord.X, toCoord.Y);
+                var fromVertex = GetNearestVertexFromNearestEdge(fromCoord.X, fromCoord.Y);
+                var toVertex = GetNearestVertexFromNearestEdge(toCoord.X, toCoord.Y);
 
                 // If these vertices are in different unconnected parts of the network, find the best of these parts to use, and
                 // route to the nearest point in that part instead of in the entire network.
-                if (_analysis.VertexIdGroup[fromVertex] != _analysis.VertexIdGroup[toVertex])
+                if (_analysis.VertexIdGroup[fromVertex.Vertex.Id] != _analysis.VertexIdGroup[toVertex.Vertex.Id])
                 {
                     // Locate the alternative vertices; for each already found nearest vertices, find the vertex in the respective part of the network
                     // that is nearest to the other vertex.
-                    var alternativeToVertex = GetNearestVertex(toCoord.X, toCoord.Y, _analysis.VertexIdGroup[fromVertex]);
-                    var alternativeFromVertex = GetNearestVertex(fromCoord.X, fromCoord.Y, _analysis.VertexIdGroup[toVertex]);
+                    var alternativeToVertex = GetNearestVertexFromNearestEdge(toCoord.X, toCoord.Y, _analysis.VertexIdGroup[fromVertex.Vertex.Id]);
+                    var alternativeFromVertex = GetNearestVertexFromNearestEdge(fromCoord.X, fromCoord.Y, _analysis.VertexIdGroup[toVertex.Vertex.Id]);
 
                     // Then calculate the distance between the alternative vertices and the actually nearest vertices
-                    var toDistance = Distance(alternativeToVertex.X, alternativeToVertex.Y, toCoord.X, toCoord.Y);
-                    var fromDistance = Distance(alternativeFromVertex.X, alternativeFromVertex.Y, fromCoord.X, fromCoord.Y);
+                    var toDistance = Distance(alternativeToVertex.Vertex.X, alternativeToVertex.Vertex.Y, toCoord.X, toCoord.Y);
+                    var fromDistance = Distance(alternativeFromVertex.Vertex.X, alternativeFromVertex.Vertex.Y, fromCoord.X, fromCoord.Y);
 
                     // And pick the vertex from the network part that in total gives the least "lost" distance.
                     if (toDistance < fromDistance)
-                        toVertex = alternativeToVertex.Id;
+                        toVertex = alternativeToVertex;
                     else
-                        fromVertex = alternativeFromVertex.Id;
+                        fromVertex = alternativeFromVertex;
                 }
 
                 var start = DateTime.Now;
 
-                int[] path;
-                lock (_lockObject)
-                {
-                    path = _graph.GetShortestPath((int) fromVertex, (int) toVertex).Select(p => p.EdgeId).ToArray();
-                }
+                var path = _graph
+                    .GetShortestPath(fromVertex.Vertex.Id, toVertex.Vertex.Id)
+                    .Select(p => p.EdgeId)
+                    .ToArray();
 
                 rs.SecsDijkstra += DateTime.Now.Subtract(start).TotalSeconds;
                 start = DateTime.Now;
@@ -135,15 +125,35 @@ namespace RoutingApi.Helpers
                 rs.SecsRetrieveLinks += DateTime.Now.Subtract(start).TotalSeconds;
                 start = DateTime.Now;
 
-                var sortedLinks = path.Select(p => _links[p]).ToArray();
+                var sortedLinks = path.Select(p => _links[p]).ToList();
+                /*if (sortedLinks.First().Edge.Id != fromVertex.Link.Edge.Id)
+                    sortedLinks.Insert(0, fromVertex.Link);
+                if (sortedLinks.Last().Edge.Id != toVertex.Link.Edge.Id)
+                    sortedLinks.Add(toVertex.Link);*/
 
                 var prevPoint = fromCoord;
-                foreach (var link in sortedLinks)
+                for (var linkIx = 0; linkIx < sortedLinks.Count; linkIx++)
                 {
-                    var reversed = Distance(link.Geometry[0].X, link.Geometry[0].Y, prevPoint.X, prevPoint.Y) > Distance(link.Geometry[link.Geometry.Length - 1].X, link.Geometry[link.Geometry.Length - 1].Y, prevPoint.X, prevPoint.Y);
-                    var geometry = reversed ? link.Geometry.Reverse() : link.Geometry;
+                    var link = sortedLinks[linkIx];
+                    var reversed = Distance(link.Geometry[0].X, link.Geometry[0].Y, prevPoint.X, prevPoint.Y) > Distance(link.Geometry[^1].X, link.Geometry[^1].Y, prevPoint.X, prevPoint.Y);
+                    var geometry = (reversed ? link.Geometry.Reverse() : link.Geometry).Select(p => new Point3D(p.X, p.Y)).ToArray();
 
                     link.Reference.Direction = reversed ? 2 : 1;
+
+                    if (linkIx == 0 || linkIx == sortedLinks.Count - 1)
+                    {
+                        Point3D[] modifiedGeometry = null;
+                        if (linkIx == 0)
+                        {
+                            modifiedGeometry = LineTools.CutEndAt(geometry, fromCoord.X, toCoord.Y);
+                        }else if (linkIx == sortedLinks.Count - 1)
+                        {
+                            modifiedGeometry = LineTools.CutStartAt(geometry, fromCoord.X, toCoord.Y);
+                        }
+
+                        if (modifiedGeometry?.Any() == true)
+                            geometry = modifiedGeometry;
+                    }
 
                     rs.LinkReferences.Add(link.Reference);
                     rs.Route.AddRange(geometry.Select(p => new PointUtm33(p.X, p.Y, 0)));
@@ -159,18 +169,59 @@ namespace RoutingApi.Helpers
 
         private static double Distance(double x1, double y1, double x2, double y2)
         {
-            return Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
+            var dx = x1 - x2;
+            var dy = y1 - y2;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        private static (InternalLinkRepresentation Link, InternalVertexRepresentation Vertex) GetNearestVertexFromNearestEdge(double x, double y)
+        {
+            var nearest = new InternalLinkRepresentation();
+            var d = 1000;
+            while (nearest.Edge == null)
+            {
+                nearest = _links
+                    .Values
+                    .Where(p => Math.Abs(p.Geometry[0].Y - y) < d && Math.Abs(p.Geometry[0].X - x) < d)
+                    .MinBy(p => LineTools.FindNearestPoint(p.Geometry, x, y).DistanceFromLine);
+                d *= 10;
+            }
+
+            return CreateNearestInfo(nearest, x, y);
+        }
+
+        private static (InternalLinkRepresentation Link, InternalVertexRepresentation Vertex) CreateNearestInfo(InternalLinkRepresentation nearest, double x, double y)
+        {
+            var distanceToStart = Distance(nearest.Geometry[0].X, nearest.Geometry[0].Y, x, y);
+            var distanceToEnd = Distance(nearest.Geometry[^1].X, nearest.Geometry[^1].Y, x, y);
+
+            if (distanceToStart < distanceToEnd)
+                return (nearest, _vertices[nearest.Edge.SourceVertexId]);
+            else
+                return (nearest, _vertices[nearest.Edge.TargetVertexId]);
+        }
+
+        private static (InternalLinkRepresentation Link, InternalVertexRepresentation Vertex) GetNearestVertexFromNearestEdge(double x, double y, int vertexGroup)
+        {
+            var d = 1000;
+            var nearest = _links.Values
+                .Where(p => _analysis.VertexIdGroup.TryGetValue(p.Edge.SourceVertexId, out var gidS) && gidS == vertexGroup && _analysis.VertexIdGroup.TryGetValue(p.Edge.SourceVertexId, out var gidE) && gidE == vertexGroup)
+                .Where(p => Math.Abs(p.Geometry[0].Y - y) < d && Math.Abs(p.Geometry[0].X - x) < d)
+                .MinBy(p => p.Geometry.Min(c => Distance(c.X, c.Y, x, y)));
+
+            return CreateNearestInfo(nearest, x, y);
         }
 
         public static int GetNearestVertex(double x, double y)
         {
-            var nearest = _vertices.MinBy(p => Distance(p.X, p.Y, x, y));
+            var nearest = _vertices.Values.MinBy(p => Distance(p.X, p.Y, x, y));
             return nearest.Id;
         }
 
         private static InternalVertexRepresentation GetNearestVertex(double x, double y, int vertexGroup)
         {
             var nearest = _vertices
+                .Values
                 .Where(p => _analysis.VertexIdGroup.TryGetValue(p.Id, out var gid) && gid == vertexGroup)
                 .MinBy(p => Distance(p.X, p.Y, x, y));
             return nearest;
@@ -240,14 +291,14 @@ namespace RoutingApi.Helpers
 
                     var edge = new InternalLinkRepresentation()
                     {
-                        EdgeId = link.EdgeId,
                         Reference = LinkReference.FromShortStringRepresentation(link.Id),
-                        Geometry = new FloatPoint[pointCount]
+                        Geometry = new Point3D[pointCount],
+                        Edge = link
                     };
 
                     for (var j = 0; j < pointCount; j++)
                     {
-                        edge.Geometry[j] = new FloatPoint((float)BitConverter.ToDouble(buffer, pos), (float)BitConverter.ToDouble(buffer, pos + 8));
+                        edge.Geometry[j] = new Point3D(BitConverter.ToDouble(buffer, pos), BitConverter.ToDouble(buffer, pos + 8));
                         pos += 24;
                     }
 

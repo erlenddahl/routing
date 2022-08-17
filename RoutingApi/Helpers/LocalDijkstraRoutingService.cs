@@ -201,7 +201,7 @@ namespace RoutingApi.Helpers
                 {
                     var link = new GraphDataItem();
                     link.Id = reader.ReadString();
-                    reader.ReadString(); // link.Direction
+                    var direction = reader.ReadString(); // link.Direction
                     reader.ReadString(); // link.RoadType
                     reader.ReadString(); // link.SpecialRoad
                     reader.ReadString(); // link.LaneCode
@@ -224,6 +224,17 @@ namespace RoutingApi.Helpers
                     link.ReverseCost = BitConverter.ToDouble(buffer, pos + 52);
                     //link.FromNodeConnectionTolerance = BitConverter.ToInt32(buffer, pos + 60);
                     //link.ToNodeConnectionTolerance = BitConverter.ToInt32(buffer, pos + 64);
+
+                    if (direction != "B")
+                    {
+                        if (direction == "FT") link.ReverseCost = double.MaxValue;
+                        else if (direction == "TF") link.Cost = double.MaxValue;
+                        else if (direction == "N") link.ReverseCost = link.Cost = double.MaxValue;
+                        else
+                        {
+                            var k = 0;
+                        }
+                    }
 
                     pos = 68;
 

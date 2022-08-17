@@ -7,8 +7,8 @@ using DotSpatial.Topology;
 using Extensions.IEnumerableExtensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using no.sintef.SpeedModule.Geometry;
-using no.sintef.SpeedModule.Geometry.SimpleStructures;
+using EnergyModule.Geometry;
+using EnergyModule.Geometry.SimpleStructures;
 using Routing;
 
 namespace RoadNetworkRouting

@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using no.sintef.SpeedModule.Geometry.SimpleStructures;
+using EnergyModule.Geometry.SimpleStructures;
 
 namespace RoadNetworkRouting
 {

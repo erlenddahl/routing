@@ -44,5 +44,10 @@ namespace Routing
         {
             return _dynamicData.ContainsKey(id);
         }
+
+        public IEnumerable<VertexData> GetInternalData()
+        {
+            return _dynamicData.Values;
+        }
     }
 }

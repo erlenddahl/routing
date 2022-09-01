@@ -17,6 +17,10 @@ namespace Routing
             Source = dr.Source;
             Target = dr.Target;
 
+            InternalData = dr;
+
+            if (Target == null) return;
+
             var vertex = dr.Target;
             Items = new int[vertex.VertexCount];
             var ix = Items.Length - 1;
@@ -26,6 +30,8 @@ namespace Routing
                 vertex = vertex.PreviousVertex;
             }
         }
+
+        public DijkstraResult InternalData { get; set; }
 
         public VertexData Source { get; }
         public VertexData Target { get; }

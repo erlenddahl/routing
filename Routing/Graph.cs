@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -17,7 +18,6 @@ namespace Routing
                 CreateEdge(item);
             }
         }
-
 
         public static Graph Create(IEnumerable<GraphDataItem> items)
         {

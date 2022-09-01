@@ -280,7 +280,7 @@ namespace RoadNetworkRouting
 
         public (int vertex, double distance) GetNearestVertex(double x, double y)
         {
-            if (Vertices == null) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
+            if (Vertices?.Any() != true) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
             var nearby = Vertices.Values.Where(p => Math.Abs(p.Y - y) < 500 && Math.Abs(p.X - x) < 500).ToArray();
             if (nearby.Any())
                 return GetNearestVertex(nearby, x, y);
@@ -296,7 +296,7 @@ namespace RoadNetworkRouting
 
         public (int vertex, double distance) GetNearestVertex(IEnumerable<NetworkNode> vertices, double x, double y)
         {
-            if (vertices == null) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
+            if (vertices?.Any() != true) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
             var nearby = vertices.Where(p => Math.Abs(p.Y - y) < 500 && Math.Abs(p.X - x) < 500).ToArray();
             if (nearby.Any())
                 return GetNearestVertexDirectly(nearby, x, y);
@@ -306,7 +306,7 @@ namespace RoadNetworkRouting
 
         public (int vertex, double distance) GetNearestVertex(int vertexGroup, double x, double y)
         {
-            if (Vertices == null) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
+            if (Vertices?.Any() != true) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
             var nearest = Vertices.Values
                 .Where(p => p.VertexGroup == vertexGroup)
                 .ToArray();

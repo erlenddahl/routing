@@ -1,0 +1,216 @@
+{
+  "runtimeTarget": {
+    "name": ".NETStandard,Version=v2.0/",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETStandard,Version=v2.0": {},
+    ".NETStandard,Version=v2.0/": {
+      "RoadNetworkRouting/1.0.0": {
+        "dependencies": {
+          "DotSpatial.Data": "1.9.0",
+          "DotSpatial.Mono": "1.9.0",
+          "DotSpatial.Projections": "1.9.0",
+          "DotSpatial.Topology": "1.9.0",
+          "NETStandard.Library": "2.0.3",
+          "Newtonsoft.Json": "13.0.1",
+          "Routing": "1.0.0",
+          "EnergyModule": "1.0.0.0",
+          "Extensions": "1.0.0.0"
+        },
+        "runtime": {
+          "RoadNetworkRouting.dll": {}
+        }
+      },
+      "DotSpatial.Data/1.9.0": {
+        "dependencies": {
+          "DotSpatial.Mono": "1.9.0",
+          "DotSpatial.Projections": "1.9.0",
+          "DotSpatial.Serialization": "0.11.9.6",
+          "DotSpatial.Topology": "1.9.0"
+        },
+        "runtime": {
+          "lib/net40-Client/DotSpatial.Data.dll": {
+            "assemblyVersion": "1.9.0.0",
+            "fileVersion": "1.9.0.0"
+          }
+        }
+      },
+      "DotSpatial.Mono/1.9.0": {
+        "runtime": {
+          "lib/net40-Client/DotSpatial.Mono.dll": {
+            "assemblyVersion": "1.9.0.0",
+            "fileVersion": "1.9.0.0"
+          }
+        }
+      },
+      "DotSpatial.Projections/1.9.0": {
+        "runtime": {
+          "lib/net40-Client/DotSpatial.Projections.dll": {
+            "assemblyVersion": "1.9.0.0",
+            "fileVersion": "1.9.0.0"
+          }
+        }
+      },
+      "DotSpatial.Serialization/0.11.9.6": {
+        "runtime": {
+          "lib/net40/DotSpatial.Serialization.dll": {
+            "assemblyVersion": "0.11.9.6",
+            "fileVersion": "0.11.9.6"
+          }
+        }
+      },
+      "DotSpatial.Topology/1.9.0": {
+        "dependencies": {
+          "DotSpatial.Serialization": "0.11.9.6"
+        },
+        "runtime": {
+          "lib/net40-Client/DotSpatial.Topology.dll": {
+            "assemblyVersion": "1.9.0.0",
+            "fileVersion": "1.9.0.0"
+          }
+        }
+      },
+      "Microsoft.NETCore.Platforms/1.1.0": {},
+      "NETStandard.Library/2.0.3": {
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0"
+        }
+      },
+      "Newtonsoft.Json/13.0.1": {
+        "runtime": {
+          "lib/netstandard2.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.1.25517"
+          }
+        }
+      },
+      "Routing/1.0.0": {
+        "runtime": {
+          "Routing.dll": {}
+        }
+      },
+      "EnergyModule/1.0.0.0": {
+        "runtime": {
+          "EnergyModule.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Extensions/1.0.0.0": {
+        "runtime": {
+          "Extensions.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "ConsoleUtilities/1.0.0.0": {
+        "runtime": {
+          "ConsoleUtilities.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "ByteUtilities/1.0.0.0": {
+        "runtime": {
+          "ByteUtilities.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "RoadNetworkRouting/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "DotSpatial.Data/1.9.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-WNPKVCuFLgHMfbfQ87fTMdVm9yYTngRSO+SUuWxEoekkMx9rpMM58EdmVWp1S/7iVx7eryGfVT/P7d+3yCQ8MQ==",
+      "path": "dotspatial.data/1.9.0",
+      "hashPath": "dotspatial.data.1.9.0.nupkg.sha512"
+    },
+    "DotSpatial.Mono/1.9.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-VysaGVbfx6Oz/rWVxwlTxOj3wsh/K/LRCl9+o0f+cC7ef+gcOPUnqiJvRpAGmp76mmuRJjr6YTxGcv5sfaDRjA==",
+      "path": "dotspatial.mono/1.9.0",
+      "hashPath": "dotspatial.mono.1.9.0.nupkg.sha512"
+    },
+    "DotSpatial.Projections/1.9.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HW2X+SHkRPIyWv9D/PbFazNjWs9xX6Wy9FQKIpzGWlr/K/LEh4ztDTdIM8tVAtc0/0wSwMMPXSjwEkE2CYJ9Fg==",
+      "path": "dotspatial.projections/1.9.0",
+      "hashPath": "dotspatial.projections.1.9.0.nupkg.sha512"
+    },
+    "DotSpatial.Serialization/0.11.9.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-N4PwBu4eGBgV3MG2cuHYGlK9F52aEix2WyLagA8oNAG62QHZc4Qau9oc/NGTz8tMzfZOeb3FZOc+V6eWxUugdA==",
+      "path": "dotspatial.serialization/0.11.9.6",
+      "hashPath": "dotspatial.serialization.0.11.9.6.nupkg.sha512"
+    },
+    "DotSpatial.Topology/1.9.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tU/o3+U9xSThRuZWmkx8xzkRsPwtbS32sXAnCSZTyK6HHAC2j3RnyGTjFY09lFxYcueTI/CWQU7QCP73I+v3PQ==",
+      "path": "dotspatial.topology/1.9.0",
+      "hashPath": "dotspatial.topology.1.9.0.nupkg.sha512"
+    },
+    "Microsoft.NETCore.Platforms/1.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A==",
+      "path": "microsoft.netcore.platforms/1.1.0",
+      "hashPath": "microsoft.netcore.platforms.1.1.0.nupkg.sha512"
+    },
+    "NETStandard.Library/2.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A==",
+      "path": "netstandard.library/2.0.3",
+      "hashPath": "netstandard.library.2.0.3.nupkg.sha512"
+    },
+    "Newtonsoft.Json/13.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ppPFpBcvxdsfUonNcvITKqLl3bqxWbDCZIzDWHzjpdAHRFfZe0Dw9HmA0+za13IdyrgJwpkDTDA9fHaxOrt20A==",
+      "path": "newtonsoft.json/13.0.1",
+      "hashPath": "newtonsoft.json.13.0.1.nupkg.sha512"
+    },
+    "Routing/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "EnergyModule/1.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Extensions/1.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ConsoleUtilities/1.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ByteUtilities/1.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

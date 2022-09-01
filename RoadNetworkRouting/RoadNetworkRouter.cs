@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using DotSpatial.Data;
@@ -38,6 +39,8 @@ namespace RoadNetworkRouting
                 Links = links.ToDictionary(k => k.LinkId, v => v)
             };
 
+            router.FixMissingNodeIds();
+
             var vertices = new Dictionary<int, NetworkNode>();
             foreach (var link in router.Links)
             {
@@ -63,6 +66,66 @@ namespace RoadNetworkRouting
             return router;
         }
 
+        private void FixMissingNodeIds()
+        {
+            // Create a list containing all nodes with their IDs and locations
+            List<(int NodeId, Point3D Location)> nodes = Links
+                .SelectMany(p => new[] { (p.Value.FromNodeId, p.Value.Geometry.Points.First()), (p.Value.ToNodeId, p.Value.Geometry.Points.Last()) })
+                .ToList();
+
+            // Locate the max node ID, so that we can continue creating nodes with IDs
+            // higher than this.
+            var id = nodes.Max(p => p.NodeId) + 1;
+
+            // Go through each link and find links with missing From/To node IDs.
+            // (Missing is defined as equal to int.MinValue, and must be set as this
+            // in the corresponding reader function.)
+            foreach (var link in Links.Values)
+            {
+                // If FromNodeId is missing, fix it.
+                if (link.FromNodeId == int.MinValue)
+                {
+                    // First, find its position (the first point in the geometry)
+                    var location = link.Geometry.Points.First();
+
+                    // Next, find any nodes within 1 meter from this location.
+                    // (Using ManhattanDistance as a filter first, as the Sqrt calculation in the actual calculation is expensive.)
+                    var match = nodes.FirstOrDefault(p => p.Location.ManhattanDistanceTo2D(location) < 2 && p.Location.DistanceTo2D(location) <= 1);
+                    Debug.WriteLine($"FromNodeId, link {link.LinkId}: Found matching node at {match.Location}");
+
+                    // If there was no match (only the Location object will be null because it's a struct),
+                    // create a new node at this location. Make sure to increment the next available ID,
+                    // as well as adding the new node to the list of nodes.
+                    if (match.Location == null)
+                    {
+                        match = (id++, location);
+                        nodes.Add(match);
+                        Debug.WriteLine($"FromNodeId, link {link.LinkId}: Created new node {match.NodeId} at {match.Location}");
+                    }
+
+                    // Set FromNodeId to the matching node (either one we found, or one we created).
+                    link.FromNodeId = match.NodeId;
+                }
+
+                // Repeat for ToNodeId
+                if (link.ToNodeId == int.MinValue)
+                {
+                    var location = link.Geometry.Points.Last();
+                    var match = nodes.FirstOrDefault(p => p.Location.ManhattanDistanceTo2D(location) < 2 && p.Location.DistanceTo2D(location) <= 1);
+                    Debug.WriteLine($"ToNodeId, link {link.LinkId}: Found matching node at {match.Location}");
+
+                    if (match.Location == null)
+                    {
+                        match = (id++, location);
+                        nodes.Add(match);
+                        Debug.WriteLine($"ToNodeId, link {link.LinkId}: Created new node {match.NodeId} at {match.Location}");
+                    }
+
+                    link.ToNodeId = match.NodeId;
+                }
+            }
+        }
+
         private RoadNetworkRouter()
         {
             Links = new Dictionary<int, GdbRoadLinkData>();
@@ -80,12 +143,13 @@ namespace RoadNetworkRouting
             var json = JObject.Parse(File.ReadAllText(file));
             var features = json["features"] as JArray;
             if (features == null) throw new Exception("Invalid GeoJSON (missing features).");
+
             return Build(features.Select(feature =>
             {
                 var properties = feature["properties"];
 
-                if (properties["FromNodeID"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("FromNodeID"))) return null;
-                if (properties["ToNodeID"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("ToNodeID"))) return null;
+                var fromNodeId = properties["FromNodeID"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("FromNodeID")) ? int.MinValue : properties.Value<int>("FromNodeID");
+                var toNodeId = properties["ToNodeID"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("ToNodeID")) ? int.MinValue : properties.Value<int>("ToNodeID");
 
                 var geometry = feature["geometry"];
                 if (features == null) throw new Exception("Invalid GeoJSON (feature missing properties).");
@@ -99,8 +163,8 @@ namespace RoadNetworkRouting
                 var data = new GdbRoadLinkData();
                 data.LinkId = properties.Value<int>("OBJECT_ID");
                 data.Reference = properties.Value<double>("FROM_M") + "-" + properties.Value<double>("ROUTEID") + "@" + properties.Value<double>("TO_M");
-                data.FromNodeId = properties.Value<int>("FromNodeID");
-                data.ToNodeId = properties.Value<int>("ToNodeID");
+                data.FromNodeId = fromNodeId;
+                data.ToNodeId = toNodeId;
                 data.RoadType = properties.Value<string>("VEGTYPE");
                 data.SpeedLimit = properties.Value<int>("FT_Fart");
                 data.SpeedLimitReversed = properties.Value<int>("TF_Fart");
@@ -108,7 +172,7 @@ namespace RoadNetworkRouting
                 data.ToRelativeLength = properties.Value<double>("TO_M");
                 data.Geometry = new PolyLineZ(coordinates.Select(p => new Point3D(p[0], p[1], p[2])), true);
                 return data;
-            }).Where(p => p != null));
+            }));
         }
 
         public static RoadNetworkRouter LoadFrom(string file)

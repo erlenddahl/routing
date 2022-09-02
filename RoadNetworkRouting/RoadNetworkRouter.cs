@@ -207,6 +207,15 @@ namespace RoadNetworkRouting
                 data.FromRelativeLength = properties.Value<double>("FROM_M");
                 data.ToRelativeLength = properties.Value<double>("TO_M");
                 data.Geometry = new PolyLineZ(coordinates.Select(p => new Point3D(p[0], p[1], p[2])), true);
+
+                var direction = properties.Value<string>("ONEWAY");
+                if (direction != "B")
+                {
+                    if (direction == "FT") data.ReverseCost = double.MaxValue;
+                    else if (direction == "TF") data.Cost = double.MaxValue;
+                    else if (direction == "N") data.ReverseCost = data.Cost = double.MaxValue;
+                }
+
                 return data;
             }));
         }

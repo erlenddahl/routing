@@ -19,6 +19,12 @@ namespace RoadNetworkRouting
         public Dictionary<int, GdbRoadLinkData> Links { get; private set; } = null;
         public Dictionary<int, NetworkNode> Vertices { get; private set; }
 
+        /// <summary>
+        /// How many missing node IDs that were fixed (mapped to existing nodes nearer than 1 meter,
+        /// or to newly created nodes) when building the network.
+        /// </summary>
+        public int FixedMissingNodeIdCount { get; set; }
+
         public Graph GetGraph()
         {
             return Graph.Create(Links.Values.Select(p => new GraphDataItem()
@@ -39,7 +45,7 @@ namespace RoadNetworkRouting
                 Links = links.ToDictionary(k => k.LinkId, v => v)
             };
 
-            router.FixMissingNodeIds();
+            router.FixedMissingNodeIdCount = router.FixMissingNodeIds();
 
             var vertices = new Dictionary<int, NetworkNode>();
             foreach (var link in router.Links)
@@ -78,7 +84,7 @@ namespace RoadNetworkRouting
             }
         }
 
-        private void FixMissingNodeIds()
+        private int FixMissingNodeIds()
         {
             // Create a list containing all nodes with their IDs and locations, then store it as a
             // Y-separated dictionary of lists.
@@ -112,6 +118,9 @@ namespace RoadNetworkRouting
                 list.Add(node);
             }
 
+            // Keep track of how many we fixed
+            var fixedNodes = 0;
+
             Node FindMatchingNode(Point3D location, string source)
             {
                 // Next, retrieve any nodes that could be relevant by doing a simple dictionary lookup.
@@ -131,6 +140,8 @@ namespace RoadNetworkRouting
                     AddNode(match);
                     Debug.WriteLine($"{source}: Created new node {match.Id} at {match.Location}");
                 }
+
+                fixedNodes++;
 
                 return match;
             }
@@ -160,6 +171,8 @@ namespace RoadNetworkRouting
                     link.ToNodeId = FindMatchingNode(location, "ToNodeId, link " + link.LinkId).Id;
                 }
             }
+
+            return fixedNodes;
         }
 
         private RoadNetworkRouter()

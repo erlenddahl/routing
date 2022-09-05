@@ -44,8 +44,8 @@ namespace Routing
                 var v = vertices.Dequeue();
                 if (groups.ContainsKey(v.Id)) continue;
                 groups.Add(v.Id, groupIx);
-                foreach (var n in v.Neighbours)
-                    vertices.Enqueue(n);
+                foreach (var n in v.NeighbourIds)
+                    vertices.Enqueue(Graph.Vertices[n]);
             }
         }
     }

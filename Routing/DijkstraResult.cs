@@ -7,6 +7,7 @@ namespace Routing
     public class DijkstraResult
     {
         private readonly Graph _graph;
+        private readonly GraphOverloader _overloader;
         private readonly Dictionary<int, VertexData> _dynamicData;
         private readonly Stopwatch _stopwatch;
 
@@ -16,9 +17,11 @@ namespace Routing
 
         public int Tries { get; set; }
 
-        public DijkstraResult(Graph graph)
+        public DijkstraResult(Graph graph, GraphOverloader overloader = null)
         {
-            _graph = graph; 
+            _graph = graph;
+            _overloader = overloader;
+            overloader?.Build(graph);
             _dynamicData = new Dictionary<int, VertexData>();
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
@@ -27,7 +30,7 @@ namespace Routing
         public VertexData GetVertexData(int id)
         {
             if (_dynamicData.TryGetValue(id, out var vd)) return vd;
-            vd = new VertexData(_graph.Vertices[id]);
+            vd = new VertexData(GetVertex(id));
             _dynamicData.Add(id, vd);
             return vd;
         }
@@ -48,6 +51,18 @@ namespace Routing
         public IEnumerable<VertexData> GetInternalData()
         {
             return _dynamicData.Values;
+        }
+
+        private Vertex GetVertex(int id)
+        {
+            if (_overloader != null && _overloader.TryGetVertex(id, out var v)) return v;
+            return _graph.Vertices[id];
+        }
+
+        public Edge GetEdge(int startVertexId, int endVertexId)
+        {
+            if (_overloader != null && _overloader.TryGetEdge(startVertexId, endVertexId, out var e)) return e;
+            return _graph.GetEdge(startVertexId, endVertexId);
         }
     }
 }

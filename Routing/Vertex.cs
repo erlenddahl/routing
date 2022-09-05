@@ -18,17 +18,17 @@ namespace Routing
         {
             Vertex = vertex;
         }
+
+        public override string ToString()
+        {
+            return $"{Vertex.Id} (cost={Cost:n2})";
+        }
     }
 
     public class Vertex : IEqualityComparer<Vertex>
     {
-        public Vertex()
-        {
-            Neighbours = new List<Vertex>();
-        }
-
         public int Id { get; set; }
-        public List<Vertex> Neighbours { get; private set; }
+        public HashSet<int> NeighbourIds { get; set; } = new HashSet<int>();
 
         public override string ToString()
         {

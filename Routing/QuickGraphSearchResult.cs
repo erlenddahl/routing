@@ -5,12 +5,11 @@ namespace Routing
 {
     public class QuickGraphSearchResult
     {
+        public VertexData Source { get; }
+        public VertexData Target { get; }
         public int[] Items { get; set; }
 
-        public QuickGraphSearchResult()
-        {
-
-        }
+        public DijkstraResult InternalData { get; set; }
 
         public QuickGraphSearchResult(DijkstraResult dr)
         {
@@ -30,10 +29,5 @@ namespace Routing
                 vertex = vertex.PreviousVertex;
             }
         }
-
-        public DijkstraResult InternalData { get; set; }
-
-        public VertexData Source { get; }
-        public VertexData Target { get; }
     }
 }

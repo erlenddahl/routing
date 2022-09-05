@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EnergyModule.Geometry;
+using Newtonsoft.Json.Linq;
 
 namespace RoadNetworkRouting
 {
@@ -24,5 +25,6 @@ namespace RoadNetworkRouting
         public double ReverseCost { get; set; }
         public int FromNodeConnectionTolerance { get; set; }
         public int ToNodeConnectionTolerance { get; set; }
+        public object Raw { get; set; }
     }
 }

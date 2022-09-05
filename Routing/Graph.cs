@@ -31,17 +31,9 @@ namespace Routing
             return new GraphAnalysis(this);
         }
 
-        public GraphSearchResult GetShortestPath(int sourceVertexId, int targetVertexId)
+        public QuickGraphSearchResult GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader overloader = null)
         {
-            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId);
-            var result = new GraphSearchResult(dr);
-
-            return result;
-        }
-
-        public QuickGraphSearchResult GetShortestPathQuickly(int sourceVertexId, int targetVertexId)
-        {
-            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId);
+            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId, overloader);
             var result = new QuickGraphSearchResult(dr);
 
             return result;
@@ -97,7 +89,7 @@ namespace Routing
                     DataItem = item,
                 };
 
-                edge.SourceVertex.Neighbours.Add(edge.TargetVertex);
+                edge.SourceVertex.NeighbourIds.Add(edge.TargetVertex.Id);
                 var key = GetKey(edge.SourceVertex.Id, edge.TargetVertex.Id);
                 if (!_edges.ContainsKey(key))
                 {
@@ -120,7 +112,7 @@ namespace Routing
                     IsReverse = true,
                     DataItem = item,
                 };
-                edge.SourceVertex.Neighbours.Add(edge.TargetVertex);
+                edge.SourceVertex.NeighbourIds.Add(edge.TargetVertex.Id);
                 var key = GetKey(edge.SourceVertex.Id, edge.TargetVertex.Id);
                 if (!_edges.ContainsKey(key))
                 {
@@ -153,6 +145,16 @@ namespace Routing
         public Edge GetEdge(int startVertexId, int endVertexId)
         {
             return _edges[GetKey(startVertexId, endVertexId)];
+        }
+
+        public bool HasEdge(int startVertexId, int endVertexId)
+        {
+            return _edges.ContainsKey(GetKey(startVertexId, endVertexId));
+        }
+
+        public bool TryGetEdge(int startVertexId, int endVertexId, out Edge edge)
+        {
+            return _edges.TryGetValue(GetKey(startVertexId, endVertexId), out edge);
         }
     }
 }

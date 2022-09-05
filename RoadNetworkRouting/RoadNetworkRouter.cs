@@ -209,17 +209,20 @@ namespace RoadNetworkRouting
 
                 var coordinates = geometry["coordinates"][0].ToObject<double[][]>();
 
-                var data = new GdbRoadLinkData();
-                data.LinkId = properties.Value<int>("OBJECT_ID");
-                data.Reference = properties.Value<double>("FROM_M") + "-" + properties.Value<double>("ROUTEID") + "@" + properties.Value<double>("TO_M");
-                data.FromNodeId = fromNodeId;
-                data.ToNodeId = toNodeId;
-                data.RoadType = properties.Value<string>("VEGTYPE");
-                data.SpeedLimit = properties.Value<int>("FT_Fart");
-                data.SpeedLimitReversed = properties.Value<int>("TF_Fart");
-                data.FromRelativeLength = properties.Value<double>("FROM_M");
-                data.ToRelativeLength = properties.Value<double>("TO_M");
-                data.Geometry = new PolyLineZ(coordinates.Select(p => new Point3D(p[0], p[1], p[2])), true);
+                var data = new GdbRoadLinkData
+                {
+                    LinkId = properties.Value<int>("OBJECT_ID"),
+                    Reference = properties.Value<double>("FROM_M") + "-" + properties.Value<double>("ROUTEID") + "@" + properties.Value<double>("TO_M"),
+                    FromNodeId = fromNodeId,
+                    ToNodeId = toNodeId,
+                    RoadType = properties.Value<string>("VEGTYPE"),
+                    SpeedLimit = properties.Value<int>("FT_Fart"),
+                    SpeedLimitReversed = properties.Value<int>("TF_Fart"),
+                    FromRelativeLength = properties.Value<double>("FROM_M"),
+                    ToRelativeLength = properties.Value<double>("TO_M"),
+                    Geometry = new PolyLineZ(coordinates.Select(p => new Point3D(p[0], p[1], p[2])), true),
+                    Raw = feature
+                };
 
                 var direction = properties.Value<string>("ONEWAY");
                 if (direction != "B")
@@ -543,6 +546,72 @@ namespace RoadNetworkRouting
             }
 
             shp.SaveAs(shpPath, true);
+        }
+
+        public (GdbRoadLinkData Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point)
+        {
+            (GdbRoadLinkData Link, NearestPointInfo Nearest) nearest = (null, null);
+            var d = 1000;
+            while (nearest.Link == null)
+            {
+                nearest = Links
+                    .Values
+                    .Where(p => Math.Abs(p.Geometry.Points[0].Y - point.Y) < d && Math.Abs(p.Geometry.Points[0].X - point.X) < d)
+                    .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry.Points, point.X, point.Y)))
+                    .MinBy(p => p.Nearest.DistanceFromLine);
+                d *= 10;
+            }
+
+            return nearest;
+        }
+
+        public (GdbRoadLinkData Link, NetworkNode Vertex) CreateNearestInfo(GdbRoadLinkData nearest, Point3D point)
+        {
+            var distanceToStart = nearest.Geometry.Points.First().DistanceTo2D(point);
+            var distanceToEnd = nearest.Geometry.Points.Last().DistanceTo2D(point);
+
+            if (distanceToStart < distanceToEnd)
+                return (nearest, Vertices[nearest.FromNodeId]);
+            else
+                return (nearest, Vertices[nearest.ToNodeId]);
+        }
+
+        public (QuickGraphSearchResult route, GdbRoadLinkData[] links) Search(Point3D fromPoint, Point3D toPoint)
+        {
+            var source = GetNearestVertexFromNearestEdge(fromPoint);
+            var target = GetNearestVertexFromNearestEdge(toPoint);
+
+            //TODO: Somehow search from a "fake vertex" than can be in the middle of a link. Should be done by sending
+            //some kind of "override data" into the search, to be able to temporarily add one extra vertex at start and end.
+
+            // Build a network graph for searching
+            var graph = GetGraph();
+
+            var overloader = new GraphOverloader();
+            
+            var sourceId = int.MinValue;
+            var targetId = int.MinValue + 1;
+
+            // Calculate the cost factor by dividing the distance along the link from start to source point
+            // by the total length of the link. This is an estimation of how large part of the total edge cost
+            // that should count for the "fake" edges from the links FromNode/ToNode to the fake overloaded
+            // source node.
+            var costFactorSource = source.Nearest.Distance / source.Link.Geometry.Length;
+
+            overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
+            overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId);
+
+            //TODO: Temp override to allow run
+            targetId = CreateNearestInfo(target.Link, toPoint).Vertex.Id;
+
+            // Find the best route between the source and target vertices using the road link costs we have built.
+            var route = graph.GetShortestPath(sourceId, targetId, overloader);
+
+            var links = route.Items.Select(p => Links[p]).ToArray();
+
+            links[0].Geometry = new PolyLineZ(LineTools.CutEnd(links[0].Geometry.Points, source.Link.Geometry.Length - source.Nearest.Distance), false);
+
+            return (route, links);
         }
     }
 }

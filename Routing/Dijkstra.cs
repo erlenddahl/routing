@@ -5,9 +5,9 @@ namespace Routing
 {
     public class Dijkstra
     {
-        public static DijkstraResult GetShortestPath(Graph graph, int sourceVertexId, int targetVertexId)
+        public static DijkstraResult GetShortestPath(Graph graph, int sourceVertexId, int targetVertexId, GraphOverloader overloader = null)
         {
-            var result = new DijkstraResult(graph);
+            var result = new DijkstraResult(graph, overloader);
 
             var current = result.GetVertexData(sourceVertexId);
             current.Cost = 0;
@@ -26,11 +26,11 @@ namespace Routing
                     return result.Finish(current);
                 }
 
-                foreach (var n in current.Vertex.Neighbours.Select(p => result.GetVertexData(p.Id)))
+                foreach (var n in current.Vertex.NeighbourIds.Select(p => result.GetVertexData(p)))
                 {
                     if (n.Visited) continue;
 
-                    var edge = graph.GetEdge(current.Vertex.Id, n.Vertex.Id);
+                    var edge = result.GetEdge(current.Vertex.Id, n.Vertex.Id);
 
                     var totalCost = current.Cost + edge.Cost;
                     if (totalCost < n.Cost)

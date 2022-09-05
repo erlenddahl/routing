@@ -565,30 +565,23 @@ namespace RoadNetworkRouting
             return nearest;
         }
 
-        public (GdbRoadLinkData Link, NetworkNode Vertex) CreateNearestInfo(GdbRoadLinkData nearest, Point3D point)
-        {
-            var distanceToStart = nearest.Geometry.Points.First().DistanceTo2D(point);
-            var distanceToEnd = nearest.Geometry.Points.Last().DistanceTo2D(point);
-
-            if (distanceToStart < distanceToEnd)
-                return (nearest, Vertices[nearest.FromNodeId]);
-            else
-                return (nearest, Vertices[nearest.ToNodeId]);
-        }
-
         public (QuickGraphSearchResult route, GdbRoadLinkData[] links) Search(Point3D fromPoint, Point3D toPoint)
         {
             var source = GetNearestVertexFromNearestEdge(fromPoint);
             var target = GetNearestVertexFromNearestEdge(toPoint);
 
-            //TODO: Somehow search from a "fake vertex" than can be in the middle of a link. Should be done by sending
-            //some kind of "override data" into the search, to be able to temporarily add one extra vertex at start and end.
-
             // Build a network graph for searching
             var graph = GetGraph();
 
+            // Create a graph overloader so that we can insert fake nodes at the from and to points.
+            // Without this, the search would be from one of the existing vertices in the road network,
+            // which could cause too much of the road link to be included in the results.
+            // With the overloader and the fake nodes, we can search from the exact point where the route
+            // enters and exits the road network.
             var overloader = new GraphOverloader();
             
+            // Create two fake IDs for the two fake nodes. We use the two absolute lowest values that
+            // are possible, since we know these are not used (existing IDs are positive integers).
             var sourceId = int.MinValue;
             var targetId = int.MinValue + 1;
 
@@ -597,19 +590,21 @@ namespace RoadNetworkRouting
             // that should count for the "fake" edges from the links FromNode/ToNode to the fake overloaded
             // source node.
             var costFactorSource = source.Nearest.Distance / source.Link.Geometry.Length;
+            var costFactorTarget = target.Nearest.Distance / target.Link.Geometry.Length;
 
+            // Configure the overloader
             overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
-            overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId);
-
-            //TODO: Temp override to allow run
-            targetId = CreateNearestInfo(target.Link, toPoint).Vertex.Id;
+            overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
 
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
 
+            // Extract the road links
             var links = route.Items.Select(p => Links[p]).ToArray();
 
+            // Chop the first and last links so that they start and stop at the search points.
             links[0].Geometry = new PolyLineZ(LineTools.CutEnd(links[0].Geometry.Points, source.Link.Geometry.Length - source.Nearest.Distance), false);
+            links.Last().Geometry = new PolyLineZ(LineTools.CutEnd(links.Last().Geometry.Points, target.Link.Geometry.Length - target.Nearest.Distance), false);
 
             return (route, links);
         }

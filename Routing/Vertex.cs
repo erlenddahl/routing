@@ -56,5 +56,14 @@ namespace Routing
             h ^= h >> 16;
             return (int)h;
         }
+
+        public Vertex Clone()
+        {
+            return new Vertex()
+            {
+                Id = Id,
+                NeighbourIds = new HashSet<int>(NeighbourIds)
+            };
+        }
     }
 }

@@ -77,7 +77,7 @@ namespace RoutingCli
                     {
                         var source = router.GetNearestVertex(largestNetworkSegmentVertices, search.Source[0], search.Source[1]);
                         var target = router.GetNearestVertex(largestNetworkSegmentVertices, search.Target[0], search.Target[1]);
-                        var res = graph.GetShortestPathQuickly(source.vertex, target.vertex);
+                        var res = graph.GetShortestPath(source.vertex, target.vertex);
                         var links = router.GetLinkReferences(res.Items);
 
                         results[search.Index] = new SearchResult()

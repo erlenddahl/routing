@@ -112,10 +112,7 @@ namespace RoutingApi.Helpers
 
                 var start = DateTime.Now;
 
-                var path = _graph
-                    .GetShortestPath(fromVertex.Vertex.Id, toVertex.Vertex.Id)
-                    .Select(p => p.EdgeId)
-                    .ToArray();
+                var path = _graph.GetShortestPath(fromVertex.Vertex.Id, toVertex.Vertex.Id).Items;
 
                 rs.SecsDijkstra += DateTime.Now.Subtract(start).TotalSeconds;
                 start = DateTime.Now;
@@ -124,6 +121,8 @@ namespace RoutingApi.Helpers
 
                 rs.SecsRetrieveLinks += DateTime.Now.Subtract(start).TotalSeconds;
                 start = DateTime.Now;
+
+                //TODO: Use RoadNetworkRouter which now has built-in support for searching from points on links
 
                 var sortedLinks = path.Select(p => _links[p]).ToList();
                 /*if (sortedLinks.First().Edge.Id != fromVertex.Link.Edge.Id)

@@ -16,7 +16,7 @@ namespace RoadNetworkRouting
 {
     public class RoadNetworkRouter
     {
-        public Dictionary<int, GdbRoadLinkData> Links { get; private set; } = null;
+        public Dictionary<int, GdbRoadLinkData> Links { get; set; } = null;
         public Dictionary<int, NetworkNode> Vertices { get; private set; }
 
         /// <summary>
@@ -282,6 +282,13 @@ namespace RoadNetworkRouting
                     link.ReverseCost = BitConverter.ToDouble(buffer, pos + 52);
                     link.FromNodeConnectionTolerance = BitConverter.ToInt32(buffer, pos + 60);
                     link.ToNodeConnectionTolerance = BitConverter.ToInt32(buffer, pos + 64);
+
+                    if (link.Direction != "B")
+                    {
+                        if (link.Direction == "FT") link.ReverseCost = double.MaxValue;
+                        else if (link.Direction == "TF") link.Cost = double.MaxValue;
+                        else if (link.Direction == "N") link.ReverseCost = link.Cost = double.MaxValue;
+                    }
 
                     pos = 68;
                     var points = new Point3D[pointCount];

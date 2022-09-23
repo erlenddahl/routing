@@ -579,7 +579,7 @@ namespace RoadNetworkRouting
             // With the overloader and the fake nodes, we can search from the exact point where the route
             // enters and exits the road network.
             var overloader = new GraphOverloader();
-            
+
             // Create two fake IDs for the two fake nodes. We use the two absolute lowest values that
             // are possible, since we know these are not used (existing IDs are positive integers).
             var sourceId = int.MinValue;
@@ -598,9 +598,9 @@ namespace RoadNetworkRouting
 
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
-
-            // Extract the road links
-            var links = route.Items.Select(p => Links[p]).ToArray();
+            
+            // Extract the road links (if there are any)
+            var links = route.Items?.Select(p => Links[p]).ToArray() ?? Array.Empty<GdbRoadLinkData>();
 
             // Chop the first and last links so that they start and stop at the search points.
             links[0].Geometry = new PolyLineZ(LineTools.CutEnd(links[0].Geometry.Points, source.Link.Geometry.Length - source.Nearest.Distance), false);

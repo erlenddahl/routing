@@ -53,5 +53,10 @@ namespace RoadNetworkRouting
                 Raw = Raw
             };
         }
+
+        public override string ToString()
+        {
+            return $"Id={LinkId}, Cost={Cost:n2} / {ReverseCost:n2}";
+        }
     }
 }

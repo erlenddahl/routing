@@ -236,7 +236,7 @@ namespace RoadNetworkRouting
             }));
         }
 
-        public static RoadNetworkRouter LoadFrom(string file)
+        public static RoadNetworkRouter LoadFrom(string file, Action<int, int> progress = null)
         {
             using (var reader = new BinaryReader(File.OpenRead(file)))
             {
@@ -301,6 +301,8 @@ namespace RoadNetworkRouting
                     link.Geometry = new PolyLineZ(points, false);
 
                     router.Links.Add(link.LinkId, link);
+
+                    progress?.Invoke(i, linkCount);
                 }
 
                 return router;

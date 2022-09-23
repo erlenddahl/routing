@@ -610,10 +610,33 @@ namespace RoadNetworkRouting
             var links = route.Items?.Select(p => Links[p]).ToArray() ?? Array.Empty<GdbRoadLinkData>();
 
             // Chop the first and last links so that they start and stop at the search points.
-            links[0].Geometry = new PolyLineZ(LineTools.CutEnd(links[0].Geometry.Points, source.Link.Geometry.Length - source.Nearest.Distance), false);
-            links.Last().Geometry = new PolyLineZ(LineTools.CutEnd(links.Last().Geometry.Points, target.Link.Geometry.Length - target.Nearest.Distance), false);
+            if (links.Any())
+            {
+                try
+                {
+                    links[0] = CutLink(links[0], links[1], source.Nearest.Distance);
+                    links[^1] = CutLink(links[^1], links[^2], target.Nearest.Distance);
+                }
+                catch (Exception ex)
+                {
+                    throw;
+                }
+            }
 
             return (route, links);
+        }
+
+        private GdbRoadLinkData CutLink(GdbRoadLinkData current, GdbRoadLinkData connectedTo,  double atDistance)
+        {
+            var connectedAtEnd = current.ToNodeId == connectedTo.FromNodeId || current.ToNodeId == connectedTo.ToNodeId;
+
+            Point3D[] points;
+            if(connectedAtEnd)
+                points = LineTools.CutStart(current.Geometry.Points, atDistance);
+            else
+                points = LineTools.CutEnd(current.Geometry.Points, current.Geometry.Length - atDistance);
+
+            return current.Clone(new PolyLineZ(points, false));
         }
     }
 }

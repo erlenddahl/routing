@@ -26,5 +26,32 @@ namespace RoadNetworkRouting
         public int FromNodeConnectionTolerance { get; set; }
         public int ToNodeConnectionTolerance { get; set; }
         public object Raw { get; set; }
+
+        public GdbRoadLinkData Clone(PolyLineZ newGeometry = null)
+        {
+            return new GdbRoadLinkData()
+            {
+                Reference = Reference,
+                RoadClass = RoadClass,
+                LinkId = LinkId,
+                FromRelativeLength = FromRelativeLength,
+                ToRelativeLength = ToRelativeLength,
+                FromNodeId = FromNodeId,
+                ToNodeId = ToNodeId,
+                RoadNumber = RoadNumber,
+                Direction = Direction,
+                SpeedLimit = SpeedLimit,
+                SpeedLimitReversed = SpeedLimitReversed,
+                RoadType = RoadType,
+                Geometry = newGeometry ?? Geometry,
+                SpecialRoad = SpecialRoad,
+                LaneCode = LaneCode,
+                Cost = Cost,
+                ReverseCost = ReverseCost,
+                FromNodeConnectionTolerance = FromNodeConnectionTolerance,
+                ToNodeConnectionTolerance = ToNodeConnectionTolerance,
+                Raw = Raw
+            };
+        }
     }
 }

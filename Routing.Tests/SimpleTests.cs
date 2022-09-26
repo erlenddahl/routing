@@ -446,8 +446,8 @@ namespace Routing.Tests
         public void AvoidsLoop_NegativeCosts()
         {
             // Create a road network that looks something like this:
-            //       ___
-            //   ___/___\___
+            //      __
+            //   ___\/___
             //     
             var links = new[]
             {

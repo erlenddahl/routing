@@ -89,16 +89,7 @@ namespace Routing
                     DataItem = item,
                 };
 
-                edge.SourceVertex.NeighbourIds.Add(edge.TargetVertex.Id);
-                var key = GetKey(edge.SourceVertex.Id, edge.TargetVertex.Id);
-                if (!_edges.ContainsKey(key))
-                {
-                    _edges.Add(key, edge);
-                }
-                else if (_edges[key].Cost > edge.Cost)
-                {
-                    _edges[key] = edge;
-                }
+                EnsureEdge(edge);
             }
 
             if (item.ReverseCost < 1_000_000)
@@ -112,17 +103,23 @@ namespace Routing
                     IsReverse = true,
                     DataItem = item,
                 };
-                edge.SourceVertex.NeighbourIds.Add(edge.TargetVertex.Id);
-                var key = GetKey(edge.SourceVertex.Id, edge.TargetVertex.Id);
-                if (!_edges.ContainsKey(key))
-                {
-                    _edges.Add(key, edge);
-                }
-                else if (_edges[key].Cost > edge.Cost)
-                {
-                    _edges[key] = edge;
-                }
+
+                EnsureEdge(edge);
             }
+        }
+
+        private void EnsureEdge(Edge edge)
+        {
+            edge.SourceVertex.NeighbourIds.Add(edge.TargetVertex.Id);
+
+            var key = GetKey(edge.SourceVertex.Id, edge.TargetVertex.Id);
+            if (_edges.TryGetValue(key, out var existing))
+            {
+                if (existing.Cost > edge.Cost)
+                    _edges[key] = edge;
+            }
+            else
+                _edges.Add(key, edge);
         }
 
         private Vertex EnsureVertex(int vertexId)

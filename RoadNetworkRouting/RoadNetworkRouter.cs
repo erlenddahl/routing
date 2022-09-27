@@ -638,6 +638,11 @@ namespace RoadNetworkRouting
             else
                 points = LineTools.CutEnd(current.Geometry.Points, current.Geometry.Length - atDistance);
 
+            // If the cut failed, simply return the entire link.
+            // This is a workaround for now, should figure out what makes it fail later.
+            if (points.Length < 2)
+                return current;
+
             return current.Clone(new PolyLineZ(points, false));
         }
     }

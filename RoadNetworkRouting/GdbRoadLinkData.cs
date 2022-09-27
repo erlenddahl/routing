@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using EnergyModule.Geometry;
 using Newtonsoft.Json.Linq;
 
@@ -56,7 +57,9 @@ namespace RoadNetworkRouting
 
         public override string ToString()
         {
-            return $"Id={LinkId}, Cost={Cost:n2} / {ReverseCost:n2}";
+            var c = Math.Abs(Cost - double.MaxValue) < 0.000001 ? "INF" : Cost.ToString("n2");
+            var rc = Math.Abs(ReverseCost - double.MaxValue) < 0.000001 ? "INF" : ReverseCost.ToString("n2");
+            return $"Id={LinkId}, Cost={c} / {rc}";
         }
     }
 }

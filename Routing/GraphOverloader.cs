@@ -12,7 +12,7 @@ namespace Routing
             public int VertexB;
             public double CostFactor;
             public Vertex Vertex;
-            public Dictionary<int, Edge> Edges = new Dictionary<int, Edge>();
+            public Dictionary<int, Edge> Edges = new();
 
             public Edge CheckAddEdge(Graph graph, int sourceVertex, int targetVertex, double costFactor)
             {
@@ -32,9 +32,9 @@ namespace Routing
             }
         }
 
-        private Dictionary<int, OverloadVertex> _sourceOverloads = new Dictionary<int, OverloadVertex>();
-        private Dictionary<int, OverloadVertex> _targetOverloads = new Dictionary<int, OverloadVertex>();
-        private Dictionary<(int From, int To), OverloadVertex> _targetEdges = new Dictionary<(int From, int To), OverloadVertex>();
+        private Dictionary<int, OverloadVertex> _sourceOverloads = new();
+        private Dictionary<int, OverloadVertex> _targetOverloads = new();
+        private Dictionary<(int From, int To), OverloadVertex> _targetEdges = new();
 
         public void AddSourceOverload(int id, int toVertexA, int toVertexB, double costFactor)
         {

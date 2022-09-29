@@ -236,6 +236,56 @@ namespace RoadNetworkRouting
             }));
         }
 
+        public static RoadNetworkRouter BuildFromGeoJsonLines(string file, Func<double, double, (double X, double Y)> wgs84ToUtm33)
+        {
+            return Build(File.ReadLines(file).Select(line =>
+            {
+                var feature = JObject.Parse(line);
+                var properties = feature["properties"];
+
+                var fromNodeId = properties["fromnode"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("fromnode")) ? int.MinValue : properties.Value<int>("fromnode");
+                var toNodeId = properties["tonode"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("tonode")) ? int.MinValue : properties.Value<int>("tonode");
+
+                var geometry = feature["geometry"];
+                if (geometry == null) throw new Exception("Invalid GeoJSON (feature missing geometry).");
+
+                var geometryType = geometry.Value<string>("type");
+                if (geometryType != "LineString") throw new Exception("Invalid GeoJSON (geometry type must be MultiLineString).");
+
+                var coordinates = geometry["coordinates"].ToObject<double[][]>();
+
+                //{ "type": "Feature", "properties": { "OBJECTID": 1, "linkid": "1", "fromnode": "0", "tonode": "1", "formofway": "1", "funcroadclass": "7", "routeid": "1008609", "from_measure": 0.0, "to_measure": 1.0, "roadnumber": "97911", "oneway": "B", "speedfw": "30", "speedbw": "30", "isferry": "0", "isbridge": "0", "istunnel": "0", "maxweight": null, "maxheight": null, "roadid": "{P97911}", "roadclass": "7", "attributes": null, "bruksklasse": null, "bruksklasse_vi": null, "drivetime_fw": 0.040456461793697801, "drivetime_bw": 0.040456461793697801 }, "geometry": { "type": "LineString", "coordinates": [ [ 10.598823, 60.9589035, 175.396 ], [ 10.5988832, 60.9590235, 175.146 ] ] } }
+                var data = new GdbRoadLinkData
+                {
+                    LinkId = properties.Value<int>("OBJECTID"),
+                    Reference = properties.Value<double>("from_measure") + "-" + properties.Value<double>("to_measure") + "@" + properties.Value<double>("routeid"),
+                    FromNodeId = fromNodeId,
+                    ToNodeId = toNodeId,
+                    //RoadType = properties.Value<string>("VEGTYPE"),
+                    SpeedLimit = properties.Value<int>("speedfw"),
+                    SpeedLimitReversed = properties.Value<int>("speedbw"),
+                    Cost = properties.Value<double>("drivetime_fw"),
+                    ReverseCost = properties.Value<double>("drivetime_bw"),
+                    FromRelativeLength = properties.Value<double>("from_measure"),
+                    ToRelativeLength = properties.Value<double>("to_measure"),
+                    Geometry = new PolyLineZ(coordinates.Select(p => new{Utm=wgs84ToUtm33(p[0], p[1]), Z=p[2]}).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)), true),
+                    Direction = properties.Value<string>("oneway"),
+                    RoadClass = properties.Value<int>("roadtype")
+                };
+
+                if (data.Direction != "B")
+                {
+                    if (data.Direction == "FT") data.ReverseCost = double.MaxValue;
+                    else if (data.Direction == "TF") data.Cost = double.MaxValue;
+                    else if (data.Direction == "N") data.ReverseCost = data.Cost = double.MaxValue;
+                }
+
+                data.Direction = data.Direction;
+
+                return data;
+            }));
+        }
+
         public static RoadNetworkRouter LoadFrom(string file, Action<int, int> progress = null)
         {
             using (var reader = new BinaryReader(File.OpenRead(file)))

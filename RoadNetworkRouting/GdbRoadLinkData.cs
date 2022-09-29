@@ -18,10 +18,10 @@ namespace RoadNetworkRouting
         public string Direction { get; set; }
         public int SpeedLimit { get; set; }
         public int SpeedLimitReversed { get; set; }
-        public string RoadType { get; set; }
+        public string RoadType { get; set; } = "";
         public PolyLineZ Geometry { get; set; }
-        public string SpecialRoad { get; set; }
-        public string LaneCode { get; set; }
+        public string SpecialRoad { get; set; } = "";
+        public string LaneCode { get; set; } = "";
         public double Cost { get; set; }
         public double ReverseCost { get; set; }
         public int FromNodeConnectionTolerance { get; set; }

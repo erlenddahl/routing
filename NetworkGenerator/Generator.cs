@@ -6,21 +6,20 @@ using System.Text;
 using System.Threading.Tasks;
 using ConsoleUtilities.ConsoleInfoPanel;
 using Newtonsoft.Json;
-using no.sintef.SpeedModule.Geometry.SimpleStructures;
-using RoadNetworkRouting;
+using EnergyModule.Geometry.SimpleStructures;
 
 namespace NetworkGenerator
 {
     public class Generator
     {
-        public void Generate(string gdbPath, string outputBinPath, int tolerance = 1)
+        /*public void Generate(string gdbPath, string outputBinPath, int tolerance = 1)
         {
             using (var cip = new ConsoleInformationPanel("Creating network topology ..."))
             {
-                var links = new Dictionary<string, LightGdbRoadLinkData>();
+                var links = new Dictionary<string, GdbRoadLinkData>();
                 using (var pb = cip.SetUnknownProgress("Loading links"))
                 {
-                    foreach (var link in GdbGraphBuilder.ProcessTableLight(gdbPath))
+                    foreach (var link in GdbGraphBuilder.ProcessNewTable(gdbPath))
                         links.Add(link.Reference, link);
                 }
 
@@ -148,6 +147,6 @@ namespace NetworkGenerator
 
                 RoadNetworkRouter.SaveToLight(outputBinPath, nodes, links, GdbGraphBuilder.ProcessTable(gdbPath));
             }
-        }
+        }*/
     }
 }

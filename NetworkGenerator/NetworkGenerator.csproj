@@ -35,23 +35,35 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ByteUtilities">
+      <HintPath>..\..\EnergyMap\Lib\ByteUtilities.dll</HintPath>
+    </Reference>
     <Reference Include="ConsoleUtilities">
-      <HintPath>D:\Nextcloud\Mine program\C#\Extensions\ConsoleUtilities\bin\Release\ConsoleUtilities.dll</HintPath>
+      <HintPath>..\..\EnergyMap\Lib\ConsoleUtilities.dll</HintPath>
+    </Reference>
+    <Reference Include="DataflowUtilities">
+      <HintPath>..\..\EnergyMap\Lib\DataflowUtilities.dll</HintPath>
+    </Reference>
+    <Reference Include="EnergyModule">
+      <HintPath>..\..\EnergyMap\Lib\EnergyModule.dll</HintPath>
     </Reference>
     <Reference Include="Esri.FileGDBAPI">
       <HintPath>..\..\EnergyMap\Lib\Esri.FileGDBAPI.dll</HintPath>
     </Reference>
     <Reference Include="Extensions">
-      <HintPath>D:\Nextcloud\Mine program\C#\Extensions\Extensions\bin\Release\netstandard2.0\Extensions.dll</HintPath>
+      <HintPath>..\..\EnergyMap\Lib\Extensions.dll</HintPath>
     </Reference>
     <Reference Include="Gdb2Xml">
       <HintPath>..\..\EnergyMap\Lib\Gdb2Xml.exe</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\EnergyMap\Lib\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="SpeedModule">
-      <HintPath>..\..\EnergyModule\Fartsmodell\bin\Release\SpeedModule.dll</HintPath>
+    <Reference Include="NpgsqlExtensions">
+      <HintPath>..\..\EnergyMap\Lib\NpgsqlExtensions.dll</HintPath>
+    </Reference>
+    <Reference Include="SqliteExtensions">
+      <HintPath>..\..\EnergyMap\Lib\SqliteExtensions.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -81,6 +93,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FromRoadNetworkRouter.cs" />
     <Compile Include="GdbGraphBuilder.cs" />
     <Compile Include="Generator.cs" />
     <Compile Include="MainWindow.xaml.cs">
@@ -114,16 +127,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\RoadNetworkRouting\RoadNetworkRouting.csproj">
-      <Project>{C20A9888-0295-4BD4-9022-B801198AA61B}</Project>
-      <Name>RoadNetworkRouting</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Routing\Routing.csproj">
-      <Project>{29f16e8b-4143-42bf-9c92-49817bce5b11}</Project>
-      <Name>Routing</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

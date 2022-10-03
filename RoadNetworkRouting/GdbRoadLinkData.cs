@@ -15,18 +15,14 @@ namespace RoadNetworkRouting
         public int FromNodeId { get; set; }
         public int ToNodeId { get; set; }
         public int RoadNumber { get; set; }
-        public string Direction { get; set; }
         public int SpeedLimit { get; set; }
         public int SpeedLimitReversed { get; set; }
         public string RoadType { get; set; } = "";
         public PolyLineZ Geometry { get; set; }
-        public string SpecialRoad { get; set; } = "";
         public string LaneCode { get; set; } = "";
         public double Cost { get; set; }
         public double ReverseCost { get; set; }
-        public int FromNodeConnectionTolerance { get; set; }
-        public int ToNodeConnectionTolerance { get; set; }
-        public object Raw { get; set; }
+        public RoadLinkDirection Direction { get; set; }
 
         public GdbRoadLinkData Clone(PolyLineZ newGeometry = null)
         {
@@ -45,13 +41,9 @@ namespace RoadNetworkRouting
                 SpeedLimitReversed = SpeedLimitReversed,
                 RoadType = RoadType,
                 Geometry = newGeometry ?? Geometry,
-                SpecialRoad = SpecialRoad,
                 LaneCode = LaneCode,
                 Cost = Cost,
-                ReverseCost = ReverseCost,
-                FromNodeConnectionTolerance = FromNodeConnectionTolerance,
-                ToNodeConnectionTolerance = ToNodeConnectionTolerance,
-                Raw = Raw
+                ReverseCost = ReverseCost
             };
         }
 
@@ -61,5 +53,30 @@ namespace RoadNetworkRouting
             var rc = Math.Abs(ReverseCost - double.MaxValue) < 0.000001 ? "INF" : ReverseCost.ToString("n2");
             return $"Id={LinkId}, Cost={c} / {rc}";
         }
+
+        public static RoadLinkDirection DirectionFromString(string direction)
+        {
+            switch (direction.ToLower())
+            {
+                case "b":
+                    return RoadLinkDirection.BothWays;
+                case "ft":
+                    return RoadLinkDirection.AlongGeometry;
+                case "tf":
+                    return RoadLinkDirection.AgainstGeometry;
+                case "n":
+                    return RoadLinkDirection.None;
+            }
+
+            throw new Exception("Unknown road link direction: '" + direction + "' (must be B, FT, TF, or N).");
+        }
+    }
+
+    public enum RoadLinkDirection
+    {
+        BothWays,
+        AlongGeometry,
+        AgainstGeometry,
+        None
     }
 }

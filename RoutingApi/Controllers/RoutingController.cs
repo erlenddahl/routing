@@ -34,13 +34,23 @@ namespace RoutingApi.Controllers
         public object FindRoute([FromBody] RoutingRequest request)
         {
             if (request == null) return new { message = "Please provide a non-empty routing request." };
-            if (request.Request != null && request.Requests != null) return new { message = "Must submit either a single Request, or multiple Requests, not Both." };
-            if (request.Request == null && request.Requests == null) return new { message = "Must submit either a single Request, or multiple Requests." };
+
+            var requestTypes = new[] { request.Request != null, request.Requests != null, request.AllToAllRequests != null };
+
+            if(requestTypes.Count(p=>p)>1)
+                return new { message = "The request object cannot have more than one request type (Request, Requests, or AllToAllRequests)." };
 
             if (request.Request != null) return RouteSingle(request.Request);
+            if (request.AllToAllRequests != null) return RouteAllToAll(request.AllToAllRequests);
+            if (request.Requests != null) return RouteMultiple(request.Requests);
 
+            return new { message = "The request object must either have the Request property, the Requests property, or the AllToAllRequests property." };
+        }
+
+        private object RouteMultiple(LatLng[][] requests)
+        {
             var ix = 0;
-            return request.Requests.Select(p => new
+            return requests.Select(p => new
                 {
                     sequence = ix++,
                     request = p
@@ -49,6 +59,25 @@ namespace RoutingApi.Controllers
                 .Select(p => new { p.sequence, result = RouteSingle(p.request) })
                 .OrderBy(p => p.sequence)
                 .Select(p => p.result);
+        }
+
+        private object RouteAllToAll(LatLng[] requests)
+        {
+            var ix = 0;
+            return requests.Select(p => new
+                {
+                    sequence = ix++,
+                    source = p
+                })
+                .AsParallel()
+                .Select(p => new { p.sequence, results = RouteOneToAll(p.source, requests) })
+                .OrderBy(p => p.sequence)
+                .Select(p => p.results);
+        }
+
+        private object RouteOneToAll(LatLng source, LatLng[] targets)
+        {
+            throw new NotImplementedException();
         }
 
         private object RouteSingle(LatLng[] coordinates)
@@ -83,5 +112,6 @@ namespace RoutingApi.Controllers
     {
         public LatLng[] Request { get; set; }
         public LatLng[][] Requests { get; set; }
+        public LatLng[] AllToAllRequests { get; set; }
     }
 }

@@ -45,7 +45,7 @@ namespace RoadNetworkRouting
                 Links = links.ToDictionary(k => k.LinkId, v => v)
             };
 
-            router.FixedMissingNodeIdCount = router.FixMissingNodeIds();
+            router.FixedMissingNodeIdCount = RoadNetworkUtilities.FixMissingNodeIds(router);
 
             var vertices = new Dictionary<int, NetworkNode>();
             foreach (var link in router.Links)
@@ -72,109 +72,6 @@ namespace RoadNetworkRouting
             return router;
         }
 
-        private struct Node
-        {
-            public readonly int Id;
-            public readonly Point3D Location;
-
-            public Node(Point3D location, int id)
-            {
-                Location = location;
-                Id = id;
-            }
-        }
-
-        private int FixMissingNodeIds()
-        {
-            // Create a list containing all nodes with their IDs and locations, then store it as a
-            // Y-separated dictionary of lists.
-            var nodesByY = Links
-                .SelectMany(p => new[]
-                {
-                    new Node(p.Value.Geometry.Points.First(), p.Value.FromNodeId),
-                    new Node(p.Value.Geometry.Points.Last(), p.Value.ToNodeId)
-                })
-                .Where(p => p.Id > int.MinValue)
-                .GroupBy(p => (int)p.Location.Y)
-                .ToDictionary(k => k.Key, v => v.ToList());
-
-            // Locate the max node ID, so that we can continue creating nodes with IDs higher than this.
-            var id = nodesByY.SelectMany(p => p.Value).Max(p => p.Id) + 1;
-
-            List<Node> FindRelevant(Point3D loc)
-            {
-                var relevantNodes = new List<Node>();
-                if (nodesByY.TryGetValue((int)loc.Y, out var nodes)) relevantNodes.AddRange(nodes);
-                if (nodesByY.TryGetValue((int)loc.Y - 1, out var nodesBelow)) relevantNodes.AddRange(nodesBelow);
-                if (nodesByY.TryGetValue((int)loc.Y + 1, out var nodesAbove)) relevantNodes.AddRange(nodesAbove);
-                return relevantNodes;
-            }
-
-            void AddNode(Node node)
-            {
-                if (!nodesByY.TryGetValue((int)node.Location.Y, out var list))
-                    nodesByY.Add((int)node.Location.Y, list = new List<Node>());
-
-                list.Add(node);
-            }
-
-            // Keep track of how many we fixed
-            var fixedNodes = 0;
-
-            Node FindMatchingNode(Point3D location, string source)
-            {
-                // Next, retrieve any nodes that could be relevant by doing a simple dictionary lookup.
-                var relevantNodes = FindRelevant(location);
-
-                // Finally, find any nodes within 1 meter from this location.
-                // (Using ManhattanDistance as a filter first, as the Sqrt calculation in the actual calculation is expensive.)
-                var match = relevantNodes.FirstOrDefault(p => p.Location.ManhattanDistanceTo2D(location) < 2 && p.Location.DistanceTo2D(location) <= 1);
-                Debug.WriteLine($"{source}: Found matching node at {match.Location}");
-
-                // If there was no match (only the Location object will be null because it's a struct),
-                // create a new node at this location. Make sure to increment the next available ID,
-                // as well as adding the new node to the list of nodes.
-                if (match.Location == null)
-                {
-                    match = new Node(location, id++);
-                    AddNode(match);
-                    Debug.WriteLine($"{source}: Created new node {match.Id} at {match.Location}");
-                }
-
-                fixedNodes++;
-
-                return match;
-            }
-
-            // Go through each link and find links with missing From/To node IDs.
-            // (Missing is defined as equal to int.MinValue, and must be set as this
-            // in the corresponding reader function.)
-            foreach (var link in Links.Values)
-            {
-                // If FromNodeId is missing, fix it.
-                if (link.FromNodeId == int.MinValue)
-                {
-                    // First, find its position (the first point in the geometry)
-                    var location = link.Geometry.Points.First();
-
-                    // Set FromNodeId to the matching node (either one we found, or one we created).
-                    link.FromNodeId = FindMatchingNode(location, "FromNodeId, link " + link.LinkId).Id;
-                }
-
-                // Repeat for ToNodeId
-                if (link.ToNodeId == int.MinValue)
-                {
-                    // First, find its position (the first point in the geometry)
-                    var location = link.Geometry.Points.Last();
-
-                    // Set FromNodeId to the matching node (either one we found, or one we created).
-                    link.ToNodeId = FindMatchingNode(location, "ToNodeId, link " + link.LinkId).Id;
-                }
-            }
-
-            return fixedNodes;
-        }
-
         private RoadNetworkRouter()
         {
             Links = new Dictionary<int, GdbRoadLinkData>();
@@ -187,6 +84,11 @@ namespace RoadNetworkRouting
             Vertices = vertices;
         }
 
+        /// <summary>
+        /// Reads the road network from a regular GeoJSON file. Due to memory constraints, this is not usable for large networks.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         public static RoadNetworkRouter BuildFromGeoJson(string file)
         {
             var json = JObject.Parse(File.ReadAllText(file));
@@ -220,8 +122,7 @@ namespace RoadNetworkRouting
                     SpeedLimitReversed = properties.Value<int>("TF_Fart"),
                     FromRelativeLength = properties.Value<double>("FROM_M"),
                     ToRelativeLength = properties.Value<double>("TO_M"),
-                    Geometry = new PolyLineZ(coordinates.Select(p => new Point3D(p[0], p[1], p[2])), true),
-                    Raw = feature
+                    Geometry = new PolyLineZ(coordinates.Select(p => new Point3D(p[0], p[1], p[2])), true)
                 };
 
                 var direction = properties.Value<string>("ONEWAY");
@@ -236,6 +137,13 @@ namespace RoadNetworkRouting
             }));
         }
 
+        /// <summary>
+        /// Reads the road network from a GeoJSON file where each line is a separate GeoJSON object. Because of constraints in the export functionality, files generated using QGis
+        /// will always use the WGS84 coordinate system, and must therefore use a function to transform the coordinates to UTM33.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="wgs84ToUtm33"></param>
+        /// <returns></returns>
         public static RoadNetworkRouter BuildFromGeoJsonLines(string file, Func<double, double, (double X, double Y)> wgs84ToUtm33)
         {
             return Build(File.ReadLines(file).Select(line =>
@@ -269,15 +177,16 @@ namespace RoadNetworkRouting
                     FromRelativeLength = properties.Value<double>("from_measure"),
                     ToRelativeLength = properties.Value<double>("to_measure"),
                     Geometry = new PolyLineZ(coordinates.Select(p => new{Utm=wgs84ToUtm33(p[0], p[1]), Z=p[2]}).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)), true),
-                    Direction = properties.Value<string>("oneway"),
                     RoadClass = properties.Value<int>("roadtype")
                 };
+                
+                data.Direction = GdbRoadLinkData.DirectionFromString(properties.Value<string>("oneway"));
 
-                if (data.Direction != "B")
+                if (data.Direction != RoadLinkDirection.BothWays)
                 {
-                    if (data.Direction == "FT") data.ReverseCost = double.MaxValue;
-                    else if (data.Direction == "TF") data.Cost = double.MaxValue;
-                    else if (data.Direction == "N") data.ReverseCost = data.Cost = double.MaxValue;
+                    if (data.Direction == RoadLinkDirection.AlongGeometry) data.ReverseCost = double.MaxValue;
+                    else if (data.Direction == RoadLinkDirection.AgainstGeometry) data.Cost = double.MaxValue;
+                    else if (data.Direction == RoadLinkDirection.None) data.ReverseCost = data.Cost = double.MaxValue;
                 }
 
                 data.Direction = data.Direction;
@@ -286,6 +195,12 @@ namespace RoadNetworkRouting
             }));
         }
 
+        /// <summary>
+        /// Loads the road network from a road network binary file.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="progress"></param>
+        /// <returns></returns>
         public static RoadNetworkRouter LoadFrom(string file, Action<int, int> progress = null)
         {
             using (var reader = new BinaryReader(File.OpenRead(file)))
@@ -308,39 +223,35 @@ namespace RoadNetworkRouting
                 for (var i = 0; i < linkCount; i++)
                 {
                     var link = new GdbRoadLinkData();
+
+                    // Read the dynamic strings directly first
                     link.Reference = reader.ReadString();
-                    link.Direction = reader.ReadString();
                     link.RoadType = reader.ReadString();
-                    link.SpecialRoad = reader.ReadString();
                     link.LaneCode = reader.ReadString();
+
+                    // Then fetch the point count, and calculate the length of the rest of this link object, and read it all in at the same time
                     var pointCount = reader.ReadInt32();
-                    itemSize = 4 + 4 + 8 + 8 + 4 + 4 + 4 + 4 + 4 + 8 + 8 + 4 + 4 + pointCount * (8 + 8 + 8);
+                    itemSize = 4 + 4 + 4 + 8 + 8 + 4 + 4 + 4 + 4 + 4 + 8 + 8 + pointCount * (8 + 8 + 8);
                     buffer = new byte[itemSize];
                     reader.Read(buffer, 0, buffer.Length);
 
+                    // Read all the normal properties
                     var pos = 0;
-                    link.RoadClass = BitConverter.ToInt32(buffer, pos);
-                    link.LinkId = BitConverter.ToInt32(buffer, pos + 4);
-                    link.FromRelativeLength = BitConverter.ToDouble(buffer, pos + 8);
-                    link.ToRelativeLength = BitConverter.ToDouble(buffer, pos + 16);
-                    link.FromNodeId = BitConverter.ToInt32(buffer, pos + 24);
-                    link.ToNodeId = BitConverter.ToInt32(buffer, pos + 28);
-                    link.RoadNumber = BitConverter.ToInt32(buffer, pos + 32);
-                    link.SpeedLimit = BitConverter.ToInt32(buffer, pos + 36);
-                    link.SpeedLimitReversed = BitConverter.ToInt32(buffer, pos + 40);
-                    link.Cost = BitConverter.ToDouble(buffer, pos + 44);
-                    link.ReverseCost = BitConverter.ToDouble(buffer, pos + 52);
-                    link.FromNodeConnectionTolerance = BitConverter.ToInt32(buffer, pos + 60);
-                    link.ToNodeConnectionTolerance = BitConverter.ToInt32(buffer, pos + 64);
+                    link.Direction = (RoadLinkDirection)BitConverter.ToInt32(buffer, pos);
+                    link.RoadClass = BitConverter.ToInt32(buffer, pos + 4);
+                    link.LinkId = BitConverter.ToInt32(buffer, pos + 8);
+                    link.FromRelativeLength = BitConverter.ToDouble(buffer, pos + 12);
+                    link.ToRelativeLength = BitConverter.ToDouble(buffer, pos + 20);
+                    link.FromNodeId = BitConverter.ToInt32(buffer, pos + 28);
+                    link.ToNodeId = BitConverter.ToInt32(buffer, pos + 32);
+                    link.RoadNumber = BitConverter.ToInt32(buffer, pos + 36);
+                    link.SpeedLimit = BitConverter.ToInt32(buffer, pos + 40);
+                    link.SpeedLimitReversed = BitConverter.ToInt32(buffer, pos + 44);
+                    link.Cost = BitConverter.ToDouble(buffer, pos + 48);
+                    link.ReverseCost = BitConverter.ToDouble(buffer, pos + 56);
 
-                    if (link.Direction != "B")
-                    {
-                        if (link.Direction == "FT") link.ReverseCost = double.MaxValue;
-                        else if (link.Direction == "TF") link.Cost = double.MaxValue;
-                        else if (link.Direction == "N") link.ReverseCost = link.Cost = double.MaxValue;
-                    }
-
-                    pos = 68;
+                    // Update the position to the end of the normal properties, and read all points
+                    pos = 64;
                     var points = new Point3D[pointCount];
                     for (var j = 0; j < pointCount; j++)
                     {
@@ -348,6 +259,7 @@ namespace RoadNetworkRouting
                         pos += 24;
                     }
 
+                    // Initialize a polyline from the read points
                     link.Geometry = new PolyLineZ(points, false);
 
                     router.Links.Add(link.LinkId, link);
@@ -359,6 +271,10 @@ namespace RoadNetworkRouting
             }
         }
 
+        /// <summary>
+        /// Writes the network to a fast binary file.
+        /// </summary>
+        /// <param name="file"></param>
         public void SaveTo(string file)
         {
             using (var writer = new BinaryWriter(File.Create(file)))
@@ -376,13 +292,12 @@ namespace RoadNetworkRouting
                 foreach (var link in Links.Values)
                 {
                     writer.Write(link.Reference);
-                    writer.Write(link.Direction);
                     writer.Write(link.RoadType);
-                    writer.Write(link.SpecialRoad);
                     writer.Write(link.LaneCode ?? "");
 
                     writer.Write(link.Geometry.Points.Length);
 
+                    writer.Write((int)link.Direction);
                     writer.Write(link.RoadClass);
                     writer.Write(link.LinkId);
                     writer.Write(link.FromRelativeLength);
@@ -394,58 +309,6 @@ namespace RoadNetworkRouting
                     writer.Write(link.SpeedLimitReversed);
                     writer.Write(link.Cost);
                     writer.Write(link.ReverseCost);
-                    writer.Write(link.FromNodeConnectionTolerance);
-                    writer.Write(link.ToNodeConnectionTolerance);
-
-                    foreach (var p in link.Geometry.Points)
-                    {
-                        writer.Write(p.X);
-                        writer.Write(p.Y);
-                        writer.Write(p.Z);
-                    }
-                }
-            }
-        }
-
-        public static void SaveToLight(string file, Dictionary<int, NetworkNode> nodes, Dictionary<string, LightGdbRoadLinkData> links, IEnumerable<GdbRoadLinkData> streamedLinks)
-        {
-            using (var writer = new BinaryWriter(File.Create(file)))
-            {
-                writer.Write(nodes.Count);
-                foreach (var v in nodes.Values)
-                {
-                    writer.Write(v.Id);
-                    writer.Write(v.X);
-                    writer.Write(v.Y);
-                    writer.Write(v.Edges);
-                }
-
-                writer.Write(links.Count);
-                foreach (var link in streamedLinks)
-                {
-                    var lightLink = links[link.Reference];
-
-                    writer.Write(link.Reference);
-                    writer.Write(link.Direction);
-                    writer.Write(link.RoadType);
-                    writer.Write(link.SpecialRoad);
-                    writer.Write(link.LaneCode ?? "");
-
-                    writer.Write(link.Geometry.Points.Length);
-
-                    writer.Write(link.RoadClass);
-                    writer.Write(link.LinkId);
-                    writer.Write(link.FromRelativeLength);
-                    writer.Write(link.ToRelativeLength);
-                    writer.Write(lightLink.FromNodeId); // *
-                    writer.Write(lightLink.ToNodeId); // *
-                    writer.Write(link.RoadNumber);
-                    writer.Write(link.SpeedLimit);
-                    writer.Write(link.SpeedLimitReversed);
-                    writer.Write(link.Cost);
-                    writer.Write(link.ReverseCost);
-                    writer.Write(lightLink.FromNodeConnectionTolerance); // *
-                    writer.Write(lightLink.ToNodeConnectionTolerance); // *
 
                     foreach (var p in link.Geometry.Points)
                     {
@@ -515,96 +378,6 @@ namespace RoadNetworkRouting
                     v.VertexGroup = gid;
                 else
                     v.VertexGroup = -1;
-        }
-
-        public void ExportNodes(string shpPath)
-        {
-            var shp = new FeatureSet(FeatureType.Point);
-
-            var table = shp.DataTable;
-            table.Columns.Add("Id", typeof(int));
-            table.Columns.Add("Edges", typeof(int));
-            table.AcceptChanges();
-
-            foreach (var c in Vertices.Values)
-            {
-                var feature = shp.AddFeature(new Point(new Coordinate(c.X, c.Y)));
-                feature.DataRow["Id"] = c.Id;
-                feature.DataRow["Edges"] = c.Edges;
-            }
-
-            shp.SaveAs(shpPath, true);
-        }
-
-        public void ExportLinks(string shpPath)
-        {
-            var shp = new FeatureSet(FeatureType.Line);
-
-            var table = shp.DataTable;
-            table.Columns.Add("Reference", typeof(string));
-            table.Columns.Add("Id", typeof(int));
-            table.Columns.Add("FromNode", typeof(int));
-            table.Columns.Add("ToNode", typeof(int));
-            table.Columns.Add("FromTolr.", typeof(int));
-            table.Columns.Add("ToTolr.", typeof(int));
-            table.Columns.Add("Speed", typeof(int));
-            table.Columns.Add("Speed rev.", typeof(int));
-            table.Columns.Add("Cost", typeof(double));
-            table.Columns.Add("Cost rev.", typeof(double));
-            table.AcceptChanges();
-
-            foreach (var c in Links.Values)
-            {
-                var feature = shp.AddFeature(new LineString(c.Geometry.Points.Select(p => new Coordinate(p.X, p.Y))));
-                feature.DataRow["FromNode"] = c.FromNodeId;
-                feature.DataRow["ToNode"] = c.ToNodeId;
-                feature.DataRow["Id"] = c.LinkId;
-                feature.DataRow["Reference"] = c.Reference;
-                feature.DataRow["FromTolr."] = c.FromNodeConnectionTolerance;
-                feature.DataRow["ToTolr."] = c.ToNodeConnectionTolerance;
-                feature.DataRow["Cost"] = c.Cost;
-                feature.DataRow["Cost rev."] = c.ReverseCost;
-                feature.DataRow["Speed"] = c.SpeedLimit;
-                feature.DataRow["Speed rev."] = c.SpeedLimitReversed;
-            }
-
-            shp.SaveAs(shpPath, true);
-        }
-
-        public void ExportNodeConnections(string shpPath)
-        {
-            var shp = new FeatureSet(FeatureType.Point);
-
-            var table = shp.DataTable;
-            table.Columns.Add("LinkId", typeof(int));
-            table.Columns.Add("NodeId", typeof(int));
-            table.Columns.Add("FromOrTo", typeof(char));
-            table.Columns.Add("Distance", typeof(double));
-            table.Columns.Add("Tolerance", typeof(int));
-            table.AcceptChanges();
-
-            foreach (var c in Links.Values)
-            {
-                var node = Vertices[c.FromNodeId];
-                var coordinate = c.Geometry.Points.First();
-                var feature = shp.AddFeature(new LineString(new[] { new Coordinate(node.X, node.Y), new Coordinate(coordinate.X, coordinate.Y) }));
-                feature.DataRow["LinkId"] = c.LinkId;
-                feature.DataRow["NodeId"] = node.Id;
-                feature.DataRow["FromOrTo"] = 0;
-                feature.DataRow["Distance"] = coordinate.DistanceTo2D(node.X, node.Y);
-                feature.DataRow["Tolerance"] = c.FromNodeConnectionTolerance;
-
-                node = Vertices[c.ToNodeId];
-                coordinate = c.Geometry.Points.Last();
-                feature = shp.AddFeature(new LineString(new[] { new Coordinate(node.X, node.Y), new Coordinate(coordinate.X, coordinate.Y) }));
-                feature.DataRow["LinkId"] = c.LinkId;
-                feature.DataRow["NodeId"] = node.Id;
-                feature.DataRow["FromOrTo"] = 2;
-                feature.DataRow["Distance"] = coordinate.DistanceTo2D(node.X, node.Y);
-                feature.DataRow["Tolerance"] = c.ToNodeConnectionTolerance;
-            }
-
-            shp.SaveAs(shpPath, true);
         }
 
         public (GdbRoadLinkData Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point)

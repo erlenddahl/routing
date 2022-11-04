@@ -24,9 +24,9 @@ namespace RoutingApi.Helpers
         private static GraphAnalysis _analysis;
         public static string NetworkFile { get; set; }
 
-        public static RoutingResponse FromLatLng(List<LatLng> coordinates)
+        public static RoutingResponse FromLatLng(List<RequestCoordinate> coordinates)
         {
-            var utmCoordinates = coordinates.Select(p => new PointWgs84(p.Lat, p.Lng).ToUtm33()).ToArray();
+            var utmCoordinates = coordinates.Select(p => p.GetUtm33()).ToArray();
             return FromUtm(utmCoordinates);
         }
 

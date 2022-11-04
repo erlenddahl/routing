@@ -5,8 +5,10 @@ using ProjNet.CoordinateSystems.Transformations;
 
 namespace RoutingApi.Geometry
 {
-    public class PointWgs84 : LatLng
+    public class PointWgs84
     {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
         public double Alt { get; set; }
 
         public PointWgs84()

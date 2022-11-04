@@ -47,7 +47,7 @@ namespace RoutingApi.Controllers
             return new { message = "The request object must either have the Request property, the Requests property, or the AllToAllRequests property." };
         }
 
-        private object RouteMultiple(LatLng[][] requests)
+        private object RouteMultiple(RequestCoordinate[][] requests)
         {
             var ix = 0;
             return requests.Select(p => new
@@ -61,7 +61,7 @@ namespace RoutingApi.Controllers
                 .Select(p => p.result);
         }
 
-        private object RouteAllToAll(LatLng[] requests)
+        private object RouteAllToAll(RequestCoordinate[] requests)
         {
             var ix = 0;
             return requests.Select(p => new
@@ -75,16 +75,16 @@ namespace RoutingApi.Controllers
                 .Select(p => p.results);
         }
 
-        private object RouteOneToAll(LatLng source, LatLng[] targets)
+        private object RouteOneToAll(RequestCoordinate source, RequestCoordinate[] targets)
         {
             throw new NotImplementedException();
         }
 
-        private object RouteSingle(LatLng[] coordinates)
+        private object RouteSingle(RequestCoordinate[] coordinates)
         {
             try
             {
-                var service = RoutingResponse.FromLatLng(coordinates);
+                var service = RoutingResponse.FromRequestCoordinates(coordinates);
 
                 return new
                 {
@@ -110,8 +110,8 @@ namespace RoutingApi.Controllers
 
     public class RoutingRequest
     {
-        public LatLng[] Request { get; set; }
-        public LatLng[][] Requests { get; set; }
-        public LatLng[] AllToAllRequests { get; set; }
+        public RequestCoordinate[] Request { get; set; }
+        public RequestCoordinate[][] Requests { get; set; }
+        public RequestCoordinate[] AllToAllRequests { get; set; }
     }
 }

@@ -15,9 +15,9 @@ namespace RoutingApi.Helpers
         public double SecsRetrieveLinks { get; set; }
         public double SecsDijkstra { get; set; }
 
-        public static RoutingResponse FromLatLng(IList<LatLng> coordinates)
+        public static RoutingResponse FromRequestCoordinates(IList<RequestCoordinate> coordinates)
         {
-            var utmCoordinates = coordinates.Select(p => new PointWgs84(p.Lat, p.Lng).ToUtm33()).ToArray();
+            var utmCoordinates = coordinates.Select(p => p.GetUtm33()).ToArray();
             return FromUtm(utmCoordinates);
         }
 

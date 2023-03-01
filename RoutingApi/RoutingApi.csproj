@@ -10,11 +10,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\EnergyModule\EnergyModule\EnergyModule.csproj" />
     <ProjectReference Include="..\Routing\Routing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="EnergyModule">
+      <HintPath>..\Lib\EnergyModule.dll</HintPath>
+    </Reference>
     <Reference Include="Extensions">
       <HintPath>..\Lib\Extensions.dll</HintPath>
     </Reference>

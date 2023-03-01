@@ -23,9 +23,6 @@
     <Reference Include="EnergyModule">
       <HintPath>..\Lib\EnergyModule.dll</HintPath>
     </Reference>
-    <Reference Include="SpeedModule">
-      <HintPath>..\Lib\SpeedModule.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

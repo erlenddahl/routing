@@ -1,31 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using EnergyModule.Geometry.SimpleStructures;
 using ProjNet.CoordinateSystems;
 using ProjNet.CoordinateSystems.Transformations;
 
 namespace RoutingApi.Geometry
 {
-    public class PointUtm33
+    public class PointUtm33 : Point3D
     {
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double Z { get; set; }
-
         public override string ToString(){
             return X.ToString("n2") + ", " + Y.ToString("n2") + ", " + Z.ToString("n1");
         }
 
-        public PointUtm33()
+        public PointUtm33():base(0,0,0)
         {
 
         }
 
-        public PointUtm33(double x, double y, double z)
+        public PointUtm33(double x, double y, double z):base(x,y,z)
         {
-            X = x;
-            Y = y;
-            Z = z;
         }
 
         internal static PointUtm33 FromWkt(string srid, string[] p)

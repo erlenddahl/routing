@@ -34,8 +34,8 @@ namespace RoutingApi.Tests
             {
                 Request = new[]
                 {
-                    new LatLng() { Lat = 63.413602, Lng = 10.412028 },
-                    new LatLng() { Lat = 63.399147, Lng = 10.350386 }
+                    new RequestCoordinate() { Lat = 63.413602, Lng = 10.412028 },
+                    new RequestCoordinate() { Lat = 63.399147, Lng = 10.350386 }
                 }
             });
 
@@ -55,8 +55,8 @@ namespace RoutingApi.Tests
                 Requests = Enumerable.Range(0, 20)
                     .Select(p => new[]
                     {
-                        new LatLng() { Lat = 63.413602, Lng = 10.412028 },
-                        new LatLng() { Lat = 63.399147, Lng = 10.350386 }
+                        new RequestCoordinate() { Lat = 63.413602, Lng = 10.412028 },
+                        new RequestCoordinate() { Lat = 63.399147, Lng = 10.350386 }
                     })
                     .ToArray()
             });
@@ -84,28 +84,28 @@ namespace RoutingApi.Tests
                 {
                     new[]
                     {
-                        new LatLng() { Lat = 63.1, Lng = 10.1 },
-                        new LatLng() { Lat = 63.399147, Lng = 10.350386 }
+                        new RequestCoordinate() { Lat = 63.1, Lng = 10.1 },
+                        new RequestCoordinate() { Lat = 63.399147, Lng = 10.350386 }
                     },
                     new[]
                     {
-                        new LatLng() { Lat = 63.2, Lng = 10.2 },
-                        new LatLng() { Lat = 63.399147, Lng = 10.350386 }
+                        new RequestCoordinate() { Lat = 63.2, Lng = 10.2 },
+                        new RequestCoordinate() { Lat = 63.399147, Lng = 10.350386 }
                     },
                     new[]
                     {
-                        new LatLng() { Lat = 63.3, Lng = 10.3 },
-                        new LatLng() { Lat = 63.399147, Lng = 10.350386 }
+                        new RequestCoordinate() { Lat = 63.3, Lng = 10.3 },
+                        new RequestCoordinate() { Lat = 63.399147, Lng = 10.350386 }
                     },
                     new[]
                     {
-                        new LatLng() { Lat = 63.4, Lng = 10.4 },
-                        new LatLng() { Lat = 63.399147, Lng = 10.350386 }
+                        new RequestCoordinate() { Lat = 63.4, Lng = 10.4 },
+                        new RequestCoordinate() { Lat = 63.399147, Lng = 10.350386 }
                     },
                     new[]
                     {
-                        new LatLng() { Lat = 63.5, Lng = 10.5 },
-                        new LatLng() { Lat = 63.399147, Lng = 10.350386 }
+                        new RequestCoordinate() { Lat = 63.5, Lng = 10.5 },
+                        new RequestCoordinate() { Lat = 63.399147, Lng = 10.350386 }
                     }
                 }
             });

@@ -415,7 +415,7 @@ namespace RoadNetworkRouting
             }
         }
 
-        public (RoadLink Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config)
+        public (RoadLink Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config, int? networkGroup = null)
         {
             (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
             var d = config.InitialSearchRadius;
@@ -425,7 +425,7 @@ namespace RoadNetworkRouting
 
                 nearest = Links
                     .Values
-                    .Where(p => p.Bounds.Contains(point.X, point.Y, d))
+                    .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup) && p.Bounds.Contains(point.X, point.Y, d))
                     .Select(EnsureLinkDataLoaded)
                     .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry.Points, point.X, point.Y)))
                     .MinBy(p => p.Nearest.DistanceFromLine);
@@ -445,9 +445,34 @@ namespace RoadNetworkRouting
             var source = GetNearestVertexFromNearestEdge(fromPoint, config);
             var target = GetNearestVertexFromNearestEdge(toPoint, config);
 
-            //TODO: Make analysis on links (or re-use graph analysis?) that can be used to set f.ex. RoadLink.NetworkGroup.
-            //TODO: Save and load RoadLink.NetworkGroup, both in normal and skeleton files.
-            //TODO: Implement usage of config.GroupHandling based on RoadLink.NetworkGroup.
+            if (source.Link.NetworkGroup != target.Link.NetworkGroup)
+            {
+                if (config.DifferentGroupHandling == GroupHandling.OnlySame)
+                {
+                    throw new DifferentGroupsException("The source and target links were in different sub graphs in a disconnected road network, which is not allowed according to the given config.DifferentGroupHandling.");
+                }
+                else if (config.DifferentGroupHandling == GroupHandling.BestGroup)
+                {
+                    var alternativeSource = GetNearestVertexFromNearestEdge(fromPoint, config, target.Link.NetworkGroup);
+                    var alternativeTarget = GetNearestVertexFromNearestEdge(toPoint, config, source.Link.NetworkGroup);
+
+                    // Update either the source or the target, depending on which gives the smallest distance from the entry/exit points to the source/target coordinates.
+                    if (source.Nearest.DistanceFromLine + alternativeTarget.Nearest.DistanceFromLine < alternativeSource.Nearest.DistanceFromLine + target.Nearest.DistanceFromLine)
+                    {
+                        target = alternativeTarget;
+                    }
+                    else
+                    {
+                        source = alternativeSource;
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException("Different group handling for " + config.DifferentGroupHandling + " is not implemented.");
+                }
+            }
+
+            //TODO: Test BestGroup network selection!
 
             // Build a network graph for searching
             var graph = Graph;

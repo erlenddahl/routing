@@ -1,4 +1,6 @@
 using EnergyModule.Geometry.SimpleStructures;
+using RoadNetworkRouting.Config;
+using RoadNetworkRouting.Exceptions;
 
 namespace RoadNetworkRouting.Tests
 {
@@ -46,9 +48,16 @@ namespace RoadNetworkRouting.Tests
         {
             var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
 
-            var res = router.Search(new Point3D(-41025, 6868128), new Point3D(-32489, 6859998));
+            try
+            {
+                router.Search(new Point3D(-41025, 6868128), new Point3D(-32489, 6859998));
+            }
+            catch (DifferentGroupsException ex)
+            {
+                return;
+            }
 
-            Assert.IsFalse(res.Success);
+            Assert.Fail();
         }
 
         [TestMethod]
@@ -56,9 +65,40 @@ namespace RoadNetworkRouting.Tests
         {
             var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
 
-            var res = router.Search(new Point3D(-41025, 6868128), new Point3D(-23826, 6857736));
+            try
+            {
+                router.Search(new Point3D(-41025, 6868128), new Point3D(-23826, 6857736));
+            }
+            catch (DifferentGroupsException ex)
+            {
+                return;
+            }
+            Assert.Fail();
+        }
 
-            Assert.IsFalse(res.Success);
+        [TestMethod]
+        public void HasThreeGroups()
+        {
+            var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
+
+            Assert.IsTrue(router.Links.All(p => p.Value.NetworkGroup >= 0));
+            Assert.AreEqual(3, router.Links.GroupBy(p => p.Value.NetworkGroup).Count());
+        }
+
+        [TestMethod]
+        public void FromWesternIslandToMiddleIslandWorksIfAllowed()
+        {
+            var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
+
+            router.Search(new Point3D(-41025, 6868128), new Point3D(-32489, 6859998), new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        }
+
+        [TestMethod]
+        public void FromWesternIslandToEasternIslandWorksIfAllowed()
+        {
+            var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
+            
+            router.Search(new Point3D(-41025, 6868128), new Point3D(-23826, 6857736), new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
         }
     }
 }

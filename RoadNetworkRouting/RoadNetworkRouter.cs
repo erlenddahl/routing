@@ -487,7 +487,7 @@ namespace RoadNetworkRouting
             return nearest;
         }
 
-        public (QuickGraphSearchResult route, GdbRoadLinkData[] links) Search(Point3D fromPoint, Point3D toPoint)
+        public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint)
         {
             var source = GetNearestVertexFromNearestEdge(fromPoint);
             var target = GetNearestVertexFromNearestEdge(toPoint);
@@ -550,7 +550,7 @@ namespace RoadNetworkRouting
                 }
             }
 
-            return (route, links);
+            return new RoadNetworkRoutingResult(route, links);
         }
 
         private GdbRoadLinkData CutLink(GdbRoadLinkData current, GdbRoadLinkData connectedTo,  double atDistance)
@@ -569,6 +569,20 @@ namespace RoadNetworkRouting
                 return current;
 
             return current.Clone(new PolyLineZ(points, false));
+        }
+    }
+
+    public class RoadNetworkRoutingResult
+    {
+        public QuickGraphSearchResult Route { get; set; }
+        public GdbRoadLinkData[] Links { get; set; }
+
+        public bool Success => Route.Target != null;
+
+        public RoadNetworkRoutingResult(QuickGraphSearchResult route, GdbRoadLinkData[] links)
+        {
+            Route = route;
+            Links = links;
         }
     }
 }

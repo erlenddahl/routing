@@ -2,7 +2,7 @@
 using DotSpatial.Data;
 using DotSpatial.Topology;
 
-namespace RoadNetworkRouting
+namespace RoadNetworkRouting.Exporting
 {
     public static class RoadNetworkExporter
     {

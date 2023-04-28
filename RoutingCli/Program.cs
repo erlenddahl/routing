@@ -8,6 +8,7 @@ using ConsoleUtilities.ConsoleInfoPanel;
 using DataflowUtilities.ProducerConsumer;
 using Newtonsoft.Json;
 using RoadNetworkRouting;
+using RoadNetworkRouting.Network;
 using Routing;
 
 namespace RoutingCli
@@ -46,7 +47,7 @@ namespace RoutingCli
 
             RoadNetworkRouter router;
             Graph graph;
-            NetworkNode[] largestNetworkSegmentVertices;
+            Node[] largestNetworkSegmentVertices;
             using (var _ = cip.SetUnknownProgress("Loading router"))
             {
                 for (var i = 0; i < Searches.Length; i++)

@@ -1,5 +1,6 @@
 using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
+using RoadNetworkRouting.Network;
 
 namespace RoadNetworkRouting.Tests
 {
@@ -11,7 +12,7 @@ namespace RoadNetworkRouting.Tests
         {
             var router = RoadNetworkRouter.Build(new[]
             {
-                new GdbRoadLinkData() { LinkId = 0, FromNodeId = 0, ToNodeId = 1, Geometry = new PolyLineZ(new[]{new Point3D(0,0), new Point3D(1,1)}, false) }
+                new RoadLink() { LinkId = 0, FromNodeId = 0, ToNodeId = 1, Geometry = new PolyLineZ(new[]{new Point3D(0,0), new Point3D(1,1)}, false) }
             });
             Assert.IsNotNull(router);
             Assert.AreEqual(1, router.Links.Count);

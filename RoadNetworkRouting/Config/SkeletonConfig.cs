@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace RoadNetworkRouting;
+namespace RoadNetworkRouting.Config;
 
-public class SkeletonConfig 
+public class SkeletonConfig
 {
     public string LinkDataDirectory { get; set; }
     public int LinksPerFile { get; set; } = 100;

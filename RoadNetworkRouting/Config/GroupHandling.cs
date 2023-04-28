@@ -1,4 +1,6 @@
-﻿namespace RoadNetworkRouting;
+﻿using RoadNetworkRouting.Exceptions;
+
+namespace RoadNetworkRouting.Config;
 
 public enum GroupHandling
 {

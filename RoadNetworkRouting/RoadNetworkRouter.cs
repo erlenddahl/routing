@@ -11,6 +11,10 @@ using Newtonsoft.Json.Linq;
 using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using Routing;
+using RoadNetworkRouting.Config;
+using RoadNetworkRouting.Exceptions;
+using RoadNetworkRouting.Network;
+using RoadNetworkRouting.Utils;
 
 namespace RoadNetworkRouting
 {
@@ -18,8 +22,8 @@ namespace RoadNetworkRouting
     {
         private Graph _graph;
         private SkeletonConfig _skeletonConfig;
-        public Dictionary<int, GdbRoadLinkData> Links { get; set; } = null;
-        public Dictionary<int, NetworkNode> Vertices { get; private set; }
+        public Dictionary<int, RoadLink> Links { get; set; } = null;
+        public Dictionary<int, Node> Vertices { get; private set; }
 
         /// <summary>
         /// Network graph that is created the first time this property is accessed, then cached. If changing Links or Vertices, it should be reset.
@@ -49,7 +53,7 @@ namespace RoadNetworkRouting
             }));
         }
 
-        public static RoadNetworkRouter Build(IEnumerable<GdbRoadLinkData> links)
+        public static RoadNetworkRouter Build(IEnumerable<RoadLink> links)
         {
             var router = new RoadNetworkRouter()
             {
@@ -58,7 +62,7 @@ namespace RoadNetworkRouting
 
             router.FixedMissingNodeIdCount = RoadNetworkUtilities.FixMissingNodeIds(router);
 
-            var vertices = new Dictionary<int, NetworkNode>();
+            var vertices = new Dictionary<int, Node>();
             foreach (var link in router.Links)
             {
                 if (vertices.TryGetValue(link.Value.FromNodeId, out var node))
@@ -66,7 +70,7 @@ namespace RoadNetworkRouting
                 else
                 {
                     var point = link.Value.Geometry.Points.First();
-                    vertices.Add(link.Value.FromNodeId, new NetworkNode(point.X, point.Y, link.Value.FromNodeId));
+                    vertices.Add(link.Value.FromNodeId, new Node(point.X, point.Y, link.Value.FromNodeId));
                 }
 
                 if (vertices.TryGetValue(link.Value.ToNodeId, out node))
@@ -74,7 +78,7 @@ namespace RoadNetworkRouting
                 else
                 {
                     var point = link.Value.Geometry.Points.Last();
-                    vertices.Add(link.Value.ToNodeId, new NetworkNode(point.X, point.Y, link.Value.ToNodeId));
+                    vertices.Add(link.Value.ToNodeId, new Node(point.X, point.Y, link.Value.ToNodeId));
                 }
             }
 
@@ -85,11 +89,11 @@ namespace RoadNetworkRouting
 
         private RoadNetworkRouter()
         {
-            Links = new Dictionary<int, GdbRoadLinkData>();
-            Vertices = new Dictionary<int, NetworkNode>();
+            Links = new Dictionary<int, RoadLink>();
+            Vertices = new Dictionary<int, Node>();
         }
 
-        public RoadNetworkRouter(Dictionary<int, GdbRoadLinkData> links, Dictionary<int, NetworkNode> vertices)
+        public RoadNetworkRouter(Dictionary<int, RoadLink> links, Dictionary<int, Node> vertices)
         {
             Links = links;
             Vertices = vertices;
@@ -122,7 +126,7 @@ namespace RoadNetworkRouting
 
                 var coordinates = geometry["coordinates"][0].ToObject<double[][]>();
 
-                var data = new GdbRoadLinkData
+                var data = new RoadLink
                 {
                     LinkId = properties.Value<int>("OBJECT_ID"),
                     FromNodeId = fromNodeId,
@@ -173,7 +177,7 @@ namespace RoadNetworkRouting
                 var coordinates = geometry["coordinates"].ToObject<double[][]>();
 
                 //{ "type": "Feature", "properties": { "OBJECTID": 1, "linkid": "1", "fromnode": "0", "tonode": "1", "formofway": "1", "funcroadclass": "7", "routeid": "1008609", "from_measure": 0.0, "to_measure": 1.0, "roadnumber": "97911", "oneway": "B", "speedfw": "30", "speedbw": "30", "isferry": "0", "isbridge": "0", "istunnel": "0", "maxweight": null, "maxheight": null, "roadid": "{P97911}", "roadclass": "7", "attributes": null, "bruksklasse": null, "bruksklasse_vi": null, "drivetime_fw": 0.040456461793697801, "drivetime_bw": 0.040456461793697801 }, "geometry": { "type": "LineString", "coordinates": [ [ 10.598823, 60.9589035, 175.396 ], [ 10.5988832, 60.9590235, 175.146 ] ] } }
-                var data = new GdbRoadLinkData
+                var data = new RoadLink
                 {
                     LinkId = properties.Value<int>("linkid"),
                     FromNodeId = fromNodeId,
@@ -189,7 +193,7 @@ namespace RoadNetworkRouting
                     RoadClass = properties.Value<int>("roadclass")
                 };
                 
-                data.Direction = GdbRoadLinkData.DirectionFromString(properties.Value<string>("oneway"));
+                data.Direction = RoadLink.DirectionFromString(properties.Value<string>("oneway"));
 
                 if (data.Direction != RoadLinkDirection.BothWays)
                 {
@@ -229,12 +233,12 @@ namespace RoadNetworkRouting
             for (var i = 0; i < vertexCount; i++)
             {
                 var id = BitConverter.ToInt32(buffer, pos);
-                router.Vertices.Add(id, new NetworkNode(BitConverter.ToDouble(buffer, pos + 4), BitConverter.ToDouble(buffer, pos + 12), id) { Edges = BitConverter.ToInt32(buffer, pos + 20) });
+                router.Vertices.Add(id, new Node(BitConverter.ToDouble(buffer, pos + 4), BitConverter.ToDouble(buffer, pos + 12), id) { Edges = BitConverter.ToInt32(buffer, pos + 20) });
                 pos += itemSize;
             }
 
             var linkCount = reader.ReadInt32();
-            router.Links = new Dictionary<int, GdbRoadLinkData>(linkCount);
+            router.Links = new Dictionary<int, RoadLink>(linkCount);
 
             // If this is a skeleton file, only id and costs are included. The rest must be loaded from individual files later.
             if (formatVersion >= 1000)
@@ -247,7 +251,7 @@ namespace RoadNetworkRouting
                 pos = 0;
                 for (var i = 0; i < linkCount; i++)
                 {
-                    var link = new GdbRoadLinkData
+                    var link = new RoadLink
                     {
                         LinkId = BitConverter.ToInt32(buffer, pos),
                         Cost = BitConverter.ToDouble(buffer, pos + 4),
@@ -269,7 +273,7 @@ namespace RoadNetworkRouting
             {
                 for (var i = 0; i < linkCount; i++)
                 {
-                    var link = new GdbRoadLinkData();
+                    var link = new RoadLink();
                     link.ReadFrom(reader);
                     router.Links.Add(link.LinkId, link);
                     progress?.Invoke(i, linkCount);
@@ -371,7 +375,7 @@ namespace RoadNetworkRouting
         /// </summary>
         /// <param name="link"></param>
         /// <returns></returns>
-        public GdbRoadLinkData EnsureLinkDataLoaded(GdbRoadLinkData link)
+        public RoadLink EnsureLinkDataLoaded(RoadLink link)
         {
             if (link.Geometry == null)
                 LoadLinkData(link);
@@ -382,7 +386,7 @@ namespace RoadNetworkRouting
         /// Loads link data for the given link, plus all other links in the same link data file (if any).
         /// </summary>
         /// <param name="link"></param>
-        public void LoadLinkData(GdbRoadLinkData link)
+        public void LoadLinkData(RoadLink link)
         {
             // Find the ID of this link
             var id = link.LinkId;
@@ -424,13 +428,13 @@ namespace RoadNetworkRouting
             return GetNearestVertex(Vertices.Values, x, y);
         }
 
-        private (int vertex, double distance) GetNearestVertexDirectly(IEnumerable<NetworkNode> vertices, double x, double y)
+        private (int vertex, double distance) GetNearestVertexDirectly(IEnumerable<Node> vertices, double x, double y)
         {
             var n = vertices.MinBy(p => Distance(p.X, p.Y, x, y));
             return (n.Id, Distance(n.X, n.Y, x, y));
         }
 
-        public (int vertex, double distance) GetNearestVertex(IEnumerable<NetworkNode> vertices, double x, double y)
+        public (int vertex, double distance) GetNearestVertex(IEnumerable<Node> vertices, double x, double y)
         {
             if (vertices?.Any() != true) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
             var nearby = vertices.Where(p => Math.Abs(p.Y - y) < 500 && Math.Abs(p.X - x) < 500).ToArray();
@@ -449,12 +453,12 @@ namespace RoadNetworkRouting
             return GetNearestVertex(nearest, x, y);
         }
 
-        public NetworkNode GetVertex(int vertexId)
+        public Node GetVertex(int vertexId)
         {
             return Vertices[vertexId];
         }
 
-        public IEnumerable<GdbRoadLinkData> GetLinkReferences(IEnumerable<int> res)
+        public IEnumerable<RoadLink> GetLinkReferences(IEnumerable<int> res)
         {
             foreach (var id in res)
                 yield return Links[id];
@@ -469,9 +473,9 @@ namespace RoadNetworkRouting
                     v.VertexGroup = -1;
         }
 
-        public (GdbRoadLinkData Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config)
+        public (RoadLink Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config)
         {
-            (GdbRoadLinkData Link, NearestPointInfo Nearest) nearest = (null, null);
+            (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
             var d = config.InitialSearchRadius;
             while (nearest.Link == null)
             {
@@ -529,7 +533,7 @@ namespace RoadNetworkRouting
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
             
             // Extract the road links (if there are any)
-            var links = route.Items?.Select(p => Links[p]).ToArray() ?? Array.Empty<GdbRoadLinkData>();
+            var links = route.Items?.Select(p => Links[p]).ToArray() ?? Array.Empty<RoadLink>();
 
             // Ensure that link geometries are loaded if this was a skeleton file.
             if (_skeletonConfig != null)
@@ -560,7 +564,7 @@ namespace RoadNetworkRouting
             return new RoadNetworkRoutingResult(route, links);
         }
 
-        private GdbRoadLinkData CutLink(GdbRoadLinkData current, GdbRoadLinkData connectedTo,  double atDistance)
+        private RoadLink CutLink(RoadLink current, RoadLink connectedTo,  double atDistance)
         {
             var connectedAtEnd = current.ToNodeId == connectedTo.FromNodeId || current.ToNodeId == connectedTo.ToNodeId;
 

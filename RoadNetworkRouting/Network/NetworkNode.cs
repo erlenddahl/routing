@@ -1,6 +1,6 @@
-﻿namespace RoadNetworkRouting
+﻿namespace RoadNetworkRouting.Network
 {
-    public class NetworkNode
+    public class Node
     {
         public double X;
         public double Y;
@@ -8,7 +8,7 @@
         public int Edges;
         public int VertexGroup { get; set; } = -1;
 
-        public NetworkNode(double x, double y, int id)
+        public Node(double x, double y, int id)
         {
             X = x;
             Y = y;

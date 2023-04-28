@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using EnergyModule.Geometry.SimpleStructures;
 
-namespace RoadNetworkRouting
+namespace RoadNetworkRouting.Utils
 {
     public static class RoadNetworkUtilities
     {

@@ -63,7 +63,7 @@ namespace RoutingCli
                     .First()
                     .GroupId;
                 largestNetworkSegmentVertices = router.Vertices.Values.Where(p => p.VertexGroup == largestNetworkSegment).ToArray();
-                graph = router.GetGraph();
+                graph = router.Graph;
             }
 
             var results = new SearchResult[Searches.Length];
@@ -110,7 +110,7 @@ namespace RoutingCli
         {
             using var _ = cip.SetUnknownProgress("Analysing network");
 
-            var graph = router.GetGraph();
+            var graph = router.Graph;
             return graph.Analyze();
         }
     }

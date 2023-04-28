@@ -20,7 +20,7 @@ public class RoutingConfig
     /// How the search <see cref="InitialSearchRadius"/> will grow if the initial search fails.
     /// For each failed search, the radius will be multiplied with this number.
     /// </summary>
-    public int SearchRadiusIncrement { get; set; }
+    public int SearchRadiusIncrement { get; set; } = 10;
 
     /// <summary>
     /// If the link search reaches this radius without finding a link, a <see cref="NoLinksFoundException"/> will be thrown./>

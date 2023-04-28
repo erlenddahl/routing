@@ -70,6 +70,7 @@ namespace RoadNetworkRouting
             var vertices = new Dictionary<int, Node>();
             foreach (var link in Links)
             {
+                EnsureLinkDataLoaded(link.Value);
                 if (vertices.TryGetValue(link.Value.FromNodeId, out var node))
                     node.Edges++;
                 else
@@ -236,7 +237,7 @@ namespace RoadNetworkRouting
             {
                 if (skeletonConfig == null) throw new MissingConfigException("Must include a SkeletonConfig object with information about the link data files when loading a skeleton file.");
                 router._skeletonConfig = skeletonConfig;
-                var itemSize = 4 + 2 * 8 + 6 * 4;
+                var itemSize = 4 + 2 * 8 + 7 * 4;
                 var buffer = new byte[linkCount * itemSize];
                 reader.Read(buffer, 0, buffer.Length);
                 var pos = 0;
@@ -250,7 +251,8 @@ namespace RoadNetworkRouting
                         ReverseCost = BitConverter.ToDouble(buffer, pos + 12),
                         FromNodeId = BitConverter.ToInt32(buffer, pos + 20),
                         ToNodeId = BitConverter.ToInt32(buffer, pos + 24),
-                        Bounds = new BoundingBox2D(BitConverter.ToInt32(buffer, pos + 28), BitConverter.ToInt32(buffer, pos + 32), BitConverter.ToInt32(buffer, pos + 36), BitConverter.ToInt32(buffer, pos + 40))
+                        Bounds = new BoundingBox2D(BitConverter.ToInt32(buffer, pos + 28), BitConverter.ToInt32(buffer, pos + 32), BitConverter.ToInt32(buffer, pos + 36), BitConverter.ToInt32(buffer, pos + 40)),
+                        NetworkGroup = BitConverter.ToInt32(buffer, pos + 40)
                     };
                     router._skeletonConfig.SetSequence(link.LinkId);
 
@@ -276,11 +278,31 @@ namespace RoadNetworkRouting
         }
 
         /// <summary>
+        /// Analyzes the network and sets each link's NetworkGroup according to which sub graph (if any) it belongs to.
+        /// Unless it's forced, this function will exit if the first link already has a network group assigned.
+        /// </summary>
+        public void SetNetworkGroups(bool forced = false)
+        {
+            var first = Links.Values.First();
+            EnsureLinkDataLoaded(first);
+            if (!forced && first.NetworkGroup >= 0) return;
+
+            var analysis = Graph.Analyze();
+            foreach (var link in Links.Values)
+            {
+                EnsureLinkDataLoaded(link);
+                link.NetworkGroup = analysis.VertexIdGroup[link.FromNodeId];
+            }
+        }
+
+        /// <summary>
         /// Writes the network to a fast binary file.
         /// </summary>
         /// <param name="file"></param>
         public void SaveTo(string file)
         {
+            SetNetworkGroups();
+
             var dir = Path.GetDirectoryName(file);
             if (!string.IsNullOrWhiteSpace(dir))
                 Directory.CreateDirectory(dir);
@@ -302,6 +324,8 @@ namespace RoadNetworkRouting
         /// <param name="config"></param>
         public void SaveSkeletonTo(string file, SkeletonConfig config)
         {
+            SetNetworkGroups();
+
             var dir = Path.GetDirectoryName(file);
             if (!string.IsNullOrWhiteSpace(dir))
                 Directory.CreateDirectory(dir);
@@ -312,6 +336,7 @@ namespace RoadNetworkRouting
                 .Sublists(config.LinksPerFile)
                 .Select((p, i) => (links:p, ix:i))
                 .ToArray();
+
             using (var writer = new BinaryWriter(File.Create(file)))
             {
                 writer.Write(1000 + 2); // Version -- the skeleton version starts at 1000.
@@ -330,6 +355,7 @@ namespace RoadNetworkRouting
                     writer.Write((int)link.Bounds.Xmax + 1);
                     writer.Write((int)link.Bounds.Ymin);
                     writer.Write((int)link.Bounds.Ymax + 1);
+                    writer.Write(link.NetworkGroup);
                 }
             }
 

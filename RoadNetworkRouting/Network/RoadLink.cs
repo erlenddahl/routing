@@ -27,6 +27,12 @@ public class RoadLink
 
     public BoundingBox2D Bounds { get; set; }
 
+    /// <summary>
+    /// Which interconnected part of the road network this link belongs to. If this is a connected/complete graph, all links will be in group 0.
+    /// If the graph is disconnected, all links in each sub group will share NetworkGroup.
+    /// </summary>
+    public int NetworkGroup { get; set; } = -1;
+
     public RoadLink Clone(PolyLineZ newGeometry = null)
     {
         return new RoadLink()
@@ -86,6 +92,7 @@ public class RoadLink
         writer.Write(ToRelativeLength);
         writer.Write(FromNodeId);
         writer.Write(ToNodeId);
+        writer.Write(NetworkGroup);
         writer.Write(SpeedLimit);
         writer.Write(SpeedLimitReversed);
         writer.Write(Cost);
@@ -109,7 +116,7 @@ public class RoadLink
         // Fetch the point count, and calculate the length of the rest of this link object, and read it all in at the same time
         var pointCount = reader.ReadInt32();
 
-        var itemSize = 1 + 4 + 8 + 8 + 4 + 4 + 2 + 2 + 8 + 8 + pointCount * (8 + 8 + 8);
+        var itemSize = 1 + 4 + 8 + 8 + 4 + 4 + 4 + 2 + 2 + 8 + 8 + pointCount * (8 + 8 + 8);
 
         var buffer = new byte[itemSize];
         reader.Read(buffer, 0, buffer.Length);
@@ -126,13 +133,14 @@ public class RoadLink
         ToRelativeLength = BitConverter.ToDouble(buffer, 13);
         FromNodeId = BitConverter.ToInt32(buffer, 21);
         ToNodeId = BitConverter.ToInt32(buffer, 25);
-        SpeedLimit = BitConverter.ToInt16(buffer, 29);
-        SpeedLimitReversed = BitConverter.ToInt16(buffer, 31);
-        Cost = BitConverter.ToDouble(buffer, 33);
-        ReverseCost = BitConverter.ToDouble(buffer, 41);
+        NetworkGroup = BitConverter.ToInt32(buffer, 29);
+        SpeedLimit = BitConverter.ToInt16(buffer, 33);
+        SpeedLimitReversed = BitConverter.ToInt16(buffer, 35);
+        Cost = BitConverter.ToDouble(buffer, 37);
+        ReverseCost = BitConverter.ToDouble(buffer, 45);
 
         // Update the position to the end of the normal properties, and read all points
-        var pos = 49;
+        var pos = 53;
         var points = new Point3D[pointCount];
         for (var j = 0; j < pointCount; j++)
         {

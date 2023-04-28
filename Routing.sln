@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31005.135
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Routing", "Routing\Routing.csproj", "{29F16E8B-4143-42BF-9C92-49817BCE5B11}"
 EndProject
@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoutingCli", "RoutingCli\Ro
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoutingApi", "RoutingAPI\RoutingApi.csproj", "{ABEEAFB3-A6D8-4FBD-BA96-CEE93883CCAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoutingApi.Tests", "RoutingApi.Tests\RoutingApi.Tests.csproj", "{A2CDA684-8CCD-48F4-ADAA-3135BEEA800F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RoutingApi.Tests", "RoutingApi.Tests\RoutingApi.Tests.csproj", "{A2CDA684-8CCD-48F4-ADAA-3135BEEA800F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

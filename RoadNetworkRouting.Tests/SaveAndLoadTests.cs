@@ -16,14 +16,14 @@ namespace RoadNetworkRouting.Tests
             });
             Assert.IsNotNull(router);
             Assert.AreEqual(1, router.Links.Count);
-            Assert.AreEqual(2, router.Vertices.Count);
+            Assert.AreEqual(2, router.GenerateVertices().Count);
 
             router.SaveTo("test_write_and_load.bin");
 
             router = RoadNetworkRouter.LoadFrom("test_write_and_load.bin");
             Assert.IsNotNull(router);
             Assert.AreEqual(1, router.Links.Count);
-            Assert.AreEqual(2, router.Vertices.Count);
+            Assert.AreEqual(2, router.GenerateVertices().Count);
         }
 
         [TestMethod]
@@ -32,7 +32,7 @@ namespace RoadNetworkRouting.Tests
             var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
             Assert.IsNotNull(router);
             Assert.AreEqual(332, router.Links.Count);
-            Assert.AreEqual(331, router.Vertices.Count);
+            Assert.AreEqual(331, router.GenerateVertices().Count);
         }
 
         [TestMethod]
@@ -43,7 +43,7 @@ namespace RoadNetworkRouting.Tests
         }
 
         [TestMethod]
-        public void VeryfiWrittenNetwork()
+        public void VerifyWrittenNetwork()
         {
             var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
             router.SaveTo("test_write.bin");
@@ -51,7 +51,7 @@ namespace RoadNetworkRouting.Tests
             router = RoadNetworkRouter.LoadFrom(@"test_write.bin");
             Assert.IsNotNull(router);
             Assert.AreEqual(332, router.Links.Count);
-            Assert.AreEqual(331, router.Vertices.Count);
+            Assert.AreEqual(331, router.GenerateVertices().Count);
         }
     }
 }

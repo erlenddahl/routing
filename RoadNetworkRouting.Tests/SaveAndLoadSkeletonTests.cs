@@ -23,7 +23,7 @@ namespace RoadNetworkRouting.Tests
             router = RoadNetworkRouter.LoadFrom(@"test_write.bin", skeletonConfig: new SkeletonConfig() { LinkDataDirectory = "test_linkdata_dir" });
             Assert.IsNotNull(router);
             Assert.AreEqual(332, router.Links.Count);
-            Assert.AreEqual(331, router.Vertices.Count);
+            Assert.AreEqual(331, router.GenerateVertices().Count);
         }
 
         [TestMethod]

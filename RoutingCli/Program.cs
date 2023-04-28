@@ -6,6 +6,7 @@ using System.Linq;
 using ConsoleUtilities;
 using ConsoleUtilities.ConsoleInfoPanel;
 using DataflowUtilities.ProducerConsumer;
+using EnergyModule.Geometry.SimpleStructures;
 using Newtonsoft.Json;
 using RoadNetworkRouting;
 using RoadNetworkRouting.Network;
@@ -46,28 +47,15 @@ namespace RoutingCli
             cip.Set("Road network", Path.GetFileName(NetworkPath));
 
             RoadNetworkRouter router;
-            Graph graph;
-            Node[] largestNetworkSegmentVertices;
             using (var _ = cip.SetUnknownProgress("Loading router"))
             {
                 for (var i = 0; i < Searches.Length; i++)
                     Searches[i].Index = i;
 
                 router = RoadNetworkRouter.LoadFrom(NetworkPath);
-
-                var analysis = GetGraphAnalysis(router, cip);
-                router.SetVertexGroups(analysis);
-                var largestNetworkSegment = analysis.VertexIdGroup
-                    .GroupBy(p => p.Value)
-                    .Select(p => new { GroupId = p.Key, Count = p.Count() })
-                    .OrderByDescending(p => p.Count)
-                    .First()
-                    .GroupId;
-                largestNetworkSegmentVertices = router.Vertices.Values.Where(p => p.VertexGroup == largestNetworkSegment).ToArray();
-                graph = router.Graph;
             }
 
-            var results = new SearchResult[Searches.Length];
+            var results = new RoadNetworkRoutingResult[Searches.Length];
             using (var pbTotal = cip.SetProgress("Finding shortest routes", max: Searches.Length, started:false))
             {
                 var consumers = new ConsumerCollection<CoordinateSearch>()
@@ -76,18 +64,7 @@ namespace RoutingCli
                     MaxBufferItemsPerConsumer = 50,
                     ConsumeAction = search =>
                     {
-                        var source = router.GetNearestVertex(largestNetworkSegmentVertices, search.Source[0], search.Source[1]);
-                        var target = router.GetNearestVertex(largestNetworkSegmentVertices, search.Target[0], search.Target[1]);
-                        var res = graph.GetShortestPath(source.vertex, target.vertex);
-                        var links = router.GetLinkReferences(res.Items);
-
-                        results[search.Index] = new SearchResult()
-                        {
-                            DistanceToSourceVertex = source.distance,
-                            DistanceToTargetVertex = target.distance,
-                            RouteDistance = links.Sum(p => p.Geometry.Length)
-                        };
-
+                        results[search.Index] = router.Search(new Point3D(search.Source[0], search.Source[1]), new Point3D(search.Target[0], search.Target[1]));
                         pbTotal.Increment();
                     },
                     OnException = (calc, ex) =>
@@ -106,22 +83,6 @@ namespace RoutingCli
 
             File.WriteAllText(ResultsPath, JsonConvert.SerializeObject(results, Formatting.None));
         }
-
-        private static GraphAnalysis GetGraphAnalysis(RoadNetworkRouter router, ConsoleInformationPanel cip)
-        {
-            using var _ = cip.SetUnknownProgress("Analysing network");
-
-            var graph = router.Graph;
-            return graph.Analyze();
-        }
-    }
-
-    public class SearchResult
-    {
-        public double DistanceToSourceVertex { get; set; }
-        public double DistanceToTargetVertex { get; set; }
-        public double RouteDistance { get; set; }
-        public double TotalDistance => DistanceToSourceVertex + RouteDistance + DistanceToTargetVertex;
     }
 
     public class CoordinateSearch

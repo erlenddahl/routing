@@ -15,6 +15,7 @@ using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Exceptions;
 using RoadNetworkRouting.Network;
 using RoadNetworkRouting.Utils;
+using System.Diagnostics.Metrics;
 
 namespace RoadNetworkRouting
 {
@@ -23,7 +24,6 @@ namespace RoadNetworkRouting
         private Graph _graph;
         private SkeletonConfig _skeletonConfig;
         public Dictionary<int, RoadLink> Links { get; set; } = null;
-        public Dictionary<int, Node> Vertices { get; private set; }
 
         /// <summary>
         /// Network graph that is created the first time this property is accessed, then cached. If changing Links or Vertices, it should be reset.
@@ -62,8 +62,13 @@ namespace RoadNetworkRouting
 
             router.FixedMissingNodeIdCount = RoadNetworkUtilities.FixMissingNodeIds(router);
 
+            return router;
+        }
+
+        public Dictionary<int, Node> GenerateVertices()
+        {
             var vertices = new Dictionary<int, Node>();
-            foreach (var link in router.Links)
+            foreach (var link in Links)
             {
                 if (vertices.TryGetValue(link.Value.FromNodeId, out var node))
                     node.Edges++;
@@ -82,21 +87,21 @@ namespace RoadNetworkRouting
                 }
             }
 
-            router.Vertices = vertices;
-
-            return router;
+            return vertices;
         }
 
         private RoadNetworkRouter()
         {
             Links = new Dictionary<int, RoadLink>();
-            Vertices = new Dictionary<int, Node>();
         }
 
-        public RoadNetworkRouter(Dictionary<int, RoadLink> links, Dictionary<int, Node> vertices)
+        public RoadNetworkRouter(Dictionary<int, RoadLink> links)
         {
             Links = links;
-            Vertices = vertices;
+        }
+
+        public RoadNetworkRouter(IEnumerable<RoadLink> links) : this(links.ToDictionary(k => k.LinkId, v => v))
+        {
         }
 
         /// <summary>
@@ -223,20 +228,6 @@ namespace RoadNetworkRouting
 
             var router = new RoadNetworkRouter();
 
-            var vertexCount = reader.ReadInt32();
-
-            var itemSize = 4 + 8 + 8 + 4;
-            var buffer = new byte[vertexCount * itemSize];
-            reader.Read(buffer, 0, buffer.Length);
-
-            var pos = 0;
-            for (var i = 0; i < vertexCount; i++)
-            {
-                var id = BitConverter.ToInt32(buffer, pos);
-                router.Vertices.Add(id, new Node(BitConverter.ToDouble(buffer, pos + 4), BitConverter.ToDouble(buffer, pos + 12), id) { Edges = BitConverter.ToInt32(buffer, pos + 20) });
-                pos += itemSize;
-            }
-
             var linkCount = reader.ReadInt32();
             router.Links = new Dictionary<int, RoadLink>(linkCount);
 
@@ -245,10 +236,11 @@ namespace RoadNetworkRouting
             {
                 if (skeletonConfig == null) throw new MissingConfigException("Must include a SkeletonConfig object with information about the link data files when loading a skeleton file.");
                 router._skeletonConfig = skeletonConfig;
-                itemSize = 4 + 2 * 8 + 6 * 4;
-                buffer = new byte[linkCount * itemSize];
+                var itemSize = 4 + 2 * 8 + 6 * 4;
+                var buffer = new byte[linkCount * itemSize];
                 reader.Read(buffer, 0, buffer.Length);
-                pos = 0;
+                var pos = 0;
+                
                 for (var i = 0; i < linkCount; i++)
                 {
                     var link = new RoadLink
@@ -296,24 +288,10 @@ namespace RoadNetworkRouting
             using var writer = new BinaryWriter(File.Create(file));
             writer.Write(2); // Version
 
-            WriteVertices(writer);
-
             writer.Write(Links.Count);
             foreach (var link in Links.Values)
             {
                 link.WriteTo(writer);
-            }
-        }
-
-        private void WriteVertices(BinaryWriter writer)
-        {
-            writer.Write(Vertices.Count);
-            foreach (var v in Vertices.Values)
-            {
-                writer.Write(v.Id);
-                writer.Write(v.X);
-                writer.Write(v.Y);
-                writer.Write(v.Edges);
             }
         }
 
@@ -337,8 +315,6 @@ namespace RoadNetworkRouting
             using (var writer = new BinaryWriter(File.Create(file)))
             {
                 writer.Write(1000 + 2); // Version -- the skeleton version starts at 1000.
-
-                WriteVertices(writer);
 
                 writer.Write(Links.Count);
 
@@ -413,66 +389,6 @@ namespace RoadNetworkRouting
             }
         }
 
-        public static double Distance(double x1, double y1, double x2, double y2)
-        {
-            return Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
-        }
-
-        public (int vertex, double distance) GetNearestVertex(double x, double y)
-        {
-            if (Vertices?.Any() != true) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
-            var nearby = Vertices.Values.Where(p => Math.Abs(p.Y - y) < 500 && Math.Abs(p.X - x) < 500).ToArray();
-            if (nearby.Any())
-                return GetNearestVertex(nearby, x, y);
-
-            return GetNearestVertex(Vertices.Values, x, y);
-        }
-
-        private (int vertex, double distance) GetNearestVertexDirectly(IEnumerable<Node> vertices, double x, double y)
-        {
-            var n = vertices.MinBy(p => Distance(p.X, p.Y, x, y));
-            return (n.Id, Distance(n.X, n.Y, x, y));
-        }
-
-        public (int vertex, double distance) GetNearestVertex(IEnumerable<Node> vertices, double x, double y)
-        {
-            if (vertices?.Any() != true) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
-            var nearby = vertices.Where(p => Math.Abs(p.Y - y) < 500 && Math.Abs(p.X - x) < 500).ToArray();
-            if (nearby.Any())
-                return GetNearestVertexDirectly(nearby, x, y);
-
-            return GetNearestVertexDirectly(vertices, x, y);
-        }
-
-        public (int vertex, double distance) GetNearestVertex(int vertexGroup, double x, double y)
-        {
-            if (Vertices?.Any() != true) throw new NullReferenceException("No vertices. Have you remembered to load a road network?");
-            var nearest = Vertices.Values
-                .Where(p => p.VertexGroup == vertexGroup)
-                .ToArray();
-            return GetNearestVertex(nearest, x, y);
-        }
-
-        public Node GetVertex(int vertexId)
-        {
-            return Vertices[vertexId];
-        }
-
-        public IEnumerable<RoadLink> GetLinkReferences(IEnumerable<int> res)
-        {
-            foreach (var id in res)
-                yield return Links[id];
-        }
-
-        public void SetVertexGroups(GraphAnalysis analysis)
-        {
-            foreach (var v in Vertices.Values)
-                if (analysis.VertexIdGroup.TryGetValue(v.Id, out var gid))
-                    v.VertexGroup = gid;
-                else
-                    v.VertexGroup = -1;
-        }
-
         public (RoadLink Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config)
         {
             (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
@@ -502,6 +418,10 @@ namespace RoadNetworkRouting
 
             var source = GetNearestVertexFromNearestEdge(fromPoint, config);
             var target = GetNearestVertexFromNearestEdge(toPoint, config);
+
+            //TODO: Make analysis on links (or re-use graph analysis?) that can be used to set f.ex. RoadLink.NetworkGroup.
+            //TODO: Save and load RoadLink.NetworkGroup, both in normal and skeleton files.
+            //TODO: Implement usage of config.GroupHandling based on RoadLink.NetworkGroup.
 
             // Build a network graph for searching
             var graph = Graph;
@@ -561,7 +481,7 @@ namespace RoadNetworkRouting
                 }
             }
 
-            return new RoadNetworkRoutingResult(route, links);
+            return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine);
         }
 
         private RoadLink CutLink(RoadLink current, RoadLink connectedTo,  double atDistance)

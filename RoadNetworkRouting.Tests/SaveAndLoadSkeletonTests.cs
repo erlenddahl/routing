@@ -66,7 +66,7 @@ namespace RoadNetworkRouting.Tests
 
             Assert.AreEqual(0, linksWithGeometryBeforeSearch);
             Assert.AreEqual(200, linksWithGeometryAfterSearch);
-            Assert.IsTrue(res.links.All(p => p.Geometry != null));
+            Assert.IsTrue(res.Links.All(p => p.Geometry != null));
         }
     }
 }

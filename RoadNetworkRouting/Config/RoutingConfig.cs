@@ -8,7 +8,7 @@ public class RoutingConfig
     /// How to handle situations where the entry points into the road network from the source
     /// and target locations are in different groups of a disconnected road network.
     /// </summary>
-    public GroupHandling DifferentGroupHandling { get; set; } = GroupHandling.BestGroup;
+    public GroupHandling DifferentGroupHandling { get; set; } = GroupHandling.OnlySame;
 
     /// <summary>
     /// The initial radius for picking links to check when searching for the nearest link (the

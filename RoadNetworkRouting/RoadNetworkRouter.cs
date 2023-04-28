@@ -469,28 +469,35 @@ namespace RoadNetworkRouting
                     v.VertexGroup = -1;
         }
 
-        public (GdbRoadLinkData Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point)
+        public (GdbRoadLinkData Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config)
         {
             (GdbRoadLinkData Link, NearestPointInfo Nearest) nearest = (null, null);
-            var d = 1000;
+            var d = config.InitialSearchRadius;
             while (nearest.Link == null)
             {
+                if (d > config.MaxSearchRadius) throw new NoLinksFoundException("Found no links near the search point " + point);
+
                 nearest = Links
                     .Values
                     .Where(p => p.Bounds.Contains(point.X, point.Y, d))
                     .Select(EnsureLinkDataLoaded)
                     .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry.Points, point.X, point.Y)))
                     .MinBy(p => p.Nearest.DistanceFromLine);
-                d *= 10;
+
+                d *= config.SearchRadiusIncrement;
             }
 
             return nearest;
         }
 
-        public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint)
+        public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null)
         {
-            var source = GetNearestVertexFromNearestEdge(fromPoint);
-            var target = GetNearestVertexFromNearestEdge(toPoint);
+            config ??= new RoutingConfig();
+
+            if (config.SearchRadiusIncrement < 1) throw new InvalidDataException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
+
+            var source = GetNearestVertexFromNearestEdge(fromPoint, config);
+            var target = GetNearestVertexFromNearestEdge(toPoint, config);
 
             // Build a network graph for searching
             var graph = Graph;
@@ -569,20 +576,6 @@ namespace RoadNetworkRouting
                 return current;
 
             return current.Clone(new PolyLineZ(points, false));
-        }
-    }
-
-    public class RoadNetworkRoutingResult
-    {
-        public QuickGraphSearchResult Route { get; set; }
-        public GdbRoadLinkData[] Links { get; set; }
-
-        public bool Success => Route.Target != null;
-
-        public RoadNetworkRoutingResult(QuickGraphSearchResult route, GdbRoadLinkData[] links)
-        {
-            Route = route;
-            Links = links;
         }
     }
 }

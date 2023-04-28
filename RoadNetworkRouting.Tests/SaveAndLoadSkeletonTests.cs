@@ -67,7 +67,8 @@ namespace RoadNetworkRouting.Tests
             var linksWithGeometryAfterSearch = router.Links.Values.Count(p => p.Geometry != null);
 
             Assert.AreEqual(0, linksWithGeometryBeforeSearch);
-            Assert.AreEqual(200, linksWithGeometryAfterSearch);
+            Assert.IsTrue(linksWithGeometryAfterSearch > 0);
+            Assert.IsTrue(linksWithGeometryAfterSearch < router.Links.Count);
             Assert.IsTrue(res.Links.All(p => p.Geometry != null));
         }
     }

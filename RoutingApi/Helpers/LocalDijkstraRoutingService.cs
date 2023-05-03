@@ -9,6 +9,7 @@ using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
 using Extensions.IEnumerableExtensions;
 using Extensions.Utilities;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Configuration;
 using RoadNetworkRouting;
 using RoadNetworkRouting.Config;
@@ -33,7 +34,10 @@ namespace RoutingApi.Helpers
         public static string NetworkFile { get; set; }
         public static SkeletonConfig SkeletonConfig { get; set; }
         public static RoutingTimer GlobalTimings { get; } = new ();
-        public static DateTime LoadedAt { get; private set; }
+        public static DateTime StartedAt { get; private set; }
+        public static DateTime NetworkLoadedAt { get; private set; }
+        public static DateTime GraphCreatedAt { get; private set; }
+        public static DateTime NearbyLookupCreatedAt { get; private set; }
         public static int TotalRequests { get; set; }
         public static int TotalWaypoints { get; set; }
 
@@ -50,9 +54,15 @@ namespace RoutingApi.Helpers
                 if (_router == null)
                 {
                     logger.Info("Reading road network");
+                    StartedAt = DateTime.Now;
                     _router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
-                    LoadedAt = DateTime.Now;
-                    logger.Info("Read road network");
+                    NetworkLoadedAt = DateTime.Now;
+                    logger.Info("Read road network (" + _router.Links.Count.ToString("n0") + " links)");
+                    GraphCreatedAt = DateTime.Now;
+                    logger.Info("Created graph (" + _router.Graph.EdgeCount.ToString("n0") + " edges)");
+                    _router.CreateNearbyLinkLookup();
+                    NearbyLookupCreatedAt = DateTime.Now;
+                    logger.Info("Created nearby lookup");
                 }
             }
         }
@@ -119,16 +129,17 @@ namespace RoutingApi.Helpers
         {
             if (Directory.Exists(@"data\networks\road\2023-01-09"))
             {
-                //NetworkFile = @"data\networks\road\2023-01-09\network_skeleton.bin";
+                NetworkFile = @"data\networks\road\2023-01-09\network_skeleton.bin";
+                //NetworkFile = @"data\networks\road\2023-01-09\network_three_islands.bin";
                 SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = @"data\networks\road\2023-01-09\geometries" };
-                return;
             }
-
-            if (config != null)
+            else if (config != null)
             {
                 NetworkFile = config.GetValue<string>("RoadNetworkLocation");
                 SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = config.GetValue<string>("RoadNetworkLinkLocation") };
             }
+
+            Initialize();
         }
     }
 }

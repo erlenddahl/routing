@@ -21,6 +21,8 @@ namespace RoadNetworkRouting
 {
     public class RoadNetworkRouter
     {
+        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private Graph _graph;
         private SkeletonConfig _skeletonConfig;
         public Dictionary<int, RoadLink> Links { get; set; } = null;

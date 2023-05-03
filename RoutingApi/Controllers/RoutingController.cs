@@ -15,8 +15,7 @@ namespace RoutingApi.Controllers
     {
         public RoutingController(IConfiguration config)
         {
-            if (config != null)
-                LocalDijkstraRoutingService.NetworkFile = config.GetValue<string>("RoadNetworkLocation");
+            LocalDijkstraRoutingService.InitializeFromConfig(config);
         }
 
         [HttpGet]

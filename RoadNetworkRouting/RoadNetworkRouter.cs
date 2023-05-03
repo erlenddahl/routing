@@ -17,6 +17,7 @@ using RoadNetworkRouting.Network;
 using RoadNetworkRouting.Utils;
 using System.Diagnostics.Metrics;
 using EnergyModule.Network;
+using System.Drawing;
 
 namespace RoadNetworkRouting
 {
@@ -29,6 +30,9 @@ namespace RoadNetworkRouting
         private Dictionary<string, RoadLink> _linkReferenceLookup;
         private readonly object _locker = new();
         public Dictionary<int, RoadLink> Links { get; set; } = null;
+
+        private readonly Dictionary<long, List<RoadLink>> _nearbyLinksLookup = new();
+        private readonly int _nearbyLinksRadius = 5000;
 
         /// <summary>
         /// Network graph that is created the first time this property is accessed, then cached. If changing Links or Vertices, it should be reset.
@@ -52,7 +56,6 @@ namespace RoadNetworkRouting
                 Cost = p.Cost,
                 EdgeId = p.LinkId,
                 ReverseCost = p.ReverseCost,
-                Id = p.Reference.ToShortRepresentation(),
                 SourceVertexId = p.FromNodeId,
                 TargetVertexId = p.ToNodeId
             }));
@@ -200,7 +203,7 @@ namespace RoadNetworkRouting
                     ReverseCost = properties.Value<float>("drivetime_bw"),
                     FromRelativeLength = properties.Value<float>("from_measure"),
                     ToRelativeLength = properties.Value<float>("to_measure"),
-                    Geometry = new PolyLineZ(coordinates.Select(p => new{Utm=wgs84ToUtm33(p[0], p[1]), Z=p[2]}).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)), true),
+                    Geometry = coordinates.Select(p => new{Utm=wgs84ToUtm33(p[0], p[1]), Z=p[2]}).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)).ToArray(),
                     RoadClass = properties.Value<int>("roadclass")
                 };
                 
@@ -420,16 +423,40 @@ namespace RoadNetworkRouting
             }
         }
 
+        public void CreateNearbyLinkLookup()
+        {
+            if (_nearbyLinksLookup.Any()) return;
+            foreach (var link in Links.Values)
+            foreach (var key in link.Bounds.Corners.Select(GetNearbyKey).Distinct())
+            {
+                if (_nearbyLinksLookup.TryGetValue(key, out var list))
+                    list.Add(link);
+                else
+                    _nearbyLinksLookup.Add(key, new List<RoadLink>() { link });
+            }
+        }
+
+        private long GetNearbyKey(Point3D point)
+        {
+            return (long)((int)(point.X / _nearbyLinksRadius) * _nearbyLinksRadius - _nearbyLinksRadius / 2) * 1_000_000_000L + (long)((int)(point.Y / _nearbyLinksRadius) * _nearbyLinksRadius - _nearbyLinksRadius / 2);
+        }
+
         public (RoadLink Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config, int? networkGroup = null)
         {
             (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
             var d = config.InitialSearchRadius;
+
+            ICollection<RoadLink> links = null;
+            if (_nearbyLinksLookup.TryGetValue(GetNearbyKey(point), out var nearby))
+                links = nearby.Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup) && p.Bounds.Contains(point.X, point.Y, d)).ToArray();
+            if(links == null || !links.Any())
+                links = Links.Values;
+
             while (nearest.Link == null)
             {
                 if (d > config.MaxSearchRadius) throw new NoLinksFoundException("Found no links near the search point " + point);
 
-                nearest = Links
-                    .Values
+                nearest = links
                     .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup) && p.Bounds.Contains(point.X, point.Y, d))
                     .Select(EnsureLinkDataLoaded)
                     .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry, point.X, point.Y)))

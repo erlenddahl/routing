@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using RoadNetworkRouting.Config;
 using RoutingApi.Geometry;
 using RoutingApi.Helpers;
 
@@ -39,14 +40,14 @@ namespace RoutingApi.Controllers
             if(requestTypes.Count(p=>p)>1)
                 return new { message = "The request object cannot have more than one request type (Request, Requests, or AllToAllRequests)." };
 
-            if (request.Request != null) return RouteSingle(request.Request);
-            if (request.AllToAllRequests != null) return RouteAllToAll(request.AllToAllRequests);
-            if (request.Requests != null) return RouteMultiple(request.Requests);
+            if (request.Request != null) return RouteSingle(request.Request, request.RoutingConfig);
+            if (request.AllToAllRequests != null) return RouteAllToAll(request.AllToAllRequests, request.RoutingConfig);
+            if (request.Requests != null) return RouteMultiple(request.Requests, request.RoutingConfig);
 
             return new { message = "The request object must either have the Request property, the Requests property, or the AllToAllRequests property." };
         }
 
-        private object RouteMultiple(RequestCoordinate[][] requests)
+        private object RouteMultiple(RequestCoordinate[][] requests, RoutingConfig routingConfig = null)
         {
             var ix = 0;
             return requests.Select(p => new
@@ -55,12 +56,12 @@ namespace RoutingApi.Controllers
                     request = p
                 })
                 .AsParallel()
-                .Select(p => new { p.sequence, result = RouteSingle(p.request) })
+                .Select(p => new { p.sequence, result = RouteSingle(p.request, routingConfig) })
                 .OrderBy(p => p.sequence)
                 .Select(p => p.result);
         }
 
-        private object RouteAllToAll(RequestCoordinate[] requests)
+        private object RouteAllToAll(RequestCoordinate[] requests, RoutingConfig routingConfig = null)
         {
             var ix = 0;
             return requests.Select(p => new
@@ -69,21 +70,21 @@ namespace RoutingApi.Controllers
                     source = p
                 })
                 .AsParallel()
-                .Select(p => new { p.sequence, results = RouteOneToAll(p.source, requests) })
+                .Select(p => new { p.sequence, results = RouteOneToAll(p.source, requests, routingConfig) })
                 .OrderBy(p => p.sequence)
                 .Select(p => p.results);
         }
 
-        private object RouteOneToAll(RequestCoordinate source, RequestCoordinate[] targets)
+        private object RouteOneToAll(RequestCoordinate source, RequestCoordinate[] targets, RoutingConfig routingConfig = null)
         {
             throw new NotImplementedException();
         }
 
-        private object RouteSingle(RequestCoordinate[] coordinates)
+        private object RouteSingle(RequestCoordinate[] coordinates, RoutingConfig routingConfig = null)
         {
             try
             {
-                var service = RoutingResponse.FromRequestCoordinates(coordinates);
+                var service = RoutingResponse.FromRequestCoordinates(coordinates, routingConfig);
 
                 return new
                 {
@@ -110,5 +111,7 @@ namespace RoutingApi.Controllers
         public RequestCoordinate[] Request { get; set; }
         public RequestCoordinate[][] Requests { get; set; }
         public RequestCoordinate[] AllToAllRequests { get; set; }
+
+        public RoutingConfig RoutingConfig { get; set; }
     }
 }

@@ -26,8 +26,8 @@ namespace RoadNetworkRouting.Utils
             var nodesByY = router.Links
                 .SelectMany(p => new[]
                 {
-                    new Node(p.Value.Geometry.Points.First(), p.Value.FromNodeId),
-                    new Node(p.Value.Geometry.Points.Last(), p.Value.ToNodeId)
+                    new Node(p.Value.Geometry.First(), p.Value.FromNodeId),
+                    new Node(p.Value.Geometry.Last(), p.Value.ToNodeId)
                 })
                 .Where(p => p.Id > int.MinValue)
                 .GroupBy(p => (int)p.Location.Y)
@@ -90,7 +90,7 @@ namespace RoadNetworkRouting.Utils
                 if (link.FromNodeId == int.MinValue)
                 {
                     // First, find its position (the first point in the geometry)
-                    var location = link.Geometry.Points.First();
+                    var location = link.Geometry.First();
 
                     // Set FromNodeId to the matching node (either one we found, or one we created).
                     link.FromNodeId = FindMatchingNode(location, "FromNodeId, link " + link.LinkId).Id;
@@ -100,7 +100,7 @@ namespace RoadNetworkRouting.Utils
                 if (link.ToNodeId == int.MinValue)
                 {
                     // First, find its position (the first point in the geometry)
-                    var location = link.Geometry.Points.Last();
+                    var location = link.Geometry.Last();
 
                     // Set FromNodeId to the matching node (either one we found, or one we created).
                     link.ToNodeId = FindMatchingNode(location, "ToNodeId, link " + link.LinkId).Id;

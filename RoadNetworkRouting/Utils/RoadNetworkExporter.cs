@@ -42,7 +42,7 @@ namespace RoadNetworkRouting.Exporting
 
             foreach (var c in router.Links.Values)
             {
-                var feature = shp.AddFeature(new LineString(c.Geometry.Points.Select(p => new Coordinate(p.X, p.Y))));
+                var feature = shp.AddFeature(new LineString(c.Geometry.Select(p => new Coordinate(p.X, p.Y))));
                 feature.DataRow["FromNode"] = c.FromNodeId;
                 feature.DataRow["ToNode"] = c.ToNodeId;
                 feature.DataRow["Id"] = c.LinkId;
@@ -71,7 +71,7 @@ namespace RoadNetworkRouting.Exporting
             foreach (var c in router.Links.Values)
             {
                 var node = vertices[c.FromNodeId];
-                var coordinate = c.Geometry.Points.First();
+                var coordinate = c.Geometry.First();
                 var feature = shp.AddFeature(new LineString(new[] { new Coordinate(node.X, node.Y), new Coordinate(coordinate.X, coordinate.Y) }));
                 feature.DataRow["LinkId"] = c.LinkId;
                 feature.DataRow["NodeId"] = node.Id;
@@ -79,7 +79,7 @@ namespace RoadNetworkRouting.Exporting
                 feature.DataRow["Distance"] = coordinate.DistanceTo2D(node.X, node.Y);
 
                 node = vertices[c.ToNodeId];
-                coordinate = c.Geometry.Points.Last();
+                coordinate = c.Geometry.Last();
                 feature = shp.AddFeature(new LineString(new[] { new Coordinate(node.X, node.Y), new Coordinate(coordinate.X, coordinate.Y) }));
                 feature.DataRow["LinkId"] = c.LinkId;
                 feature.DataRow["NodeId"] = node.Id;

@@ -19,7 +19,7 @@ public class RoadLink
     public short SpeedLimit { get; set; }
     public short SpeedLimitReversed { get; set; }
     public string RoadType { get; set; } = "";
-    public PolyLineZ Geometry { get; set; }
+    public Point3D[] Geometry { get; set; }
     public string LaneCode { get; set; } = "";
     public double Cost { get; set; }
     public double ReverseCost { get; set; }
@@ -33,7 +33,7 @@ public class RoadLink
     /// </summary>
     public int NetworkGroup { get; set; } = -1;
 
-    public RoadLink Clone(PolyLineZ newGeometry = null)
+    public RoadLink Clone(Point3D[] newGeometry = null)
     {
         return new RoadLink()
         {
@@ -84,7 +84,7 @@ public class RoadLink
     {
         writer.Write(LinkId);
 
-        writer.Write(Geometry.Points.Length);
+        writer.Write(Geometry.Length);
 
         writer.Write((byte)Direction);
         writer.Write(RoadClass);
@@ -98,7 +98,7 @@ public class RoadLink
         writer.Write(Cost);
         writer.Write(ReverseCost);
 
-        foreach (var p in Geometry.Points)
+        foreach (var p in Geometry)
         {
             writer.Write(p.X);
             writer.Write(p.Y);

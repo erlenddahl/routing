@@ -77,7 +77,7 @@ namespace RoadNetworkRouting
                     node.Edges++;
                 else
                 {
-                    var point = link.Value.Geometry.Points.First();
+                    var point = link.Value.Geometry.First();
                     vertices.Add(link.Value.FromNodeId, new Node(point.X, point.Y, link.Value.FromNodeId));
                 }
 
@@ -85,7 +85,7 @@ namespace RoadNetworkRouting
                     node.Edges++;
                 else
                 {
-                    var point = link.Value.Geometry.Points.Last();
+                    var point = link.Value.Geometry.Last();
                     vertices.Add(link.Value.ToNodeId, new Node(point.X, point.Y, link.Value.ToNodeId));
                 }
             }
@@ -144,7 +144,7 @@ namespace RoadNetworkRouting
                     SpeedLimitReversed = properties.Value<short>("TF_Fart"),
                     FromRelativeLength = properties.Value<float>("FROM_M"),
                     ToRelativeLength = properties.Value<float>("TO_M"),
-                    Geometry = new PolyLineZ(coordinates.Select(p => new Point3D(p[0], p[1], p[2])), true)
+                    Geometry = coordinates.Select(p => new Point3D(p[0], p[1], p[2])).ToArray()
                 };
 
                 var direction = properties.Value<string>("ONEWAY");
@@ -243,7 +243,7 @@ namespace RoadNetworkRouting
                 var buffer = new byte[linkCount * itemSize];
                 reader.Read(buffer, 0, buffer.Length);
                 var pos = 0;
-                
+
                 for (var i = 0; i < linkCount; i++)
                 {
                     var link = new RoadLink
@@ -429,7 +429,7 @@ namespace RoadNetworkRouting
                     .Values
                     .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup) && p.Bounds.Contains(point.X, point.Y, d))
                     .Select(EnsureLinkDataLoaded)
-                    .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry.Points, point.X, point.Y)))
+                    .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry, point.X, point.Y)))
                     .MinBy(p => p.Nearest.DistanceFromLine);
 
                 d *= config.SearchRadiusIncrement;
@@ -554,16 +554,33 @@ namespace RoadNetworkRouting
 
             Point3D[] points;
             if(connectedAtEnd)
-                points = LineTools.CutStart(current.Geometry.Points, atDistance);
+                points = LineTools.CutStart(current.Geometry, atDistance);
             else
-                points = LineTools.CutEnd(current.Geometry.Points, current.Geometry.Length - atDistance);
+                points = LineTools.CutEnd(current.Geometry, current.Geometry.Length - atDistance);
 
             // If the cut failed, simply return the entire link.
             // This is a workaround for now, should figure out what makes it fail later.
             if (points.Length < 2)
                 return current;
 
-            return current.Clone(new PolyLineZ(points, false));
+            return current.Clone(points);
+        }
+
+        public IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<LinkReference> linkReferences)
+        {
+            lock (_locker)
+            {
+                if (_linkReferenceLookup == null)
+                {
+                    _linkReferenceLookup = Links.ToDictionary(k => k.Value.Reference.ToShortRepresentation(), v => v.Value);
+                }
+            }
+
+            foreach (var lr in linkReferences)
+                if (_linkReferenceLookup.TryGetValue(lr.ToShortRepresentation(), out var link))
+                    yield return link;
+                else
+                    throw new Exception("A link with the reference code '" + lr.ToShortRepresentation() + "' was not found in the current road network.");
         }
     }
 }

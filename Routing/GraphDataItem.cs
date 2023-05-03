@@ -2,7 +2,6 @@
 {
     public class GraphDataItem
     {
-        public string Id { get; set; }
         public int EdgeId { get; set; }
         public int SourceVertexId { get; set; }
         public int TargetVertexId { get; set; }
@@ -15,7 +14,6 @@
         {
             return new GraphDataItem
             {
-                Id = Id,
                 EdgeId = EdgeId,
                 SourceVertexId = SourceVertexId,
                 TargetVertexId = TargetVertexId,

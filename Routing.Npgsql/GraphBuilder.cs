@@ -17,7 +17,7 @@ namespace Routing.Npgsql
                 TargetVertexId = dr.GetInt32(2),
                 Cost = dr.GetDouble(3),
                 ReverseCost = dr.GetDouble(4),
-                Id = dr.FieldCount > 5 ? dr.GetString(5) : null
+                //Id = dr.FieldCount > 5 ? dr.GetString(5) : null
             }).ToList());
         }
     }

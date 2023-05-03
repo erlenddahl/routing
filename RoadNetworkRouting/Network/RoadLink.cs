@@ -4,12 +4,14 @@ using System.IO;
 using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
+using EnergyModule.Road;
 
 namespace RoadNetworkRouting.Network;
 
-public class RoadLink
+public class RoadLink : ILinkPartGenerator
 {
     private LinkReference _reference;
+    private CachedLineTools _pointCache;
 
     public LinkReference Reference => _reference ??= new LinkReference(LinkId.ToString(), FromRelativeLength, ToRelativeLength, Direction);
     public int RoadClass { get; set; }
@@ -64,6 +66,70 @@ public class RoadLink
         var c = Math.Abs(Cost - double.MaxValue) < 0.000001 ? "INF" : Cost.ToString("n2");
         var rc = Math.Abs(ReverseCost - double.MaxValue) < 0.000001 ? "INF" : ReverseCost.ToString("n2");
         return $"Id={LinkId}, Cost={c} / {rc}";
+    }
+
+    public PointInfo GetGeometricData(double metersFromA)
+    {
+        if (_pointCache == null)
+            _pointCache = new CachedLineTools(Geometry);
+        return _pointCache.QueryPointInfo(metersFromA);
+    }
+
+    public TransportLinkPart[] GenerateLinkParts(double segmentLength = TransportLink.StandardSegmentLength)
+    {
+        var partIndex = 0;
+
+        // Tangent at start of segment:
+        var start = GetGeometricData(0);
+        var lastKnownHeight = 0.0;
+        var linkParts = new TransportLinkPart[(int)Math.Ceiling(_pointCache.Length / segmentLength)];
+
+        for (var posStart = 0d; posStart < _pointCache.Length; posStart += segmentLength)
+        {
+            //Create the new TransportLinkPart
+            var tlp = new TransportLinkPart
+            {
+                LinkId = LinkId,
+                Width = 8, //TODO: Fix!
+                LaneInfo = LaneReader.Default(2), //TODO: Fix!
+                NodeA = FromNodeId,
+                NodeB = ToNodeId,
+                IsFerry = false, //TODO: Fix!
+                IsRoundabout = false, //TODO: Fix!
+                SpeedLimitKmH = SpeedLimit, //TODO: Fix!
+                VehiclesPerHour = 0,
+                RoadType = 'r', //TODO: Fix!
+                RoadNumber = RoadNumber,
+                PartIndex = partIndex++
+            };
+
+            // Calculate how far into the TransportLink this part will end
+            var posEnd = Math.Min(posStart + segmentLength, _pointCache.Length);
+            var end = GetGeometricData(posEnd);
+
+            // Check height values
+            TransportLink.CheckHeightValue(tlp, start, ref lastKnownHeight);
+            TransportLink.CheckHeightValue(tlp, end, ref lastKnownHeight);
+
+            // Update and store list element:   
+            tlp.HRadius = TransportLink.FindRadius(segmentLength, start.Angle, end.Angle);
+            tlp.GradientPercent = 100 * (end.Z - start.Z) / segmentLength;
+            tlp.SegmentLength = posEnd - posStart;
+            tlp.Z1 = start.Z;
+            tlp.Z2 = end.Z;
+            tlp.X1 = start.X;
+            tlp.X2 = end.X;
+            tlp.Y1 = start.Y;
+            tlp.Y2 = end.Y;
+            tlp.EndsAt = posEnd; // Used locally. Will later be replaced by length out value relative entire route!
+
+            linkParts[tlp.PartIndex] = tlp;
+
+            // Prepare data for next linkPart:
+            start = end;
+        }
+
+        return linkParts;
     }
 
     public static RoadLinkDirection DirectionFromString(string direction)
@@ -144,15 +210,14 @@ public class RoadLink
 
         // Update the position to the end of the normal properties, and read all points
         var pos = 53;
-        var points = new Point3D[pointCount];
+        Geometry = new Point3D[pointCount];
         for (var j = 0; j < pointCount; j++)
         {
-            points[j] = new Point3D(BitConverter.ToDouble(buffer, pos), BitConverter.ToDouble(buffer, pos + 8), BitConverter.ToDouble(buffer, pos + 16));
+            Geometry[j] = new Point3D(BitConverter.ToDouble(buffer, pos), BitConverter.ToDouble(buffer, pos + 8), BitConverter.ToDouble(buffer, pos + 16));
             pos += 24;
         }
 
         // Initialize a polyline from the read points
-        Geometry = new PolyLineZ(points, false);
-        Bounds = BoundingBox2D.FromPoints(Geometry.Points);
+        Bounds = BoundingBox2D.FromPoints(Geometry);
     }
 }

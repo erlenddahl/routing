@@ -29,7 +29,7 @@ namespace Routing
     public class Vertex : IEqualityComparer<Vertex>
     {
         public int Id { get; set; }
-        public HashSet<int> NeighbourIds { get; set; } = new HashSet<int>();
+        public HashSet<int> NeighbourIds { get; set; } = new();
 
         public override string ToString()
         {

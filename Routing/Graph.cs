@@ -7,8 +7,8 @@ namespace Routing
 {
     public class Graph
     {
-        private readonly Dictionary<long, Edge> _edges = new Dictionary<long, Edge>();
-        public Dictionary<int, Vertex> Vertices { get; } = new Dictionary<int, Vertex>();
+        private readonly Dictionary<long, Edge> _edges = new();
+        public Dictionary<int, Vertex> Vertices { get; } = new();
         public int EdgeCount => _edges.Count;
 
         private Graph(IEnumerable<GraphDataItem> items)

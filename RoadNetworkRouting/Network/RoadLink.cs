@@ -3,12 +3,15 @@ using System.Globalization;
 using System.IO;
 using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
+using EnergyModule.Network;
 
 namespace RoadNetworkRouting.Network;
 
 public class RoadLink
 {
-    public string Reference => $"{FromRelativeLength.ToString("n8", CultureInfo.InvariantCulture).Replace(".", ",")}-{ToRelativeLength.ToString("n8", CultureInfo.InvariantCulture).Replace(".", ",")}@{LinkId}";
+    private LinkReference _reference;
+
+    public LinkReference Reference => _reference ??= new LinkReference(LinkId.ToString(), FromRelativeLength, ToRelativeLength, Direction);
     public int RoadClass { get; set; }
     public int LinkId { get; set; }
     public double FromRelativeLength { get; set; }

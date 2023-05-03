@@ -16,6 +16,7 @@ using RoadNetworkRouting.Exceptions;
 using RoadNetworkRouting.Network;
 using RoadNetworkRouting.Utils;
 using System.Diagnostics.Metrics;
+using EnergyModule.Network;
 
 namespace RoadNetworkRouting
 {
@@ -25,6 +26,8 @@ namespace RoadNetworkRouting
 
         private Graph _graph;
         private SkeletonConfig _skeletonConfig;
+        private Dictionary<string, RoadLink> _linkReferenceLookup;
+        private readonly object _locker = new();
         public Dictionary<int, RoadLink> Links { get; set; } = null;
 
         /// <summary>
@@ -49,7 +52,7 @@ namespace RoadNetworkRouting
                 Cost = p.Cost,
                 EdgeId = p.LinkId,
                 ReverseCost = p.ReverseCost,
-                Id = p.Reference,
+                Id = p.Reference.ToShortRepresentation(),
                 SourceVertexId = p.FromNodeId,
                 TargetVertexId = p.ToNodeId
             }));
@@ -448,14 +451,20 @@ namespace RoadNetworkRouting
             var source = GetNearestVertexFromNearestEdge(fromPoint, config);
             var target = GetNearestVertexFromNearestEdge(toPoint, config);
 
+            // If the source and target entry points are in different disconnected parts of the road network (for example if one of them is on an island),
+            // we can't directly find a route between them.
             if (source.Link.NetworkGroup != target.Link.NetworkGroup)
             {
+                // If the config is set to only route between nodes/links in the same network group, raise an exception.
                 if (config.DifferentGroupHandling == GroupHandling.OnlySame)
                 {
                     throw new DifferentGroupsException("The source and target links were in different sub graphs in a disconnected road network, which is not allowed according to the given config.DifferentGroupHandling.");
                 }
-                else if (config.DifferentGroupHandling == GroupHandling.BestGroup)
+
+                // If we are allowed to, we can pick the best group.
+                if (config.DifferentGroupHandling == GroupHandling.BestGroup)
                 {
+                    // Find the alternative entry/exit points in each of the two network groups.
                     var alternativeSource = GetNearestVertexFromNearestEdge(fromPoint, config, target.Link.NetworkGroup);
                     var alternativeTarget = GetNearestVertexFromNearestEdge(toPoint, config, source.Link.NetworkGroup);
 

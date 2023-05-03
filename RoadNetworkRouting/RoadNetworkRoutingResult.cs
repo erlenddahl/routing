@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using RoadNetworkRouting.Network;
+using RoadNetworkRouting.Utils;
 using Routing;
 
 namespace RoadNetworkRouting;
@@ -15,14 +16,16 @@ public class RoadNetworkRoutingResult
 
     public double DistanceToSourceVertex { get; set; }
     public double DistanceToTargetVertex { get; set; }
+    public RoutingTimer Timer { get; }
     public double RouteDistance => _routeDistance ??= Links.Sum(p => p.Geometry.Length);
     public double TotalDistance => DistanceToSourceVertex + RouteDistance + DistanceToTargetVertex;
 
-    public RoadNetworkRoutingResult(QuickGraphSearchResult route, RoadLink[] links, double distanceToSourceVertex, double distanceToTargetVertex)
+    public RoadNetworkRoutingResult(QuickGraphSearchResult route, RoadLink[] links, double distanceToSourceVertex, double distanceToTargetVertex, RoutingTimer timer)
     {
         Route = route;
         Links = links;
         DistanceToSourceVertex = distanceToSourceVertex;
         DistanceToTargetVertex = distanceToTargetVertex;
+        Timer = timer;
     }
 }

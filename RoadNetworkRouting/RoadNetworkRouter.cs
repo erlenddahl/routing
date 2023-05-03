@@ -438,9 +438,10 @@ namespace RoadNetworkRouting
             return nearest;
         }
 
-        public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null)
+        public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, RoutingTimer timer = null)
         {
             config ??= new RoutingConfig();
+            timer ??= new RoutingTimer();
 
             if (config.SearchRadiusIncrement < 1) throw new InvalidDataException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
 
@@ -474,10 +475,12 @@ namespace RoadNetworkRouting
                 }
             }
 
-            //TODO: Test BestGroup network selection!
+            timer.Time(nameof(timer.EntryPointsMs));
 
             // Build a network graph for searching
             var graph = Graph;
+
+            timer.Time(nameof(timer.GraphCreationMs));
 
             // Create a graph overloader so that we can insert fake nodes at the from and to points.
             // Without this, the search would be from one of the existing vertices in the road network,
@@ -504,9 +507,13 @@ namespace RoadNetworkRouting
 
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
-            
+
+            timer.Time(nameof(timer.RoutingMs));
+
             // Extract the road links (if there are any)
             var links = route.Items?.Select(p => Links[p]).ToArray() ?? Array.Empty<RoadLink>();
+
+            timer.Time(nameof(timer.PostprocessingMs));
 
             // Ensure that link geometries are loaded if this was a skeleton file.
             if (_skeletonConfig != null)
@@ -519,6 +526,8 @@ namespace RoadNetworkRouting
                     }
                 }
             }
+
+            timer.Time(nameof(timer.LoadLinksMs));
 
             // Chop the first and last links so that they start and stop at the search points.
             if (links.Any())
@@ -534,7 +543,9 @@ namespace RoadNetworkRouting
                 }
             }
 
-            return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine);
+            timer.Time(nameof(timer.PostprocessingMs));
+
+            return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine, timer);
         }
 
         private RoadLink CutLink(RoadLink current, RoadLink connectedTo,  double atDistance)

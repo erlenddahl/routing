@@ -93,9 +93,7 @@ namespace RoutingApi.Controllers
                     linkReferences = service.LinkReferences.Select(p => p.ToShortRepresentation()),
                     request = coordinates,
                     service.WayPointIndices,
-                    service.SecsDijkstra,
-                    service.SecsRetrieveLinks,
-                    service.SecsModifyLinks
+                    service.Timings
                 };
             }
             catch (Exception ex)

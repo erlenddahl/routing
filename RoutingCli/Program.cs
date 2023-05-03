@@ -28,7 +28,7 @@ namespace RoutingCli
 
         private static IRunnable ParseConfigFile(string path)
         {
-            return JsonConvert.DeserializeObject<Searcher>(System.IO.File.ReadAllText(path));
+            return JsonConvert.DeserializeObject<Searcher>(File.ReadAllText(path));
         }
     }
 

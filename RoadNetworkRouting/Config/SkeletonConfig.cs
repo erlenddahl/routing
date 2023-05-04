@@ -17,6 +17,11 @@ public class SkeletonConfig
 
     public string GetLinkDataFile(int id)
     {
-        return Path.Combine(LinkDataDirectory, LinkIdToFileNumber[id] + ".bin");
+        return GetLinkDataFileForFileNumber(LinkIdToFileNumber[id]);
+    }
+
+    public string GetLinkDataFileForFileNumber(int fileNumber)
+    {
+        return Path.Combine(LinkDataDirectory, fileNumber + ".bin");
     }
 }

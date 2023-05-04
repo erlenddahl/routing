@@ -31,7 +31,7 @@ namespace RoadNetworkRouting
         private readonly object _locker = new();
         public Dictionary<int, RoadLink> Links { get; set; } = null;
 
-        private readonly Dictionary<long, List<RoadLink>> _nearbyLinksLookup = new();
+        private NearbyBoundsCache<RoadLink> _nearbyLinksLookup = null;
         private readonly int _nearbyLinksRadius = 5000;
 
         /// <summary>
@@ -406,6 +406,11 @@ namespace RoadNetworkRouting
             // from 0 to N-1, the next from N to 2*N-1, and so on.
             var file = _skeletonConfig.GetLinkDataFile(id);
 
+            LoadLinksFromFile(file);
+        }
+
+        private void LoadLinksFromFile(string file)
+        {
             // Read the links in this file
             using var reader = new BinaryReader(File.OpenRead(file));
 
@@ -425,20 +430,8 @@ namespace RoadNetworkRouting
 
         public void CreateNearbyLinkLookup()
         {
-            if (_nearbyLinksLookup.Any()) return;
-            foreach (var link in Links.Values)
-            foreach (var key in link.Bounds.Corners.Select(GetNearbyKey).Distinct())
-            {
-                if (_nearbyLinksLookup.TryGetValue(key, out var list))
-                    list.Add(link);
-                else
-                    _nearbyLinksLookup.Add(key, new List<RoadLink>() { link });
-            }
-        }
-
-        private long GetNearbyKey(Point3D point)
-        {
-            return (long)((int)(point.X / _nearbyLinksRadius) * _nearbyLinksRadius - _nearbyLinksRadius / 2) * 1_000_000_000L + (long)((int)(point.Y / _nearbyLinksRadius) * _nearbyLinksRadius - _nearbyLinksRadius / 2);
+            if (_nearbyLinksLookup != null) return;
+            _nearbyLinksLookup = NearbyBoundsCache<RoadLink>.FromBounds(Links.Values, p => p.Bounds, _nearbyLinksRadius);
         }
 
         public (RoadLink Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config, int? networkGroup = null)
@@ -446,18 +439,12 @@ namespace RoadNetworkRouting
             (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
             var d = config.InitialSearchRadius;
 
-            ICollection<RoadLink> links = null;
-            if (_nearbyLinksLookup.TryGetValue(GetNearbyKey(point), out var nearby))
-                links = nearby.Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup) && p.Bounds.Contains(point.X, point.Y, d)).ToArray();
-            if(links == null || !links.Any())
-                links = Links.Values;
-
             while (nearest.Link == null)
             {
                 if (d > config.MaxSearchRadius) throw new NoLinksFoundException("Found no links near the search point " + point);
 
-                nearest = links
-                    .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup) && p.Bounds.Contains(point.X, point.Y, d))
+                nearest = _nearbyLinksLookup.GetNearbyItems(point, d)
+                    .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup))
                     .Select(EnsureLinkDataLoaded)
                     .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry, point.X, point.Y)))
                     .MinBy(p => p.Nearest.DistanceFromLine);

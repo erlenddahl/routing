@@ -68,6 +68,7 @@ namespace RoadNetworkRouting.Utils
 
         public IEnumerable<T> GetNearbyItems(double x, double y, int searchRadius = 0)
         {
+            HashSet<BoundingBox2D> returned = new();
             var r = (int)Math.Ceiling(searchRadius / (double)CellSize) * CellSize;
             for (var xi = x - r; xi <= x + r; xi += CellSize)
             for (var yi = y - r; yi <= y + r; yi += CellSize)
@@ -75,8 +76,12 @@ namespace RoadNetworkRouting.Utils
                 var key = GetNearbyKey(x, y);
                 if (_nearbyLookup.TryGetValue(key, out var items))
                     foreach (var item in items)
-                        if (item.Bounds.Contains(x, y, searchRadius))
-                            yield return item.Item;
+                        if (!returned.Contains(item.Bounds))
+                            if (item.Bounds.Contains(x, y, searchRadius))
+                            {
+                                yield return item.Item;
+                                returned.Add(item.Bounds);
+                            }
             }
         }
 

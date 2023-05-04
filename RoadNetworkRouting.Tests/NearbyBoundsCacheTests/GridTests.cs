@@ -9,7 +9,7 @@ using RoadNetworkRouting.Utils;
 namespace RoadNetworkRouting.Tests.NearbyBoundsCacheTests
 {
     [TestClass]
-    public class CreationTests
+    public class GridTests
     {
         [TestMethod]
         public void SingleItemWithinSingleCell()

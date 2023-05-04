@@ -35,9 +35,7 @@ namespace RoutingApi.Helpers
         public static SkeletonConfig SkeletonConfig { get; set; }
         public static RoutingTimer GlobalTimings { get; } = new ();
         public static DateTime StartedAt { get; private set; }
-        public static DateTime NetworkLoadedAt { get; private set; }
-        public static DateTime GraphCreatedAt { get; private set; }
-        public static DateTime NearbyLookupCreatedAt { get; private set; }
+        public static TaskTimer Timings { get; private set; }
         public static int TotalRequests { get; set; }
         public static int TotalWaypoints { get; set; }
 
@@ -55,14 +53,13 @@ namespace RoutingApi.Helpers
                 {
                     logger.Info("Reading road network");
                     StartedAt = DateTime.Now;
+                    Timings = new TaskTimer();
                     _router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
-                    NetworkLoadedAt = DateTime.Now;
-                    logger.Info("Read road network (" + _router.Links.Count.ToString("n0") + " links)");
-                    GraphCreatedAt = DateTime.Now;
-                    logger.Info("Created graph (" + _router.Graph.EdgeCount.ToString("n0") + " edges)");
+                    Timings.Time("Loaded network");
+                    _router.Graph = _router.CreateGraph();
+                    Timings.Time("Created graph");
                     _router.CreateNearbyLinkLookup();
-                    NearbyLookupCreatedAt = DateTime.Now;
-                    logger.Info("Created nearby lookup");
+                    Timings.Time("Created nearby lookup");
                 }
             }
         }
@@ -129,9 +126,10 @@ namespace RoutingApi.Helpers
         {
             if (Directory.Exists(@"data\networks\road\2023-01-09"))
             {
-                NetworkFile = @"data\networks\road\2023-01-09\network_skeleton.bin";
+                NetworkFile = @"data\networks\road\2023-01-09\network.bin";
+                //NetworkFile = @"data\networks\road\2023-01-09\network_skeleton.bin";
                 //NetworkFile = @"data\networks\road\2023-01-09\network_three_islands.bin";
-                SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = @"data\networks\road\2023-01-09\geometries" };
+                //SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = @"data\networks\road\2023-01-09\geometries" };
             }
             else if (config != null)
             {

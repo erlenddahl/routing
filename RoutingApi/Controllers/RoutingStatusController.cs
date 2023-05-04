@@ -20,12 +20,8 @@ namespace RoutingApi.Controllers
             {
                 Api = "Routing",
                 Version = "3",
-                LoadTimings = new {
-                    LocalDijkstraRoutingService.StartedAt,
-                    LocalDijkstraRoutingService.NetworkLoadedAt,
-                    LocalDijkstraRoutingService.GraphCreatedAt,
-                    LocalDijkstraRoutingService.NearbyLookupCreatedAt
-                },
+                LocalDijkstraRoutingService.StartedAt,
+                LoadTimings = LocalDijkstraRoutingService.Timings.GetTimingsInMs(),
                 LocalDijkstraRoutingService.GlobalTimings,
                 LocalDijkstraRoutingService.TotalRequests,
                 LocalDijkstraRoutingService.TotalWaypoints

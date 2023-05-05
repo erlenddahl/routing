@@ -73,7 +73,7 @@ namespace RoutingApi.Helpers
                 WayPoints = coordinates
             };
 
-            logger.Debug($"Initiating search with {coordinates} waypoints");
+            logger.Debug($"Initiating search with {coordinates.Length:n0} waypoints");
 
             for (var i = 1; i < coordinates.Length; i++)
             {

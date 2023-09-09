@@ -33,6 +33,98 @@ namespace RoadNetworkRouting.Tests.NearbyBoundsCacheTests
         }
 
         [TestMethod]
+        public void SingleItemWithinSingleCell_NegativeBounds()
+        {
+            // This item is strictly within the -50--100, -50--100 cell.
+            var bounds = new[] { new BoundingBox2D(-65, -55, -65, -55) };
+            var cache = NearbyBoundsCache<BoundingBox2D>.FromBounds(bounds, p => p, 50);
+
+            // Check that there are no items in the cells surrounding this item.
+            Assert.AreEqual(0, cache.GetItemsInCell(-5, -5).Count());
+            Assert.AreEqual(0, cache.GetItemsInCell(-55, -5).Count());
+            Assert.AreEqual(0, cache.GetItemsInCell(-105, -5).Count());
+            Assert.AreEqual(0, cache.GetItemsInCell(-5, -55).Count());
+            Assert.AreEqual(0, cache.GetItemsInCell(-105, -55).Count());
+            Assert.AreEqual(0, cache.GetItemsInCell(-5, -105).Count());
+            Assert.AreEqual(0, cache.GetItemsInCell(-55, -105).Count());
+            Assert.AreEqual(0, cache.GetItemsInCell(-105, -105).Count());
+
+            // Check that there is a single item in the middle cell
+            Assert.AreEqual(1, cache.GetItemsInCell(-55, -55).Count());
+        }
+
+        [TestMethod]
+        public void SingleItemWithinSingleCell_NegativeBounds_Nearby()
+        {
+            // This item is strictly within the -50--100, -50--100 cell.
+            var bounds = new[] { new BoundingBox2D(-65, -55, -65, -55) };
+            var cache = NearbyBoundsCache<BoundingBox2D>.FromBounds(bounds, p => p, 50);
+
+            // Check that there are no items in the cells surrounding this item.
+            Assert.AreEqual(0, cache.GetNearbyItems(-5, -5).Count());
+            Assert.AreEqual(0, cache.GetNearbyItems(-55, -5).Count());
+            Assert.AreEqual(0, cache.GetNearbyItems(-105, -5).Count());
+            Assert.AreEqual(0, cache.GetNearbyItems(-5, -55).Count());
+            Assert.AreEqual(0, cache.GetNearbyItems(-105, -55).Count());
+            Assert.AreEqual(0, cache.GetNearbyItems(-5, -105).Count());
+            Assert.AreEqual(0, cache.GetNearbyItems(-55, -105).Count());
+            Assert.AreEqual(0, cache.GetNearbyItems(-105, -105).Count());
+
+            // Check that there is a single item in the middle cell
+            Assert.AreEqual(1, cache.GetNearbyItems(-55, -55).Count());
+        }
+
+        [TestMethod]
+        public void SingleItemWithinSingleCell_NegativeX()
+        {
+            // This item overlaps with four cells.
+            var bounds = new[] { new BoundingBox2D(-105, -37, 640, 719) };
+            var cache = NearbyBoundsCache<BoundingBox2D>.FromBounds(bounds, p => p, 50);
+
+            Assert.AreEqual(1, cache.GetItemsInCell(-42, 688).Count());
+        }
+
+        [TestMethod]
+        public void SingleItemWithinSingleCell_NegativeX_Nearby()
+        {
+            // This item overlaps with four cells.
+            var bounds = new[] { new BoundingBox2D(-105, -37, 640, 719) };
+            var cache = NearbyBoundsCache<BoundingBox2D>.FromBounds(bounds, p => p, 50);
+
+            Assert.AreEqual(1, cache.GetNearbyItems(-42, 688).Count());
+        }
+
+        [TestMethod]
+        public void SingleItemWithinSingleCell_NegativeY()
+        {
+            // This item overlaps with four cells.
+            var bounds = new[] { new BoundingBox2D(911, 976, -972, -888) };
+            var cache = NearbyBoundsCache<BoundingBox2D>.FromBounds(bounds, p => p, 50);
+
+            for (var x = 801; x <= 1101; x += 50)
+            for (var y = -1099; y <= -799; y += 50)
+            {
+                var shouldContain = (x == 901 || x == 951) && (y == -999 || y == -949 || y == -899);
+                Assert.AreEqual(shouldContain ? 1 : 0, cache.GetItemsInCell(x, y).Count());
+            }
+        }
+
+        [TestMethod]
+        public void SingleItemWithinSingleCell_NegativeY_Nearby()
+        {
+            // This item overlaps with four cells.
+            var bounds = new[] { new BoundingBox2D(911, 976, -972, -888) };
+            var cache = NearbyBoundsCache<BoundingBox2D>.FromBounds(bounds, p => p, 50);
+
+            for (var x = 801; x <= 1101; x += 50)
+            for (var y = -1099; y <= -799; y += 50)
+            {
+                var shouldContain = bounds[0].Contains(x, y);
+                Assert.AreEqual(shouldContain ? 1 : 0, cache.GetNearbyItems(x, y).Count());
+            }
+        }
+
+        [TestMethod]
         public void SingleItemThatAlmostFillsSingleCell()
         {
             // This item is strictly within the 50-100, 50-100 cell.

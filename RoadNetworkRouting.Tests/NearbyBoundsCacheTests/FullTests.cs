@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -85,7 +86,7 @@ namespace RoadNetworkRouting.Tests.NearbyBoundsCacheTests
 
             var nonZeroes = 0;
             var timer = new TaskTimer();
-            for (var i = 0; i < 100; i++)
+            for (var i = 0; i < 500; i++)
             {
                 foreach (var search in searches)
                 {
@@ -100,6 +101,11 @@ namespace RoadNetworkRouting.Tests.NearbyBoundsCacheTests
                         nonZeroes++;
                     }
 
+                    //Debug.WriteLine("Search: " + search.X.ToString(CultureInfo.InvariantCulture) + ", " + search.Y.ToString(CultureInfo.InvariantCulture));
+                    //Debug.WriteLine("Exhaustive:");
+                    //foreach (var e in exhaustive)
+                    //    Debug.WriteLine("    " + $"new BoundingBox2D({e.Xmin.ToString(CultureInfo.InvariantCulture)}, {e.Xmax.ToString(CultureInfo.InvariantCulture)}, {e.Ymin.ToString(CultureInfo.InvariantCulture)}, {e.Ymax.ToString(CultureInfo.InvariantCulture)});");
+
                     CollectionAssert.AreEqual(exhaustive, cached);
                 }
             }
@@ -107,6 +113,29 @@ namespace RoadNetworkRouting.Tests.NearbyBoundsCacheTests
             Assert.IsTrue(nonZeroes > 0);
             Console.WriteLine("Searches with non-zero results: " + nonZeroes);
             Console.WriteLine(JObject.FromObject(timer).ToString());
+
+            Console.WriteLine($"Cached search used {(double)timer.Timings["Cached"]/ timer.Timings["Exhaustive"]*100d:n3} % of the exhaustive search.");
+        }
+
+
+        [TestMethod]
+        public void VerySparseButShouldGoQuickly()
+        {
+            var bounds = new[]
+            {
+                new BoundingBox2D(55, 65, 51, 98),
+                new BoundingBox2D(67_000_000, 67_000_075, 65, 69),
+            };
+            var cache = NearbyBoundsCache<BoundingBox2D>.FromBounds(bounds, p => p, 50);
+
+            // Near the first box
+            Assert.AreEqual(1, cache.GetNearbyItems(56, 58, 10_000).Count());
+
+            // In the middle
+            Assert.AreEqual(2, cache.GetNearbyItems(33_000_000, 68, 50_000_000).Count());
+
+            // Near the third box
+            Assert.AreEqual(1, cache.GetNearbyItems(67_000_006, 68, 10_000).Count());
         }
 
         private static (BoundingBox2D[] boxes, Point3D[] coordinates) GenerateTestSet()

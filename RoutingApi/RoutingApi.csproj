@@ -5,22 +5,24 @@
   </PropertyGroup>
   <PropertyGroup>
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    <UserSecretsId>a8daa6f6-2878-495c-a4fc-bead9d98c191</UserSecretsId>
+    <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NLog" Version="5.1.4" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
+    <PackageReference Include="NLog" Version="5.2.0" />
     <PackageReference Include="ProjNet" Version="2.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
-
   <ItemGroup>
+    <ProjectReference Include="..\..\EnergyModule\EnergyModule.csproj" />
     <ProjectReference Include="..\RoadNetworkRouting\RoadNetworkRouting.csproj" />
     <ProjectReference Include="..\Routing\Routing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="EnergyModule">
-      <HintPath>..\Lib\EnergyModule.dll</HintPath>
-    </Reference>
     <Reference Include="Extensions">
       <HintPath>..\Lib\Extensions.dll</HintPath>
     </Reference>

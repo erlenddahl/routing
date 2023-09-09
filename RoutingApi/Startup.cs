@@ -4,6 +4,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using RoadNetworkRouting.Config;
+using RoadNetworkRouting.Service;
+using System.IO;
+using System.Text.Json.Serialization;
 
 namespace RoutingApi
 {
@@ -12,6 +19,23 @@ namespace RoutingApi
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            var networkFile = "";
+            SkeletonConfig skeletonConfig = null;
+            if (Directory.Exists(@"data\networks\road\2023-01-09"))
+            {
+                networkFile = @"data\networks\road\2023-01-09\network.bin";
+                //networkFile = @"data\networks\road\2023-01-09\network_skeleton.bin";
+                //networkFile = @"data\networks\road\2023-01-09\network_three_islands.bin";
+                //skeletonConfig = new SkeletonConfig() { LinkDataDirectory = @"data\networks\road\2023-01-09\geometries" };
+            }
+            else if (configuration != null)
+            {
+                networkFile = configuration.GetValue<string>("RoadNetworkLocation");
+                skeletonConfig = new SkeletonConfig() { LinkDataDirectory = configuration.GetValue<string>("RoadNetworkLinkLocation") };
+            }
+
+            FullRoutingService.Initialize(networkFile, skeletonConfig);
         }
 
         public IConfiguration Configuration { get; }
@@ -19,7 +43,12 @@ namespace RoutingApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "RoutingAPI", Version = "v1" });

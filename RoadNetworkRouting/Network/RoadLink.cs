@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
 using EnergyModule.Road;
+using RoadNetworkRouting.Geometry;
 
 namespace RoadNetworkRouting.Network;
 
@@ -219,5 +221,12 @@ public class RoadLink : ILinkPartGenerator
 
         // Initialize a polyline from the read points
         Bounds = BoundingBox2D.FromPoints(Geometry);
+    }
+
+    public RoadLink ConvertCoordinates(CoordinateConverter converter)
+    {
+        var link = Clone(Geometry.Select(converter.Forward).ToArray());
+        link.Bounds = null;
+        return link;
     }
 }

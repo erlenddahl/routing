@@ -3,7 +3,7 @@ using System.Globalization;
 using ProjNet.CoordinateSystems;
 using ProjNet.CoordinateSystems.Transformations;
 
-namespace RoutingApi.Geometry
+namespace RoadNetworkRouting.Geometry
 {
     public class PointWgs84
     {

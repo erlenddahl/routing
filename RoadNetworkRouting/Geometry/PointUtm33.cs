@@ -5,7 +5,7 @@ using EnergyModule.Geometry.SimpleStructures;
 using ProjNet.CoordinateSystems;
 using ProjNet.CoordinateSystems.Transformations;
 
-namespace RoutingApi.Geometry
+namespace RoadNetworkRouting.Geometry
 {
     public class PointUtm33 : Point3D
     {
@@ -49,15 +49,19 @@ namespace RoutingApi.Geometry
 
         public PointWgs84 ToWgs84()
         {
-            var pUtm = _transUtmToWgs.MathTransform.Transform(new[] { X, Y });
-
-            return new PointWgs84(){ Lat = pUtm[1], Lng = pUtm[0], Alt = Z};
+            return ToWgs84(this);
         }
 
-        public static object Utm33ToWgs84(double x, double y, double z)
+        public static PointWgs84 ToWgs84(Point3D point)
         {
-            var p = new PointUtm33(x, y, z).ToWgs84();
-            return new {p.Lat, p.Lng, p.Alt};
+            var pUtm = _transUtmToWgs.MathTransform.Transform(new[] { point.X, point.Y });
+
+            return new PointWgs84() { Lat = pUtm[1], Lng = pUtm[0], Alt = point.Z };
+        }
+
+        public static PointWgs84 Utm33ToWgs84(double x, double y, double z)
+        {
+            return new PointUtm33(x, y, z).ToWgs84();
         }
 
         public static IEnumerable<PointUtm33> Fill(List<PointUtm33> points, int maxDist)

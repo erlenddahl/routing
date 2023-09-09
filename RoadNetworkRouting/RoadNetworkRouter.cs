@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using DotSpatial.Data;
-using DotSpatial.Topology;
 using Extensions.IEnumerableExtensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,12 +16,15 @@ using RoadNetworkRouting.Utils;
 using System.Diagnostics.Metrics;
 using EnergyModule.Network;
 using System.Drawing;
+using Extensions.Utilities;
 
 namespace RoadNetworkRouting
 {
     public class RoadNetworkRouter
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
+        public static string Version = "2023-05-29";
 
         private Graph _graph;
         private SkeletonConfig _skeletonConfig;
@@ -231,7 +232,19 @@ namespace RoadNetworkRouting
         /// <returns></returns>
         public static RoadNetworkRouter LoadFrom(string file, Action<int, int> progress = null, SkeletonConfig skeletonConfig = null)
         {
-            using var reader = new BinaryReader(File.OpenRead(file));
+            return LoadFrom(File.OpenRead(file), progress, skeletonConfig);
+        }
+
+        /// <summary>
+        /// Loads the road network from a road network binary file (created using the SaveTo function).
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="progress"></param>
+        /// <param name="skeletonConfig"></param>
+        /// <returns></returns>
+        public static RoadNetworkRouter LoadFrom(Stream stream, Action<int, int> progress = null, SkeletonConfig skeletonConfig = null)
+        {
+            using var reader = new BinaryReader(stream);
 
             var formatVersion = reader.ReadInt32(); // Currently at 2
 
@@ -438,6 +451,7 @@ namespace RoadNetworkRouting
         {
             (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
             var d = config.InitialSearchRadius;
+            CreateNearbyLinkLookup();
 
             while (nearest.Link == null)
             {
@@ -455,10 +469,10 @@ namespace RoadNetworkRouting
             return nearest;
         }
 
-        public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, RoutingTimer timer = null)
+        public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)
         {
             config ??= new RoutingConfig();
-            timer ??= new RoutingTimer();
+            timer ??= new TaskTimer();
 
             if (config.SearchRadiusIncrement < 1) throw new InvalidDataException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
 
@@ -498,12 +512,12 @@ namespace RoadNetworkRouting
                 }
             }
 
-            timer.Time(nameof(timer.EntryPointsMs));
+            timer.Time("routing.entry");
 
             // Build a network graph for searching
             var graph = Graph;
 
-            timer.Time(nameof(timer.GraphCreationMs));
+            timer.Time("routing.graph");
 
             // Create a graph overloader so that we can insert fake nodes at the from and to points.
             // Without this, the search would be from one of the existing vertices in the road network,
@@ -531,12 +545,12 @@ namespace RoadNetworkRouting
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
 
-            timer.Time(nameof(timer.RoutingMs));
+            timer.Time("routing.routing");
 
             // Extract the road links (if there are any)
             var links = route.Items?.Select(p => Links[p]).ToArray() ?? Array.Empty<RoadLink>();
 
-            timer.Time(nameof(timer.PostprocessingMs));
+            timer.Time("routing.post");
 
             // Ensure that link geometries are loaded if this was a skeleton file.
             if (_skeletonConfig != null)
@@ -550,7 +564,7 @@ namespace RoadNetworkRouting
                 }
             }
 
-            timer.Time(nameof(timer.LoadLinksMs));
+            timer.Time("routing.loadlinks");
 
             // Chop the first and last links so that they start and stop at the search points.
             if (links.Any())
@@ -566,7 +580,7 @@ namespace RoadNetworkRouting
                 }
             }
 
-            timer.Time(nameof(timer.PostprocessingMs));
+            timer.Time("routing.post");
 
             return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine, timer);
         }
@@ -589,7 +603,7 @@ namespace RoadNetworkRouting
             return current.Clone(points);
         }
 
-        public IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<LinkReference> linkReferences)
+        public IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<string> linkReferences)
         {
             lock (_locker)
             {
@@ -600,10 +614,10 @@ namespace RoadNetworkRouting
             }
 
             foreach (var lr in linkReferences)
-                if (_linkReferenceLookup.TryGetValue(lr.ToShortRepresentation(), out var link))
+                if (_linkReferenceLookup.TryGetValue(lr, out var link))
                     yield return link;
                 else
-                    throw new Exception("A link with the reference code '" + lr.ToShortRepresentation() + "' was not found in the current road network.");
+                    throw new Exception("A link with the reference code '" + lr + "' was not found in the current road network.");
         }
     }
 }

@@ -7,6 +7,8 @@ namespace Routing
 {
     public class Graph
     {
+        public static string Version = "2023-05-29";
+
         private readonly Dictionary<long, Edge> _edges = new();
         public Dictionary<int, Vertex> Vertices { get; } = new();
         public int EdgeCount => _edges.Count;

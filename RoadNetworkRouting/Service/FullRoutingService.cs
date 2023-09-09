@@ -3,28 +3,21 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using DotSpatial.Topology;
-using EnergyModule.Geometry;
+using System.Reflection;
 using EnergyModule.Geometry.SimpleStructures;
-using EnergyModule.Network;
-using Extensions.IEnumerableExtensions;
 using Extensions.Utilities;
-using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.Extensions.Configuration;
-using RoadNetworkRouting;
 using RoadNetworkRouting.Config;
+using RoadNetworkRouting.Geometry;
+using RoadNetworkRouting.Helpers;
 using RoadNetworkRouting.Network;
-using RoadNetworkRouting.Utils;
-using Routing;
-using RoutingApi.Geometry;
 
-namespace RoutingApi.Helpers
+namespace RoadNetworkRouting.Service
 {
-    public class LocalDijkstraRoutingService
+    public class FullRoutingService
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private LocalDijkstraRoutingService()
+        private FullRoutingService()
         {
         }
 
@@ -33,17 +26,11 @@ namespace RoutingApi.Helpers
 
         public static string NetworkFile { get; set; }
         public static SkeletonConfig SkeletonConfig { get; set; }
-        public static RoutingTimer GlobalTimings { get; } = new ();
+        public static TaskTimer GlobalTimings { get; } = new();
         public static DateTime StartedAt { get; private set; }
         public static TaskTimer Timings { get; private set; }
         public static int TotalRequests { get; set; }
         public static int TotalWaypoints { get; set; }
-
-        public static RoutingResponse FromLatLng(List<RequestCoordinate> coordinates, RoutingConfig config = null)
-        {
-            var utmCoordinates = coordinates.Select(p => p.GetUtm33()).ToArray();
-            return FromUtm(utmCoordinates, config);
-        }
 
         public static void Initialize()
         {
@@ -52,9 +39,20 @@ namespace RoutingApi.Helpers
                 if (_router == null)
                 {
                     logger.Info("Reading road network");
+                    logger.Info("NetworkFile: " + NetworkFile);
+
                     StartedAt = DateTime.Now;
                     Timings = new TaskTimer();
-                    _router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
+                    if (string.IsNullOrWhiteSpace(NetworkFile))
+                    {
+                        logger.Info("Reading hard coded test network.");
+                        _router = RoadNetworkRouter.LoadFrom(new MemoryStream(HardcodedNetwork.Trondheim));
+                    }
+                    else
+                    {
+                        _router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
+                    }
+
                     Timings.Time("Loaded network");
                     _router.Graph = _router.CreateGraph();
                     Timings.Time("Created graph");
@@ -64,13 +62,23 @@ namespace RoutingApi.Helpers
             }
         }
 
-        public static RoutingResponse FromUtm(PointUtm33[] coordinates, RoutingConfig config = null)
+        public static InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter)
         {
-            Initialize();
+            return FromUtm(coordinates.Select(p => converter.Forward(p)).ToArray());
+        }
 
-            var rs = new RoutingResponse
+        public static InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config = null)
+        {
+            if (_router == null)
+                Initialize();
+
+            var rs = new InternalRoutingResponse()
             {
-                WayPoints = coordinates
+                RequestedWaypoints = new(),
+                LinkReferences = new(),
+                Timings = new(),
+                Links = new(),
+                Coordinates = new()
             };
 
             logger.Debug($"Initiating search with {coordinates.Length:n0} waypoints");
@@ -80,9 +88,11 @@ namespace RoutingApi.Helpers
                 var fromCoord = coordinates[i - 1];
                 var toCoord = coordinates[i];
 
-                rs.WayPointIndices.Add(new WayPointIndex()
+                rs.RequestedWaypoints.Add(new WayPointData()
                 {
-                    CoordinateIndex = rs.Route.Count,
+                    FromWaypoint = fromCoord,
+                    ToWaypoint = toCoord,
+                    CoordinateIndex = rs.Coordinates.Count,
                     LinkReferenceIndex = rs.LinkReferences.Count
                 });
 
@@ -94,9 +104,9 @@ namespace RoutingApi.Helpers
 
                 foreach (var link in path.Links)
                 {
-                    rs.LinkReferences.Add(link.Reference);
+                    rs.LinkReferences.Add(link.Reference.ToShortRepresentation());
                     rs.Links.Add(link);
-                    rs.Route.AddRange(link.Geometry.Select(p => new PointUtm33(p.X, p.Y, p.Z)));
+                    rs.Coordinates.AddRange(link.Geometry.Select(p => new Point3D(p.X, p.Y, p.Z)));
                 }
 
                 rs.Timings.Append(path.Timer);
@@ -116,26 +126,16 @@ namespace RoutingApi.Helpers
             return rs;
         }
 
-        public static IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<LinkReference> linkReferences)
+        public static IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<string> linkReferences)
         {
             Initialize();
             return _router.GetLinksFromReferences(linkReferences);
         }
 
-        public static void InitializeFromConfig(IConfiguration config)
+        public static void Initialize(string networkFile, SkeletonConfig skeletonConfig)
         {
-            if (Directory.Exists(@"data\networks\road\2023-01-09"))
-            {
-                NetworkFile = @"data\networks\road\2023-01-09\network.bin";
-                //NetworkFile = @"data\networks\road\2023-01-09\network_skeleton.bin";
-                //NetworkFile = @"data\networks\road\2023-01-09\network_three_islands.bin";
-                //SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = @"data\networks\road\2023-01-09\geometries" };
-            }
-            else if (config != null)
-            {
-                NetworkFile = config.GetValue<string>("RoadNetworkLocation");
-                SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = config.GetValue<string>("RoadNetworkLinkLocation") };
-            }
+            NetworkFile = networkFile;
+            SkeletonConfig = skeletonConfig;
 
             Initialize();
         }

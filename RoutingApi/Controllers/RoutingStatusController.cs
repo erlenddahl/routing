@@ -4,8 +4,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using RoutingApi.Geometry;
-using RoutingApi.Helpers;
+using RoadNetworkRouting.Service;
 
 namespace RoutingApi.Controllers
 {
@@ -20,11 +19,11 @@ namespace RoutingApi.Controllers
             {
                 Api = "Routing",
                 Version = "3",
-                LocalDijkstraRoutingService.StartedAt,
-                LoadTimings = LocalDijkstraRoutingService.Timings.GetTimingsInMs(),
-                LocalDijkstraRoutingService.GlobalTimings,
-                LocalDijkstraRoutingService.TotalRequests,
-                LocalDijkstraRoutingService.TotalWaypoints
+                FullRoutingService.StartedAt,
+                LoadTimings = FullRoutingService.Timings.GetTimingsInMs(),
+                FullRoutingService.GlobalTimings,
+                FullRoutingService.TotalRequests,
+                FullRoutingService.TotalWaypoints
             };
         }
     }

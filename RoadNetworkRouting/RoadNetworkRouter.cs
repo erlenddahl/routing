@@ -453,7 +453,7 @@ namespace RoadNetworkRouting
             _nearbyLinksLookup = NearbyBoundsCache<RoadLink>.FromBounds(Links.Values, p => p.Bounds, _nearbyLinksRadius);
         }
 
-        public (RoadLink Link, NearestPointInfo Nearest) GetNearestVertexFromNearestEdge(Point3D point, RoutingConfig config, int? networkGroup = null)
+        public (RoadLink Link, NearestPointInfo Nearest) GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null)
         {
             (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
             var d = config.InitialSearchRadius;
@@ -482,8 +482,8 @@ namespace RoadNetworkRouting
 
             if (config.SearchRadiusIncrement < 1) throw new InvalidDataException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
 
-            var source = GetNearestVertexFromNearestEdge(fromPoint, config);
-            var target = GetNearestVertexFromNearestEdge(toPoint, config);
+            var source = GetNearestLink(fromPoint, config);
+            var target = GetNearestLink(toPoint, config);
 
             // If the source and target entry points are in different disconnected parts of the road network (for example if one of them is on an island),
             // we can't directly find a route between them.
@@ -499,8 +499,8 @@ namespace RoadNetworkRouting
                 if (config.DifferentGroupHandling == GroupHandling.BestGroup)
                 {
                     // Find the alternative entry/exit points in each of the two network groups.
-                    var alternativeSource = GetNearestVertexFromNearestEdge(fromPoint, config, target.Link.NetworkGroup);
-                    var alternativeTarget = GetNearestVertexFromNearestEdge(toPoint, config, source.Link.NetworkGroup);
+                    var alternativeSource = GetNearestLink(fromPoint, config, target.Link.NetworkGroup);
+                    var alternativeTarget = GetNearestLink(toPoint, config, source.Link.NetworkGroup);
 
                     // Update either the source or the target, depending on which gives the smallest distance from the entry/exit points to the source/target coordinates.
                     if (source.Nearest.DistanceFromLine + alternativeTarget.Nearest.DistanceFromLine < alternativeSource.Nearest.DistanceFromLine + target.Nearest.DistanceFromLine)

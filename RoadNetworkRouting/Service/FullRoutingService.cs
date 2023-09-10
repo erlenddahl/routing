@@ -8,7 +8,6 @@ using EnergyModule.Geometry.SimpleStructures;
 using Extensions.Utilities;
 using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Geometry;
-using RoadNetworkRouting.Helpers;
 using RoadNetworkRouting.Network;
 
 namespace RoadNetworkRouting.Service
@@ -43,15 +42,8 @@ namespace RoadNetworkRouting.Service
 
                     StartedAt = DateTime.Now;
                     Timings = new TaskTimer();
-                    if (string.IsNullOrWhiteSpace(NetworkFile))
-                    {
-                        logger.Info("Reading hard coded test network.");
-                        _router = RoadNetworkRouter.LoadFrom(new MemoryStream(HardcodedNetwork.Trondheim));
-                    }
-                    else
-                    {
-                        _router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
-                    }
+                    
+                    _router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
 
                     Timings.Time("Loaded network");
                     _router.Graph = _router.CreateGraph();

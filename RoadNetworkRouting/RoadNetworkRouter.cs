@@ -577,8 +577,21 @@ namespace RoadNetworkRouting
             {
                 try
                 {
-                    links[0] = CutLink(links[0], links[1], source.Nearest.Distance);
-                    links[^1] = CutLink(links[^1], links[^2], target.Nearest.Distance);
+                    if (links.Length == 1)
+                    {
+                        var cutStart = source.Nearest.Distance;
+                        var cutEnd = target.Nearest.Distance;
+                        if (source.Link.FromNodeId == targetId)
+                            (cutStart, cutEnd) = (cutEnd, cutStart);
+                        var geometry = LineTools.CutStart(links[0].Geometry, cutStart);
+                        geometry = LineTools.CutEnd(geometry, links[0].Length - cutEnd);
+                        links[0] = links[0].Clone(geometry);
+                    }
+                    else
+                    {
+                        links[0] = CutLink(links[0], links[1], source.Nearest.Distance);
+                        links[^1] = CutLink(links[^1], links[^2], target.Nearest.Distance);
+                    }
                 }
                 catch (Exception ex)
                 {

@@ -108,6 +108,12 @@ namespace RoadNetworkRouting
         public RoadNetworkRouter(Dictionary<int, RoadLink> links)
         {
             Links = links;
+
+            foreach (var link in Links)
+            {
+                if (link.Value.Bounds == null)
+                    link.Value.Bounds = BoundingBox2D.FromPoints(link.Value.Geometry);
+            }
         }
 
         public RoadNetworkRouter(IEnumerable<RoadLink> links) : this(links.ToDictionary(k => k.LinkId, v => v))

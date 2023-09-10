@@ -8,6 +8,8 @@ namespace RoadNetworkRouting.Service;
 
 public class RoutingResponse : InternalRoutingResponse
 {
+    private readonly Exception _ex;
+
     /// <summary>
     /// The full length of the route, measured in meters.
     /// </summary>
@@ -75,5 +77,12 @@ public class RoutingResponse : InternalRoutingResponse
     public RoutingResponse(Exception ex)
     {
         ErrorMessage = ex.Message;
+        _ex = ex;
+    }
+
+    public RoutingResponse CheckThrow()
+    {
+        if (_ex != null) throw _ex;
+        return this;
     }
 }

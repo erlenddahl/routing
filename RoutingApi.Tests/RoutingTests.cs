@@ -34,7 +34,7 @@ namespace RoutingApi.Tests
                     new Point3D(10.412028, 63.413602),
                     new Point3D(10.350386, 63.399147),
                 }
-            }.Route();
+            }.Route().CheckThrow();
 
             Assert.AreEqual(7986, response.DistanceM, 0.5);
             Assert.AreEqual(315, response.Coordinates.Count);
@@ -63,6 +63,7 @@ namespace RoutingApi.Tests
 
             foreach (var response in responses)
             {
+                response.CheckThrow();
                 Assert.AreEqual(7986, response.DistanceM, 0.5);
                 Assert.AreEqual(315, response.Coordinates.Count);
                 Assert.AreEqual(106, response.LinkReferences.Count);
@@ -123,6 +124,7 @@ namespace RoutingApi.Tests
 
             for (var i = 0; i < responses.Count(); i++)
             {
+                responses[i].CheckThrow();
                 Assert.AreEqual(63d + (i + 1d) / 10d, responses[i].RequestedWaypoints[0].FromWaypoint.Y, 0.0005);
             }
         }

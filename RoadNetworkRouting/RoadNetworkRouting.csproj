@@ -17,11 +17,15 @@
 
   <ItemGroup>
     <Reference Include="EnergyModule">
-      <HintPath>..\..\EnergyModule\bin\Release\EnergyModule.dll</HintPath>
+      <HintPath>..\Lib\EnergyModule.dll</HintPath>
     </Reference>
     <Reference Include="Extensions">
       <HintPath>..\Lib\Extensions.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Helpers\" />
   </ItemGroup>
 
 </Project>

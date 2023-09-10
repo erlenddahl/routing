@@ -17,12 +17,14 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\EnergyModule\EnergyModule.csproj" />
     <ProjectReference Include="..\RoadNetworkRouting\RoadNetworkRouting.csproj" />
     <ProjectReference Include="..\Routing\Routing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="EnergyModule">
+      <HintPath>..\Lib\EnergyModule.dll</HintPath>
+    </Reference>
     <Reference Include="Extensions">
       <HintPath>..\Lib\Extensions.dll</HintPath>
     </Reference>

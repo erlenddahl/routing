@@ -21,4 +21,10 @@
     <ProjectReference Include="..\RoutingAPI\RoutingApi.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="EnergyModule">
+      <HintPath>..\Lib\EnergyModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

@@ -14,6 +14,7 @@ public class RoadLink : ILinkPartGenerator
 {
     private LinkReference _reference;
     private CachedLineTools _pointCache;
+    private double? _length;
 
     public LinkReference Reference => _reference ??= new LinkReference(LinkId.ToString(), FromRelativeLength, ToRelativeLength, Direction);
     public int RoadClass { get; set; }
@@ -39,6 +40,11 @@ public class RoadLink : ILinkPartGenerator
     /// If the graph is disconnected, all links in each sub group will share NetworkGroup.
     /// </summary>
     public int NetworkGroup { get; set; } = -1;
+
+    /// <summary>
+    /// The 3D length of the road link, calculated (on the first call) from its Geometry.
+    /// </summary>
+    public double Length => _length ??= LineTools.CalculateLength(Geometry);
 
     public RoadLink Clone(Point3D[] newGeometry = null)
     {

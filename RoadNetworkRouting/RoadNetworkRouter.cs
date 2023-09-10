@@ -535,8 +535,8 @@ namespace RoadNetworkRouting
             // by the total length of the link. This is an estimation of how large part of the total edge cost
             // that should count for the "fake" edges from the links FromNode/ToNode to the fake overloaded
             // source node.
-            var costFactorSource = source.Nearest.Distance / source.Link.Geometry.Length;
-            var costFactorTarget = target.Nearest.Distance / target.Link.Geometry.Length;
+            var costFactorSource = source.Nearest.Distance / source.Link.Length;
+            var costFactorTarget = target.Nearest.Distance / target.Link.Length;
 
             // Configure the overloader
             overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
@@ -593,7 +593,7 @@ namespace RoadNetworkRouting
             if(connectedAtEnd)
                 points = LineTools.CutStart(current.Geometry, atDistance);
             else
-                points = LineTools.CutEnd(current.Geometry, current.Geometry.Length - atDistance);
+                points = LineTools.CutEnd(current.Geometry, current.Length - atDistance);
 
             // If the cut failed, simply return the entire link.
             // This is a workaround for now, should figure out what makes it fail later.

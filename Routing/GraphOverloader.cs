@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Routing
@@ -36,9 +37,15 @@ namespace Routing
         private Dictionary<int, OverloadVertex> _targetOverloads = new();
         private Dictionary<(int From, int To), OverloadVertex> _targetEdges = new();
 
-        public void AddSourceOverload(int id, int toVertexA, int toVertexB, double costFactor)
+        public int AddSourceOverload(int id, int toVertexA, int toVertexB, double costFactor)
         {
             if (costFactor < 0 || costFactor > 1) throw new Exception($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
+
+            if (costFactor == 0)
+                return toVertexA;
+            if(Math.Abs(costFactor - 1) < 0.1)
+                return toVertexB;
+
             _sourceOverloads.Add(id, new OverloadVertex()
             {
                 Id = id,
@@ -46,11 +53,19 @@ namespace Routing
                 VertexB = toVertexB,
                 CostFactor = costFactor
             });
+
+            return id;
         }
 
-        public void AddTargetOverload(int id, int fromVertexA, int fromVertexB, double costFactor)
+        public int AddTargetOverload(int id, int fromVertexA, int fromVertexB, double costFactor)
         {
             if (costFactor < 0 || costFactor > 1) throw new Exception($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
+
+            if (costFactor == 0)
+                return fromVertexA;
+            if (Math.Abs(costFactor - 1) < 0.1)
+                return fromVertexB;
+
             _targetOverloads.Add(id, new OverloadVertex()
             {
                 Id = id,
@@ -58,6 +73,8 @@ namespace Routing
                 VertexB = fromVertexB,
                 CostFactor = costFactor
             });
+
+            return id;
         }
 
         public void Build(Graph graph)

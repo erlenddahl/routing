@@ -545,8 +545,8 @@ namespace RoadNetworkRouting
             var costFactorTarget = target.Nearest.Distance / target.Link.Length;
 
             // Configure the overloader
-            overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
-            overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
+            sourceId = overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
+            targetId = overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
 
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);

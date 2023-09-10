@@ -38,6 +38,7 @@ namespace Routing
 
         public void AddSourceOverload(int id, int toVertexA, int toVertexB, double costFactor)
         {
+            if (costFactor < 0 || costFactor > 1) throw new Exception($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
             _sourceOverloads.Add(id, new OverloadVertex()
             {
                 Id = id,
@@ -49,6 +50,7 @@ namespace Routing
 
         public void AddTargetOverload(int id, int fromVertexA, int fromVertexB, double costFactor)
         {
+            if (costFactor < 0 || costFactor > 1) throw new Exception($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
             _targetOverloads.Add(id, new OverloadVertex()
             {
                 Id = id,

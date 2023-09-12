@@ -428,22 +428,31 @@ namespace RoadNetworkRouting
             LoadLinksFromFile(file);
         }
 
+        private HashSet<string> _loadedFiles = new HashSet<string>();
+
         private void LoadLinksFromFile(string file)
         {
-            // Read the links in this file
-            using var reader = new BinaryReader(File.OpenRead(file));
-
-            var formatVersion = reader.ReadInt32();
-            var linkCount = reader.ReadInt32();
-
-            // Read data about all links in this link data file onto the links already in the Links dictionary.
-            for (var i = 0; i < linkCount; i++)
+            lock (_loadedFiles)
             {
-                // Read the ID of this link
-                var linkIdToRead = reader.ReadInt32();
+                if (_loadedFiles.Contains(file)) return;
 
-                // Overwrite properties on this link with data from the stream
-                Links[linkIdToRead].ReadFrom(reader, true);
+                // Read the links in this file
+                using var reader = new BinaryReader(File.OpenRead(file));
+
+                var formatVersion = reader.ReadInt32();
+                var linkCount = reader.ReadInt32();
+
+                // Read data about all links in this link data file onto the links already in the Links dictionary.
+                for (var i = 0; i < linkCount; i++)
+                {
+                    // Read the ID of this link
+                    var linkIdToRead = reader.ReadInt32();
+
+                    // Overwrite properties on this link with data from the stream
+                    Links[linkIdToRead].ReadFrom(reader, true);
+                }
+
+                _loadedFiles.Add(file);
             }
         }
 

@@ -1,42 +1,29 @@
 using EnergyModule.Geometry.SimpleStructures;
+using EnergyModule.Network;
 using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Network;
 
 namespace RoadNetworkRouting.Tests;
 
 [TestClass]
-public class FullRoutingTests
+public class RoutingTests_FullNetwork : RoutingTests
 {
-    private RoadNetworkRouter _router;
-
     [TestInitialize]
-    public void Init()
+    public override void Init()
     {
         var networkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
         _router = RoadNetworkRouter.LoadFrom(networkFile);
     }
-
-    [TestMethod]
-    public void PointAtNode()
-    {
-        var res = _router.Search(new Point3D(261079.2, 7041288.2), new Point3D(261807.7, 7041127.1), new RoutingConfig());
-        Assert.AreEqual(62, res.DistanceToSourceVertex, 1);
-        Assert.AreEqual(64, res.DistanceToTargetVertex, 1);
-
-        Assert.AreEqual(916, res.RouteDistance, 1);
-    }
 }
 
-/// <summary>
-/// Tests for routing along a single route from Byåsen, Trondheim.
-/// </summary>
-[TestClass]
-public class TinyRoutingTests
+public abstract class RoutingTests
 {
-    private RoadNetworkRouter _router;
+    protected RoadNetworkRouter _router;
+
+    public abstract void Init();
 
     [TestMethod]
-    public void PointAtNode()
+    public void GetNearestLink_PointAtNode()
     {
         var res = _router.GetNearestLink(new Point3D(261079.2, 7041288.2), new RoutingConfig());
         Assert.AreEqual(335707, res.Link.LinkId);
@@ -49,7 +36,7 @@ public class TinyRoutingTests
     }
 
     [TestMethod]
-    public void PointInsideLink()
+    public void GetNearestLink_PointInsideLink()
     {
         var res = _router.GetNearestLink(new Point3D(261807.7, 7041127.1), new RoutingConfig());
         Assert.AreEqual(335707, res.Link.LinkId);
@@ -59,7 +46,7 @@ public class TinyRoutingTests
     }
 
     [TestMethod]
-    public void PointAtOtherSide()
+    public void GetNearestLink_PointAtOtherSide()
     {
         var res = _router.GetNearestLink(new Point3D(263800.5783, 7040584.6060), new RoutingConfig());
         Assert.AreEqual(335707, res.Link.LinkId);
@@ -72,28 +59,368 @@ public class TinyRoutingTests
     }
 
     [TestMethod]
-    public void FromStartToEnd()
+    public void SingleLink_FromStartToEnd()
     {
         var res = _router.Search(new Point3D(263800.5783, 7040584.6060), new Point3D(261079.2, 7041288.2), new RoutingConfig());
 
+        Assert.AreEqual(1, res.Links.Length);
+        Assert.AreEqual(175, res.Links[0].Geometry.Length);
         Assert.AreEqual(2811, new Point3D(261079.2, 7041288.2).DistanceTo2D(new Point3D(263800.5783, 7040584.6060)), 1);
         Assert.AreEqual(3596, res.RouteDistance, 1);
+
+        var start = _router.Links[335707].Geometry[0];
+        var end = _router.Links[335707].Geometry[^1];
+        Assert.AreEqual(start, res.Links[0].Geometry[0]);
+        Assert.AreEqual(end, res.Links[0].Geometry[^1]);
     }
 
     [TestMethod]
-    public void FromEndToStart()
+    public void SingleLink_FromStartToMiddle()
+    {
+        var res = _router.Search(new Point3D(263800.5783, 7040584.6060), new Point3D(262443.0, 7040825.6), new RoutingConfig());
+
+        Assert.AreEqual(1, res.Links.Length);
+        Assert.AreEqual(75, res.Links[0].Geometry.Length);
+
+        Assert.AreEqual(1643, res.RouteDistance, 1);
+
+        var start = _router.Links[335707].Geometry[0];
+        var end = _router.Links[335707].Geometry[74];
+        Assert.AreEqual(start, res.Links[0].Geometry[0]);
+        Assert.AreEqual(end, res.Links[0].Geometry[^1]);
+    }
+
+    [TestMethod]
+    public void SingleLink_FromEndToStart()
     {
         var res = _router.Search(new Point3D(261079.2, 7041288.2), new Point3D(263800.5783, 7040584.6060), new RoutingConfig());
 
+        Assert.AreEqual(1, res.Links.Length);
+        Assert.AreEqual(175, res.Links[0].Geometry.Length);
         Assert.AreEqual(2811, new Point3D(261079.2, 7041288.2).DistanceTo2D(new Point3D(263800.5783, 7040584.6060)), 1);
         Assert.AreEqual(3596, res.RouteDistance, 1);
+
+        var start = _router.Links[335707].Geometry[^1];
+        var end = _router.Links[335707].Geometry[0];
+        Assert.AreEqual(start, res.Links[0].Geometry[0]);
+        Assert.AreEqual(end, res.Links[0].Geometry[^1]);
     }
 
+    [TestMethod]
+    public void SingleLink_FromEndToMiddle()
+    {
+        var res = _router.Search(new Point3D(261079.2, 7041288.2), new Point3D(262443.0, 7040825.6), new RoutingConfig());
+
+        Assert.AreEqual(1, res.Links.Length);
+        Assert.AreEqual(101, res.Links[0].Geometry.Length);
+
+        Assert.AreEqual(1953, res.RouteDistance, 1);
+
+        var start = _router.Links[335707].Geometry[^1];
+        var end = _router.Links[335707].Geometry[74];
+        Assert.AreEqual(start, res.Links[0].Geometry[0]);
+        Assert.AreEqual(end, res.Links[0].Geometry[^1]);
+    }
+
+    [TestMethod]
+    public void SingleLink_BothDirections_FromOneThirdToTwoThirds()
+    {
+        var res = _router.Search(new Point3D(262725.5, 7040681.7), new Point3D(261848.6, 7041068.2), new RoutingConfig());
+
+        Assert.AreEqual(1, res.Links.Length);
+        Assert.AreEqual(63, res.Links[0].Geometry.Length);
+
+        Assert.AreEqual(1211, res.RouteDistance, 1);
+
+        Assert.AreEqual(262711, res.Links[0].Geometry[0].X, 1);
+        Assert.AreEqual(7040651, res.Links[0].Geometry[0].Y, 1);
+        Assert.AreEqual(394, res.Links[0].Geometry[0].Z, 1);
+
+        Assert.AreEqual(261800, res.Links[0].Geometry[^1].X, 1);
+        Assert.AreEqual(7041032, res.Links[0].Geometry[^1].Y, 1);
+        Assert.AreEqual(417, res.Links[0].Geometry[^1].Z, 1);
+    }
+
+    [TestMethod]
+    public void SingleLink_BothDirections_FromTwoThirdsToOneThird()
+    {
+        var res = _router.Search(new Point3D(261848.6, 7041068.2), new Point3D(262725.5, 7040681.7), new RoutingConfig());
+
+        Assert.AreEqual(1, res.Links.Length);
+        Assert.AreEqual(63, res.Links[0].Geometry.Length);
+
+        Assert.AreEqual(1211, res.RouteDistance, 1);
+
+        Assert.AreEqual(262711, res.Links[0].Geometry[^1].X, 1);
+        Assert.AreEqual(7040651, res.Links[0].Geometry[^1].Y, 1);
+        Assert.AreEqual(394, res.Links[0].Geometry[^1].Z, 1);
+
+        Assert.AreEqual(261800, res.Links[0].Geometry[0].X, 1);
+        Assert.AreEqual(7041032, res.Links[0].Geometry[0].Y, 1);
+        Assert.AreEqual(417, res.Links[0].Geometry[0].Z, 1);
+    }
+
+    [TestMethod]
+    public void SingleLink_OneWay_LegalDrivingDirection()
+    {
+        var res = _router.Search(new Point3D(270155.529, 7042095.454), new Point3D(270130.155, 7042079.387), new RoutingConfig());
+
+        Assert.AreEqual(1, res.Links.Length);
+
+        Assert.AreEqual(25, res.RouteDistance, 1);
+
+        Assert.AreEqual(593586, res.Links[0].LinkId);
+    }
+
+    [TestMethod]
+    public void SingleLink_OneWay_IllegalDrivingDirection_DriveAround()
+    {
+        var res = _router.Search(new Point3D(270130.155, 7042079.387), new Point3D(270155.529, 7042095.454), new RoutingConfig());
+
+        Assert.AreEqual(11, res.Links.Length);
+
+        Assert.AreEqual(415, res.RouteDistance, 1);
+
+        Assert.AreEqual(593586, res.Links[0].LinkId);
+        Assert.AreEqual(593594, res.Links[1].LinkId);
+        Assert.AreEqual(473188, res.Links[2].LinkId);
+        Assert.AreEqual(473180, res.Links[3].LinkId);
+        Assert.AreEqual(1580985, res.Links[4].LinkId);
+        Assert.AreEqual(1580977, res.Links[5].LinkId);
+        Assert.AreEqual(564771, res.Links[6].LinkId);
+        Assert.AreEqual(593562, res.Links[7].LinkId);
+        Assert.AreEqual(593570, res.Links[8].LinkId);
+        Assert.AreEqual(593578, res.Links[9].LinkId);
+        Assert.AreEqual(593586, res.Links[10].LinkId);
+    }
+
+    [TestMethod]
+    public void ThreeLinks_OneWay_LegalDrivingDirection()
+    {
+        var res = _router.Search(new Point3D(270179.57, 7042107.00), new Point3D(270130.59, 7042080.35), new RoutingConfig());
+
+        Assert.AreEqual(3, res.Links.Length);
+
+        Assert.AreEqual(56, res.RouteDistance, 1);
+
+        Assert.AreEqual(593570, res.Links[0].LinkId);
+        Assert.AreEqual(593578, res.Links[1].LinkId);
+        Assert.AreEqual(593586, res.Links[2].LinkId);
+    }
+
+    [TestMethod]
+    public void ThreeLinks_OneWay_IllegalDrivingDirection_DriveAround()
+    {
+        var res = _router.Search(new Point3D(270130.59, 7042080.35), new Point3D(270179.57, 7042107.00), new RoutingConfig());
+
+        Assert.AreEqual(9, res.Links.Length);
+
+        Assert.AreEqual(388, res.RouteDistance, 1);
+
+        Assert.AreEqual(593586, res.Links[0].LinkId);
+        Assert.AreEqual(593594, res.Links[1].LinkId);
+        Assert.AreEqual(473188, res.Links[2].LinkId);
+        Assert.AreEqual(473180, res.Links[3].LinkId);
+        Assert.AreEqual(1580985, res.Links[4].LinkId);
+        Assert.AreEqual(1580977, res.Links[5].LinkId);
+        Assert.AreEqual(564771, res.Links[6].LinkId);
+        Assert.AreEqual(593562, res.Links[7].LinkId);
+        Assert.AreEqual(593570, res.Links[8].LinkId);
+    }
+
+    [TestMethod]
+    public void TwoLinks_OneWay_LegalDrivingDirection()
+    {
+        var res = _router.Search(new Point3D(270165.015, 7042099.307), new Point3D(270130.59, 7042080.35), new RoutingConfig());
+
+        Assert.AreEqual(2, res.Links.Length);
+
+        Assert.AreEqual(39, res.RouteDistance, 1);
+
+        Assert.AreEqual(593578, res.Links[0].LinkId);
+        Assert.AreEqual(593586, res.Links[1].LinkId);
+    }
+
+    [TestMethod]
+    public void TwoLinks_OneWay_IllegalDrivingDirection_DriveAround()
+    {
+        var res = _router.Search(new Point3D(270130.59, 7042080.35), new Point3D(270165.015, 7042099.307), new RoutingConfig());
+
+        Assert.AreEqual(10, res.Links.Length);
+
+        Assert.AreEqual(404, res.RouteDistance, 1);
+
+        Assert.AreEqual(593586, res.Links[0].LinkId);
+        Assert.AreEqual(593594, res.Links[1].LinkId);
+        Assert.AreEqual(473188, res.Links[2].LinkId);
+        Assert.AreEqual(473180, res.Links[3].LinkId);
+        Assert.AreEqual(1580985, res.Links[4].LinkId);
+        Assert.AreEqual(1580977, res.Links[5].LinkId);
+        Assert.AreEqual(564771, res.Links[6].LinkId);
+        Assert.AreEqual(593562, res.Links[7].LinkId);
+        Assert.AreEqual(593570, res.Links[8].LinkId);
+        Assert.AreEqual(593578, res.Links[9].LinkId);
+    }
+
+    [TestMethod]
+    public void FiveLinks_VariousGeometryDirections_EntireLinks()
+    {
+        var res = _router.Search(new Point3D(264310.48, 7040713.99), new Point3D(263801.32212, 7040584.45598), new RoutingConfig());
+
+        Assert.AreEqual(5, res.Links.Length);
+
+        Assert.AreEqual(487847, res.Links[0].LinkId);
+        Assert.AreEqual(475764, res.Links[1].LinkId);
+        Assert.AreEqual(1573429, res.Links[2].LinkId);
+        Assert.AreEqual(1573437, res.Links[3].LinkId);
+        Assert.AreEqual(335696, res.Links[4].LinkId);
+
+        // No cutting -- all links should be whole.
+        Assert.AreEqual(6, res.Links[0].Geometry.Length);
+        Assert.AreEqual(8, res.Links[1].Geometry.Length);
+        Assert.AreEqual(3, res.Links[2].Geometry.Length);
+        Assert.AreEqual(6, res.Links[3].Geometry.Length);
+        Assert.AreEqual(6, res.Links[4].Geometry.Length);
+
+        // No cutting -- all links should be whole.
+        Assert.AreEqual(87, res.Links[0].Length, 1);
+        Assert.AreEqual(135, res.Links[1].Length, 1);
+        Assert.AreEqual(116, res.Links[2].Length, 1);
+        Assert.AreEqual(262, res.Links[3].Length, 1);
+        Assert.AreEqual(80, res.Links[4].Length, 1);
+
+        Assert.AreEqual(680, res.RouteDistance, 1);
+    }
+
+    [TestMethod]
+    public void FiveLinks_VariousGeometryDirections_FirstAndLastCut()
+    {
+        var res = _router.Search(new Point3D(264306.57, 7040675.76), new Point3D(263836.97, 7040592.68), new RoutingConfig());
+
+        Assert.AreEqual(5, res.Links.Length);
+
+        Assert.AreEqual(487847, res.Links[0].LinkId);
+        Assert.AreEqual(475764, res.Links[1].LinkId);
+        Assert.AreEqual(1573429, res.Links[2].LinkId);
+        Assert.AreEqual(1573437, res.Links[3].LinkId);
+        Assert.AreEqual(335696, res.Links[4].LinkId);
+
+        // First and last links are cut.
+        Assert.AreEqual(6, res.Links[0].Geometry.Length);
+        Assert.AreEqual(8, res.Links[1].Geometry.Length);
+        Assert.AreEqual(3, res.Links[2].Geometry.Length);
+        Assert.AreEqual(6, res.Links[3].Geometry.Length);
+        Assert.AreEqual(5, res.Links[4].Geometry.Length);
+
+        // First and last links are cut.
+        Assert.AreEqual(57, res.Links[0].Length, 1);
+        Assert.AreEqual(135, res.Links[1].Length, 1);
+        Assert.AreEqual(116, res.Links[2].Length, 1);
+        Assert.AreEqual(262, res.Links[3].Length, 1);
+        Assert.AreEqual(43, res.Links[4].Length, 1);
+
+        Assert.AreEqual(612, res.RouteDistance, 1);
+    }
+}
+
+[TestClass]
+public class RoutingTests_TinyNetwork : RoutingTests
+{
     [TestInitialize]
-    public void Init()
+    public override void Init()
     {
         _router = new RoadNetworkRouter(new RoadLink[]
         {
+            new()
+            {
+                RoadClass = 7,
+                LinkId = 487847,
+                FromRelativeLength = 0,
+                ToRelativeLength = 1,
+                FromNodeId = 475955,
+                ToNodeId = 490272,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 30,
+                SpeedLimitReversed = 30,
+                RoadType = "",
+                Geometry = new[] { new Point3D(264296.9, 7040621.6, 357.345), new Point3D(264294.3, 7040626.6, 357.345), new Point3D(264294.1, 7040632.3, 357.545), new Point3D(264304, 7040653.8, 357.445), new Point3D(264306.1, 7040673.2, 358.145), new Point3D(264310.4, 7040705.3, 362.045) },
+                LaneCode = "",
+                Cost = 0.25551238656044006,
+                ReverseCost = 0.25551238656044006
+            },
+            new()
+            {
+                RoadClass = 7,
+                LinkId = 475764,
+                FromRelativeLength = 0,
+                ToRelativeLength = 1,
+                FromNodeId = 475955,
+                ToNodeId = 475956,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 30,
+                SpeedLimitReversed = 30,
+                RoadType = "",
+                Geometry = new[] { new Point3D(264296.9, 7040621.6, 357.345), new Point3D(264291.6, 7040602.8, 357.345), new Point3D(264285.5, 7040589.2, 357.045), new Point3D(264259.9, 7040564.7, 355.045), new Point3D(264253.4, 7040554.3, 354.945), new Point3D(264244, 7040535.1, 355.545), new Point3D(264236.5, 7040512, 357.645), new Point3D(264236, 7040505.2, 357.945) },
+                LaneCode = "",
+                Cost = 0.3957824409008026,
+                ReverseCost = 0.3957824409008026
+            },
+            new()
+            {
+                RoadClass = 6,
+                LinkId = 1573429,
+                FromRelativeLength = 0.7913469076156616,
+                ToRelativeLength = 0.8131144046783447,
+                FromNodeId = 475956,
+                ToNodeId = 487377,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 60,
+                SpeedLimitReversed = 60,
+                RoadType = "",
+                Geometry = new[] { new Point3D(264236, 7040505.2, 357.945), new Point3D(264201.7, 7040509.8, 360.745), new Point3D(264124.7, 7040534.2, 367.945) },
+                LaneCode = "",
+                Cost = 0.16845566034317017,
+                ReverseCost = 0.16845566034317017
+            },
+            new()
+            {
+                RoadClass = 6,
+                LinkId = 1573437,
+                FromRelativeLength = 0.8131144046783447,
+                ToRelativeLength = 0.8622568845748901,
+                FromNodeId = 487377,
+                ToNodeId = 326254,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 60,
+                SpeedLimitReversed = 60,
+                RoadType = "",
+                Geometry = new[] { new Point3D(264124.7, 7040534.2, 367.945), new Point3D(264044.7, 7040560.8, 375.645), new Point3D(264008, 7040571.1, 379.245), new Point3D(263947.6, 7040594.3, 385.145), new Point3D(263920.9, 7040599.6, 387.546), new Point3D(263875.05, 7040604.05, 392.196) },
+                LaneCode = "",
+                Cost = 0.38020312786102295,
+                ReverseCost = 0.38020312786102295
+            },
+            new()
+            {
+                RoadClass = 7,
+                LinkId = 335696,
+                FromRelativeLength = 0,
+                ToRelativeLength = 0.02185666374862194,
+                FromNodeId = 326254,
+                ToNodeId = 326255,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 50,
+                SpeedLimitReversed = 50,
+                RoadType = "",
+                Geometry = new[] { new Point3D(263875.05, 7040604.05, 392.196), new Point3D(263873.76, 7040599.37, 391.526), new Point3D(263870.15, 7040596.32, 391.286), new Point3D(263846.56, 7040594.42, 390.536), new Point3D(263817.2, 7040584.47, 390.226), new Point3D(263801.335, 7040584.454, 391.4079221) },
+                LaneCode = "",
+                Cost = 0.1413177102804184,
+                ReverseCost = 0.1413177102804184
+            },
             new()
             {
                 FromNodeId = 0,
@@ -279,6 +606,186 @@ public class TinyRoutingTests
                     new(261084.11, 7041213.63, 449.719),
                     new(261084.36, 7041226.53, 447.579)
                 }
+            },
+            new()
+            {
+                RoadClass = 3,
+                LinkId = 593586,
+                FromRelativeLength = 0.041672881692647934,
+                ToRelativeLength = 0.09881021827459335,
+                FromNodeId = 598238,
+                ToNodeId = 598244,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.AlongGeometry,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270161.498, 7042097.45, 7.2518926), new Point3D(270120.982, 7042073.75, 6.833) },
+                LaneCode = "",
+                Cost = 0.08589772135019302,
+                ReverseCost = 3.4028234663852886E+38
+            },
+            new()
+            {
+                RoadClass = 3,
+                LinkId = 593594,
+                FromRelativeLength = 0.09881021827459335,
+                ToRelativeLength = 0.1726849526166916,
+                FromNodeId = 598244,
+                ToNodeId = 472915,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.AlongGeometry,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270120.982, 7042073.75, 6.833), new Point3D(270068.314, 7042043.948, 6.433) },
+                LaneCode = "",
+                Cost = 0.11074263602495193,
+                ReverseCost = 3.4028234663852886E+38
+            },
+            new()
+            {
+                RoadClass = 6,
+                LinkId = 473188,
+                FromRelativeLength = 0.8603624701499939,
+                ToRelativeLength = 1,
+                FromNodeId = 472907,
+                ToNodeId = 472915,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270076.4, 7042017.5, 7.833), new Point3D(270068.314, 7042043.948, 6.433) },
+                LaneCode = "",
+                Cost = 0.06056765839457512,
+                ReverseCost = 0.06056765839457512
+            },
+            new()
+            {
+                RoadClass = 6,
+                LinkId = 473180,
+                FromRelativeLength = 0.7119511365890503,
+                ToRelativeLength = 0.8603624701499939,
+                FromNodeId = 472897,
+                ToNodeId = 472907,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270087.3, 7041989.1, 9.433), new Point3D(270076.4, 7042017.5, 7.833) },
+                LaneCode = "",
+                Cost = 0.06661956757307053,
+                ReverseCost = 0.06661956757307053
+            },
+            new()
+            {
+                RoadClass = 6,
+                LinkId = 1580985,
+                FromRelativeLength = 0.6455956101417542,
+                ToRelativeLength = 0.6962451338768005,
+                FromNodeId = 1394248,
+                ToNodeId = 472897,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270134, 7041993.7, 9.533), new Point3D(270087.3, 7041989.1, 9.433) },
+                LaneCode = "",
+                Cost = 0.1027679517865181,
+                ReverseCost = 0.1027679517865181
+            },
+            new()
+            {
+                RoadClass = 6,
+                LinkId = 1580977,
+                FromRelativeLength = 0.5847190618515015,
+                ToRelativeLength = 0.6455956101417542,
+                FromNodeId = 573210,
+                ToNodeId = 1394248,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270190.4, 7041991.5, 9.533), new Point3D(270134, 7041993.7, 9.533) },
+                LaneCode = "",
+                Cost = 0.12360993027687073,
+                ReverseCost = 0.12360993027687073
+            },
+            new()
+            {
+                RoadClass = 5,
+                LinkId = 564771,
+                FromRelativeLength = 0.8024753928184509,
+                ToRelativeLength = 0.8264882564544678,
+                FromNodeId = 573210,
+                ToNodeId = 573216,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270190.4, 7041991.5, 9.533), new Point3D(270186.9, 7042087.4, 7.833), new Point3D(270187.8, 7042096.4, 7.733), new Point3D(270192.6, 7042107.2, 7.633) },
+                LaneCode = "",
+                Cost = 0.23832783102989197,
+                ReverseCost = 0.23832783102989197
+            },
+            new()
+            {
+                RoadClass = 3,
+                LinkId = 593562,
+                FromRelativeLength = 0,
+                ToRelativeLength = 0.011160610243678093,
+                FromNodeId = 573216,
+                ToNodeId = 598223,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.AlongGeometry,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270192.6, 7042107.2, 7.633), new Point3D(270183.353, 7042108.78, 7.533) },
+                LaneCode = "",
+                Cost = 0.01716725341975689,
+                ReverseCost = 3.4028234663852886E+38
+            },
+            new()
+            {
+                RoadClass = 3,
+                LinkId = 593570,
+                FromRelativeLength = 0.011160610243678093,
+                ToRelativeLength = 0.03194738179445267,
+                FromNodeId = 598223,
+                ToNodeId = 598231,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.AlongGeometry,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270183.353, 7042108.78, 7.533), new Point3D(270168.405, 7042101.465, 7.333) },
+                LaneCode = "",
+                Cost = 0.03045462630689144,
+                ReverseCost = 3.4028234663852886E+38
+            },
+            new()
+            {
+                RoadClass = 3,
+                LinkId = 593578,
+                FromRelativeLength = 0.03194738179445267,
+                ToRelativeLength = 0.041672881692647934,
+                FromNodeId = 598231,
+                ToNodeId = 598238,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.AlongGeometry,
+                SpeedLimit = 40,
+                SpeedLimitReversed = 40,
+                RoadType = "",
+                Geometry = new[] { new Point3D(270168.405, 7042101.465, 7.333), new Point3D(270161.498, 7042097.45, 7.2518926) },
+                LaneCode = "",
+                Cost = 0.014620184898376465,
+                ReverseCost = 3.4028234663852886E+38
             }
         });
     }

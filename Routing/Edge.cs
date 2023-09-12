@@ -26,5 +26,10 @@
                 DataItem = DataItem
             };
         }
+
+        public override string ToString()
+        {
+            return Id.ToString();
+        }
     }
 }

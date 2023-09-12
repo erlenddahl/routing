@@ -235,4 +235,31 @@ public class RoadLink : ILinkPartGenerator
         link.Bounds = null;
         return link;
     }
+
+    public string ToCsharp()
+    {
+        return @"new RoadLink()
+        {
+            RoadClass = " + RoadClass + @",
+            LinkId = " + LinkId + @",
+            FromRelativeLength = " + FromRelativeLength.ToString(CultureInfo.InvariantCulture) + @",
+            ToRelativeLength = " + ToRelativeLength.ToString(CultureInfo.InvariantCulture) + @",
+            FromNodeId = " + FromNodeId + @",
+            ToNodeId = " + ToNodeId + @",
+            RoadNumber = " + RoadNumber + @",
+            Direction = RoadLinkDirection." + Direction.ToString() + @",
+            SpeedLimit = " + SpeedLimit + @",
+            SpeedLimitReversed = " + SpeedLimitReversed + @",
+            RoadType = """ + RoadType + @""",
+            Geometry = new[]{" + string.Join(", ", Geometry.Select(ToCsharp)) + @"},
+            LaneCode = """ + LaneCode + @""",
+            Cost = " + Cost.ToString(CultureInfo.InvariantCulture) + @",
+            ReverseCost = " + ReverseCost.ToString(CultureInfo.InvariantCulture) + @"
+        };";
+    }
+
+    private string ToCsharp(Point3D p)
+    {
+        return $"new Point3D({p.X.ToString(CultureInfo.InvariantCulture)}, {p.Y.ToString(CultureInfo.InvariantCulture)}, {p.Z.ToString(CultureInfo.InvariantCulture)})";
+    }
 }

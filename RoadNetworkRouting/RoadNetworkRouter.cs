@@ -556,6 +556,13 @@ namespace RoadNetworkRouting
             // Extract the road links (if there are any)
             var links = route.Items?.Select(p => Links[p]).ToArray() ?? Array.Empty<RoadLink>();
 
+            // In cases where the routing result is a single link, it will be listed twice because of the
+            // GraphOverloader's fake edges. Use only one of them in those cases.
+            if (source.Link.LinkId == target.Link.LinkId && links.Length == 2 && links[0].LinkId == links[1].LinkId)
+            {
+                links = links.Take(1).ToArray();
+            }
+
             timer.Time("routing.post");
 
             // Ensure that link geometries are loaded if this was a skeleton file.
@@ -572,54 +579,54 @@ namespace RoadNetworkRouting
 
             timer.Time("routing.loadlinks");
 
-            // Chop the first and last links so that they start and stop at the search points.
-            if (links.Any())
+            // Chop the first and last links so that they start and stop at the search points,
+            // and reverse the geometry of any links that are FT/TF when they should be TF/FT.
+            // Store which nodeId the next link should start with.
+            var nodeId = source.Link.Geometry[0].DistanceTo2D(fromPoint) < source.Link.Geometry[^1].DistanceTo2D(fromPoint) ? source.Link.FromNodeId : source.Link.ToNodeId;
+            var (cutStart, cutEnd) = (source.Nearest.Distance, links[^1].Length - target.Nearest.Distance);
+            for (var i = 0; i < links.Length; i++)
             {
-                try
+                // Store the links geometry, and a flag for if it has been modified or not.
+                var (geometry, modified) = (links[i].Geometry, false);
+
+                // If the next link does not start with this nodeId, turn it around
+                // (because it presumably ends with this nodeId -- if not, we're out of luck).
+                if (links[i].FromNodeId != nodeId)
                 {
-                    if (links.Length == 1)
-                    {
-                        var cutStart = source.Nearest.Distance;
-                        var cutEnd = target.Nearest.Distance;
-                        if (source.Link.FromNodeId == targetId)
-                            (cutStart, cutEnd) = (cutEnd, cutStart);
-                        var geometry = LineTools.CutStart(links[0].Geometry, cutStart);
-                        geometry = LineTools.CutEnd(geometry, links[0].Length - cutEnd);
-                        links[0] = links[0].Clone(geometry);
-                    }
-                    else
-                    {
-                        links[0] = CutLink(links[0], links[1], source.Nearest.Distance);
-                        links[^1] = CutLink(links[^1], links[^2], target.Nearest.Distance);
-                    }
+                    geometry = links[i].Geometry.Reverse().ToArray();
+                    modified = true;
+
+                    if (i == 0) cutStart = links[i].Length - cutStart;
+                    if (i == links.Length - 1) cutEnd = links[i].Length - cutEnd;
                 }
-                catch (Exception ex)
+
+                // If this is the first link, remove points from the start if necessary (if
+                // the search point/start point is inside the link).
+                if (i == 0 && cutStart > 0)
                 {
-                    throw;
+                    geometry = LineTools.CutStart(geometry, cutStart);
+                    modified = true;
                 }
+
+                if (i == links.Length - 1 && cutEnd > 0)
+                {
+                    geometry = LineTools.CutEnd(geometry, cutEnd);
+                    modified = true;
+                }
+
+                // If the geometry was modified, replace this link in the links array with
+                // an identical link with the new geometry.
+                if (modified)
+                    links[i] = links[i].Clone(geometry);
+
+                // Now save the end node of this link as the node the next link should 
+                // start with.
+                nodeId = links[i].ToNodeId;
             }
 
             timer.Time("routing.post");
 
             return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine, timer);
-        }
-
-        private RoadLink CutLink(RoadLink current, RoadLink connectedTo,  double atDistance)
-        {
-            var connectedAtEnd = current.ToNodeId == connectedTo.FromNodeId || current.ToNodeId == connectedTo.ToNodeId;
-
-            Point3D[] points;
-            if(connectedAtEnd)
-                points = LineTools.CutStart(current.Geometry, atDistance);
-            else
-                points = LineTools.CutEnd(current.Geometry, current.Length - atDistance);
-
-            // If the cut failed, simply return the entire link.
-            // This is a workaround for now, should figure out what makes it fail later.
-            if (points.Length < 2)
-                return current;
-
-            return current.Clone(points);
         }
 
         public IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<string> linkReferences)

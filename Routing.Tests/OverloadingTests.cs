@@ -58,9 +58,8 @@ namespace Routing.Tests
             CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Items);
         }
         [TestMethod]
-        public void SourceOverloading_NegativeFactorTHrows()
+        public void SourceOverloading_NegativeFactorThrows()
         {
-            var graph = TestGraphGenerator.StraightLine();
             var overloader = new GraphOverloader();
             try
             {
@@ -76,7 +75,6 @@ namespace Routing.Tests
         [TestMethod]
         public void TargetOverloading_TooLargeFactorThrows()
         {
-            var graph = TestGraphGenerator.StraightLine();
             var overloader = new GraphOverloader();
             try
             {

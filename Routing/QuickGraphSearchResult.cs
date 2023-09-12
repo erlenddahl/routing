@@ -11,6 +11,12 @@ namespace Routing
 
         public DijkstraResult InternalData { get; set; }
 
+        public QuickGraphSearchResult(VertexData source, VertexData target)
+        {
+            Source = source;
+            Target = target;
+        }
+
         public QuickGraphSearchResult(DijkstraResult dr)
         {
             Source = dr.Source;

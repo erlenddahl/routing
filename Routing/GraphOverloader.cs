@@ -69,24 +69,22 @@ namespace Routing
             public Edge CheckAddEdge(Graph graph, int sourceVertex, int targetVertex, double costFactor)
             {
                 // Find the edge we are "replacing" with two sub-edges
-                if (graph.TryGetEdge(sourceVertex, targetVertex, out var edge))
-                {
-                    // Add the target vertex to the list of neighbors on the overload-vertex.
-                    Vertex?.NeighbourIds.Add(targetVertex);
+                // If the existing edge doesn't exist (for example if this is a one-way street), do nothing.
+                if (!graph.TryGetEdge(sourceVertex, targetVertex, out var edge)) return null;
 
-                    // Create a copy of the existing edge, with a cost that is a part of
-                    // the original cost (depending on the cost factor, which in practice
-                    // tells us how large part of the edge we are representing).
-                    edge = edge.Clone();
-                    edge.Cost *= costFactor;
-                    edge.IsOverload = true;
-                    Edges.Add(targetVertex, edge);
+                // Add the target vertex to the list of neighbors on the overload-vertex.
+                Vertex?.NeighbourIds.Add(targetVertex);
 
-                    return edge;
-                }
+                // Create a copy of the existing edge, with a cost that is a part of
+                // the original cost (depending on the cost factor, which in practice
+                // tells us how large part of the edge we are representing).
+                edge = edge.Clone();
+                edge.Cost *= costFactor;
+                edge.IsOverload = true;
+                Edges.Add(targetVertex, edge);
 
-                // If the existing edge doesn't exist, do nothing.
-                return null;
+                return edge;
+
             }
         }
 

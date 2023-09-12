@@ -562,6 +562,12 @@ namespace RoadNetworkRouting
             {
                 links = links.Take(1).ToArray();
             }
+            
+            // In cases where the routing is along a single one-way link, we may get weird results. This is a hack for that.
+            if (source.Link.LinkId == target.Link.LinkId && (source.Link.Direction == RoadLinkDirection.AlongGeometry && target.Nearest.Distance > source.Nearest.Distance || source.Link.Direction == RoadLinkDirection.AgainstGeometry && target.Nearest.Distance < source.Nearest.Distance))
+            {
+                links = new[] { source.Link };
+            }
 
             timer.Time("routing.post");
 

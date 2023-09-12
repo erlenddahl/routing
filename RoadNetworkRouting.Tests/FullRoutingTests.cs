@@ -167,7 +167,7 @@ public abstract class RoutingTests
 
         Assert.AreEqual(1, res.Links.Length);
 
-        Assert.AreEqual(25, res.RouteDistance, 1);
+        Assert.AreEqual(30, res.RouteDistance, 1);
 
         Assert.AreEqual(593586, res.Links[0].LinkId);
     }

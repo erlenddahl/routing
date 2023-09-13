@@ -404,38 +404,43 @@ namespace RoadNetworkRouting
         /// Loads link data for the given link if required, then returns the link (for easy usage in LINQ queries).
         /// </summary>
         /// <param name="link"></param>
+        /// <param name="timer"></param>
         /// <returns></returns>
-        public RoadLink EnsureLinkDataLoaded(RoadLink link)
+        public RoadLink EnsureLinkDataLoaded(RoadLink link, TaskTimer timer = null)
         {
             if (link.Geometry == null)
-                LoadLinkData(link);
+            {
+                timer?.Restart();
+
+                // Find the ID of this link
+                var id = link.LinkId;
+
+                // Depending on the skeleton config, there might be more than one link per file.
+                // If there is, they are always saved in files of size N, the first file having links
+                // from 0 to N-1, the next from N to 2*N-1, and so on.
+                var file = _skeletonConfig.GetLinkDataFile(id);
+
+                LoadLinksFromFile(file);
+
+                link = Links[link.LinkId];
+
+                if (link.Geometry == null) throw new Exception("Geometry for link " + id + " was not found in the file '" + file + "'.");
+                timer?.Time("routing.loadlinks");
+            }
+
             return link;
         }
 
-        /// <summary>
-        /// Loads link data for the given link, plus all other links in the same link data file (if any).
-        /// </summary>
-        /// <param name="link"></param>
-        public void LoadLinkData(RoadLink link)
-        {
-            // Find the ID of this link
-            var id = link.LinkId;
-
-            // Depending on the skeleton config, there might be more than one link per file.
-            // If there is, they are always saved in files of size N, the first file having links
-            // from 0 to N-1, the next from N to 2*N-1, and so on.
-            var file = _skeletonConfig.GetLinkDataFile(id);
-
-            LoadLinksFromFile(file);
-        }
-
-        private HashSet<string> _loadedFiles = new HashSet<string>();
+        private HashSet<string> _loadedFiles = new();
 
         private void LoadLinksFromFile(string file)
         {
             lock (_loadedFiles)
             {
-                if (_loadedFiles.Contains(file)) return;
+                if (_loadedFiles.Contains(file))
+                {
+                    return;
+                }
 
                 // Read the links in this file
                 using var reader = new BinaryReader(File.OpenRead(file));
@@ -475,7 +480,7 @@ namespace RoadNetworkRouting
 
                 nearest = _nearbyLinksLookup.GetNearbyItems(point, d)
                     .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup))
-                    .Select(EnsureLinkDataLoaded)
+                    .Select(p => EnsureLinkDataLoaded(p))
                     .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry, point.X, point.Y)))
                     .MinBy(p => p.Nearest.DistanceFromLine);
 
@@ -564,7 +569,7 @@ namespace RoadNetworkRouting
             timer.Time("routing.routing");
 
             // Extract the road links (if there are any)
-            var links = route.Items?.Select(p => Links[p].Clone()).ToArray() ?? Array.Empty<RoadLink>();
+            var links = route.Items?.Select(p => EnsureLinkDataLoaded(Links[p], timer)).ToArray() ?? Array.Empty<RoadLink>();
 
             // In cases where the routing result is a single link, it will be listed twice because of the
             // GraphOverloader's fake edges. Use only one of them in those cases.
@@ -580,20 +585,6 @@ namespace RoadNetworkRouting
             }
 
             timer.Time("routing.post");
-
-            // Ensure that link geometries are loaded if this was a skeleton file.
-            if (_skeletonConfig != null)
-            {
-                foreach (var link in links)
-                {
-                    if (link.Geometry == null)
-                    {
-                        LoadLinkData(link);
-                    }
-                }
-            }
-
-            timer.Time("routing.loadlinks");
 
             // Chop the first and last links so that they start and stop at the search points,
             // and reverse the geometry of any links that are FT/TF when they should be TF/FT.
@@ -620,14 +611,14 @@ namespace RoadNetworkRouting
             for (var i = 0; i < links.Length; i++)
             {
                 // Store the links geometry, and a flag for if it has been modified or not.
-                var (geometry, modified) = (links[i].Geometry, false);
+                var (geometry, modified, swapNodes) = (links[i].Geometry, false, false);
 
                 // If the next link does not start with this nodeId, turn it around
                 // (because it presumably ends with this nodeId -- if not, we're out of luck).
                 if (links[i].FromNodeId != nodeId)
                 {
                     geometry = links[i].Geometry.Reverse().ToArray();
-                    (links[i].FromNodeId, links[i].ToNodeId) = (links[i].ToNodeId, links[i].FromNodeId);
+                    swapNodes = true;
                     modified = true;
 
                     if (i == 0) cutStart = links[i].Length - cutStart;
@@ -651,7 +642,11 @@ namespace RoadNetworkRouting
                 // If the geometry was modified, replace this link in the links array with
                 // an identical link with the new geometry.
                 if (modified)
+                {
                     links[i] = links[i].Clone(geometry);
+                    if(swapNodes)
+                        (links[i].FromNodeId, links[i].ToNodeId) = (links[i].ToNodeId, links[i].FromNodeId);
+                }
 
                 // Now save the end node of this link as the node the next link should 
                 // start with.

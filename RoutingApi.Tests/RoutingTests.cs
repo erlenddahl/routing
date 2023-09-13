@@ -22,9 +22,9 @@ namespace RoutingApi.Tests
         public void Init()
         {
             //TODO: Fix issue with skeleton not working (see MultipleIdenticalRoutes test)
-            FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
-            //FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network_skeleton.bin";
-            //FullRoutingService.SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\geometries" };
+            //FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
+            FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network_skeleton.bin";
+            FullRoutingService.SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\geometries" };
             FullRoutingService.Initialize();
         }
 
@@ -101,7 +101,8 @@ namespace RoutingApi.Tests
                 {
                     LinkReferences = true,
                     Coordinates = true,
-                    OutputSrid = 4326
+                    Links = true,
+                    OutputSrid = 25833
                 },
                 Waypoints = Enumerable.Range(0, 20)
                     .Select(p => new[]
@@ -111,7 +112,7 @@ namespace RoutingApi.Tests
                     })
                     .ToArray()
             }.Route().ToArray();
-
+            
             Assert.AreEqual(20, responses.Length);
 
             foreach (var response in responses)

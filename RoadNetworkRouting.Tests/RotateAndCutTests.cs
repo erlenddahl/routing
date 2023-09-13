@@ -14,7 +14,7 @@ public class RotateAndCutTests : RoadNetworkRouter
     }
 
     [TestMethod]
-    public void Cut_Original_Unmodified()
+    public void Original_Unmodified_Cut()
     {
         var link = new RoadLink()
         {
@@ -42,6 +42,41 @@ public class RotateAndCutTests : RoadNetworkRouter
 
         Assert.AreEqual(7, link.FromNodeId);
         Assert.AreEqual(13, link.ToNodeId);
+
+        Assert.AreEqual(20, link.Length);
+
+        Assert.AreEqual(15, link.Geometry[0].X);
+        Assert.AreEqual(25, link.Geometry[1].X);
+        Assert.AreEqual(35, link.Geometry[2].X);
+    }
+
+    [TestMethod]
+    public void OriginalUnmodified_Reversal()
+    {
+        var link = new RoadLink()
+        {
+            FromNodeId = 13,
+            ToNodeId = 7,
+            Geometry = new[] { new Point3D(15, 0), new Point3D(25, 0), new Point3D(35, 0) }
+        };
+        var links = new[]
+        {
+            link
+        };
+
+        RotateAndCut(links, 7, 20, 0);
+        Assert.AreEqual(7, links[0].FromNodeId);
+        Assert.AreEqual(13, links[0].ToNodeId);
+
+        Assert.AreEqual(20, links[0].Length);
+
+        Assert.AreEqual(35, links[0].Geometry[0].X);
+        Assert.AreEqual(25, links[0].Geometry[1].X);
+        Assert.AreEqual(15, links[0].Geometry[2].X);
+
+
+        Assert.AreEqual(13, link.FromNodeId);
+        Assert.AreEqual(7, link.ToNodeId);
 
         Assert.AreEqual(20, link.Length);
 

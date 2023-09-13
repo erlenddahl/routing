@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Geometry;
@@ -39,6 +41,9 @@ public class SingleRoutingRequest : RoutingRequest
         }
         catch (Exception ex)
         {
+#if DEBUG
+            throw;
+#endif
             return new RoutingResponse(ex);
         }
     }

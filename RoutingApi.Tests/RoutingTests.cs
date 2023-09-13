@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using RoadNetworkRouting.Config;
+using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Service;
 using RoutingApi.Controllers;
 
@@ -19,9 +21,44 @@ namespace RoutingApi.Tests
         [TestInitialize]
         public void Init()
         {
-            FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network_skeleton.bin";
-            FullRoutingService.SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\geometries" };
+            //TODO: Fix issue with skeleton not working (see MultipleIdenticalRoutes test)
+            FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
+            //FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network_skeleton.bin";
+            //FullRoutingService.SkeletonConfig = new SkeletonConfig() { LinkDataDirectory = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\geometries" };
             FullRoutingService.Initialize();
+        }
+
+        [TestMethod]
+        public void ShortRoute_AvoidBackAndForth()
+        {
+            // In the initial version, the router took U-turns both at the start and the end of this route.
+            // (The problem was that some of the links weren't rotated correctly.)
+
+            var response = new SingleRoutingRequest()
+            {
+                SourceSrid = 4326,
+                Response = new RoutingResponseDefinition()
+                {
+                    LinkReferences = true,
+                    Coordinates = true,
+                    OutputSrid = 4326
+                },
+                Waypoints = new[]
+                {
+                    new Point3D(10.415004587765168, 63.41784215066588),
+                    new Point3D(10.414155474818585, 63.4179078153318),
+                }
+            }.Route().CheckThrow();
+
+            Assert.AreEqual(62, response.DistanceM, 0.5);
+            Assert.AreEqual(7, response.Coordinates.Count);
+            Assert.AreEqual(3, response.LinkReferences.Count);
+
+            foreach (var c in response.Coordinates)
+                Debug.WriteLine(c.X + ";" + c.Y);
+
+            var referenceString = "0,00000000-0,52123529@622787-2;0,48851538-0,50344980@1548623-2;0,00000000-1,00000000@490120-2";
+            Assert.AreEqual(referenceString, string.Join(";", response.LinkReferences));
         }
 
         [TestMethod]
@@ -43,7 +80,7 @@ namespace RoutingApi.Tests
                 }
             }.Route().CheckThrow();
 
-            Assert.AreEqual(8098, response.DistanceM, 0.5);
+            Assert.AreEqual(8051, response.DistanceM, 0.5);
             Assert.AreEqual(436, response.Coordinates.Count);
             Assert.AreEqual(187, response.LinkReferences.Count);
 
@@ -80,7 +117,7 @@ namespace RoutingApi.Tests
             foreach (var response in responses)
             {
                 response.CheckThrow();
-                Assert.AreEqual(8098, response.DistanceM, 0.5);
+                Assert.AreEqual(8051, response.DistanceM, 0.5);
                 Assert.AreEqual(436, response.Coordinates.Count);
                 Assert.AreEqual(187, response.LinkReferences.Count);
 

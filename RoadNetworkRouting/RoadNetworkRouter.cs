@@ -17,6 +17,7 @@ using System.Diagnostics.Metrics;
 using EnergyModule.Network;
 using System.Drawing;
 using Extensions.Utilities;
+using NLog.Targets;
 
 namespace RoadNetworkRouting
 {
@@ -563,7 +564,7 @@ namespace RoadNetworkRouting
             timer.Time("routing.routing");
 
             // Extract the road links (if there are any)
-            var links = route.Items?.Select(p => Links[p]).ToArray() ?? Array.Empty<RoadLink>();
+            var links = route.Items?.Select(p => Links[p].Clone()).ToArray() ?? Array.Empty<RoadLink>();
 
             // In cases where the routing result is a single link, it will be listed twice because of the
             // GraphOverloader's fake edges. Use only one of them in those cases.
@@ -597,8 +598,25 @@ namespace RoadNetworkRouting
             // Chop the first and last links so that they start and stop at the search points,
             // and reverse the geometry of any links that are FT/TF when they should be TF/FT.
             // Store which nodeId the next link should start with.
-            var nodeId = source.Link.Geometry[0].DistanceTo2D(fromPoint) < source.Link.Geometry[^1].DistanceTo2D(fromPoint) ? source.Link.FromNodeId : source.Link.ToNodeId;
-            var (cutStart, cutEnd) = (source.Nearest.Distance, links[^1].Length - target.Nearest.Distance);
+            var nodeId = FindFirstNodeId(links, fromPoint);
+            RotateAndCut(links, nodeId, source.Nearest.Distance, target.Nearest.Distance);
+
+            timer.Time("routing.post");
+
+            return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine, timer);
+        }
+
+        /// <summary>
+        /// Makes sure all links are rotated correctly (so that they fit together in one coherent group, regardless of
+        /// original geometry orientation), and cuts the first and last link to fit the from- and to points if necessary.
+        /// </summary>
+        /// <param name="links"></param>
+        /// <param name="nodeId"></param>
+        /// <param name="distanceAlongFirst"></param>
+        /// <param name="distanceAlongLast"></param>
+        protected void RotateAndCut(RoadLink[] links, int nodeId, double distanceAlongFirst, double distanceAlongLast)
+        {
+            var (cutStart, cutEnd) = (distanceAlongFirst, links[^1].Length - distanceAlongLast);
             for (var i = 0; i < links.Length; i++)
             {
                 // Store the links geometry, and a flag for if it has been modified or not.
@@ -609,6 +627,7 @@ namespace RoadNetworkRouting
                 if (links[i].FromNodeId != nodeId)
                 {
                     geometry = links[i].Geometry.Reverse().ToArray();
+                    (links[i].FromNodeId, links[i].ToNodeId) = (links[i].ToNodeId, links[i].FromNodeId);
                     modified = true;
 
                     if (i == 0) cutStart = links[i].Length - cutStart;
@@ -638,10 +657,22 @@ namespace RoadNetworkRouting
                 // start with.
                 nodeId = links[i].ToNodeId;
             }
+        }
 
-            timer.Time("routing.post");
-
-            return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine, timer);
+        /// <summary>
+        /// Given a list of links, detect what node (from the first link)
+        /// that is the first node of the route. 
+        /// </summary>
+        /// <param name="links"></param>
+        /// <param name="fromPoint"></param>
+        /// <returns></returns>
+        protected static int FindFirstNodeId(RoadLink[] links, Point3D fromPoint)
+        {
+            var f = links[0];
+            if (links.Length == 1) return f.Geometry[0].DistanceTo2D(fromPoint) < f.Geometry[^1].DistanceTo2D(fromPoint) ? f.FromNodeId : f.ToNodeId;
+            var s = links[1];
+            if (f.FromNodeId == s.FromNodeId || f.FromNodeId == s.ToNodeId) return f.ToNodeId;
+            return f.FromNodeId;
         }
 
         public IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<string> linkReferences)

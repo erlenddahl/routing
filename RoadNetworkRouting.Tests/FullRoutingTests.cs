@@ -1,7 +1,12 @@
+using System.Diagnostics;
+using System.Globalization;
+using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
 using RoadNetworkRouting.Config;
+using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Network;
+using RoadNetworkRouting.Service;
 
 namespace RoadNetworkRouting.Tests;
 
@@ -11,8 +16,11 @@ public class RoutingTests_FullNetwork : RoutingTests
     [TestInitialize]
     public override void Init()
     {
-        var networkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
-        _router = RoadNetworkRouter.LoadFrom(networkFile);
+        //var networkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
+
+        var networkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network_skeleton.bin";
+        var skeletonConfig = new SkeletonConfig() { LinkDataDirectory = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\geometries" };
+        _router = RoadNetworkRouter.LoadFrom(networkFile, skeletonConfig: skeletonConfig);
     }
 }
 
@@ -179,7 +187,7 @@ public abstract class RoutingTests
 
         Assert.AreEqual(11, res.Links.Length);
 
-        Assert.AreEqual(415, res.RouteDistance, 1);
+        Assert.AreEqual(389, res.RouteDistance, 1);
 
         Assert.AreEqual(593586, res.Links[0].LinkId);
         Assert.AreEqual(593594, res.Links[1].LinkId);
@@ -215,7 +223,7 @@ public abstract class RoutingTests
 
         Assert.AreEqual(9, res.Links.Length);
 
-        Assert.AreEqual(388, res.RouteDistance, 1);
+        Assert.AreEqual(364, res.RouteDistance, 1);
 
         Assert.AreEqual(593586, res.Links[0].LinkId);
         Assert.AreEqual(593594, res.Links[1].LinkId);
@@ -226,6 +234,13 @@ public abstract class RoutingTests
         Assert.AreEqual(564771, res.Links[6].LinkId);
         Assert.AreEqual(593562, res.Links[7].LinkId);
         Assert.AreEqual(593570, res.Links[8].LinkId);
+
+        var ix = 0;
+        foreach (var link in res.Links)
+        foreach (var p in link.Geometry)
+        {
+            Debug.WriteLine(ix++ + ";" + link.LinkId + ";" + p.X.ToString(CultureInfo.InvariantCulture) + ";" + p.Y.ToString(CultureInfo.InvariantCulture));
+        }
     }
 
     [TestMethod]
@@ -248,7 +263,7 @@ public abstract class RoutingTests
 
         Assert.AreEqual(10, res.Links.Length);
 
-        Assert.AreEqual(404, res.RouteDistance, 1);
+        Assert.AreEqual(381, res.RouteDistance, 1);
 
         Assert.AreEqual(593586, res.Links[0].LinkId);
         Assert.AreEqual(593594, res.Links[1].LinkId);
@@ -320,6 +335,31 @@ public abstract class RoutingTests
         Assert.AreEqual(43, res.Links[4].Length, 1);
 
         Assert.AreEqual(612, res.RouteDistance, 1);
+    }
+
+    [TestMethod]
+    public void ShortRoute_CorrectGeometryRotations()
+    {
+        // In the initial version, the router took U-turns both at the start and the end of this route.
+        var converter = CoordinateConverter.ToUtm33(4326);
+        var from = converter.Forward(new Point3D(10.415004587765168, 63.41784215066588));
+        var to = converter.Forward(new Point3D(10.414155474818585, 63.4179078153318));
+
+        var res = _router.Search(from, to, new RoutingConfig());
+
+        Assert.AreEqual(3, res.Links.Length);
+        
+        Assert.AreEqual(622787, res.Links[0].LinkId);
+        Assert.AreEqual(1548623, res.Links[1].LinkId);
+        Assert.AreEqual(490120, res.Links[2].LinkId);
+
+        // First and last links are cut.
+        Assert.AreEqual(26, res.Links[0].Length, 1);
+        Assert.AreEqual(21, res.Links[1].Length, 1);
+        Assert.AreEqual(14, res.Links[2].Length, 1);
+
+        Assert.AreEqual(62, res.RouteDistance, 1);
+        Assert.AreEqual(62, LineTools.CalculateLength(res.Links.SelectMany(p => p.Geometry).ToArray()), 1);
     }
 }
 
@@ -786,6 +826,60 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 LaneCode = "",
                 Cost = 0.014620184898376465,
                 ReverseCost = 3.4028234663852886E+38
+            },
+            new()
+            {
+                RoadClass = 6,
+                LinkId = 622787,
+                FromRelativeLength = 0,
+                ToRelativeLength = 0.5212352871894836,
+                FromNodeId = 607134,
+                ToNodeId = 608003,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.AgainstGeometry,
+                SpeedLimit = 30,
+                SpeedLimitReversed = 30,
+                RoadType = "",
+                Geometry = new[] { new Point3D(271204.6, 7040349, 78.236), new Point3D(271212, 7040344.2, 78.336), new Point3D(271259.7, 7040286.4, 79.136) },
+                LaneCode = "",
+                Cost = 3.4028234663852886E+38,
+                ReverseCost = 0.2445829212665558
+            },
+            new()
+            {
+                RoadClass = 6,
+                LinkId = 1548623,
+                FromRelativeLength = 0.48851537704467773,
+                ToRelativeLength = 0.5034497976303101,
+                FromNodeId = 492807,
+                ToNodeId = 607134,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 30,
+                SpeedLimitReversed = 30,
+                RoadType = "",
+                Geometry = new[] { new Point3D(271190.8, 7040365.2, 78.036), new Point3D(271204.6, 7040349, 78.236) },
+                LaneCode = "",
+                Cost = 0.06214045360684395,
+                ReverseCost = 0.06214045360684395
+            },
+            new()
+            {
+                RoadClass = 7,
+                LinkId = 490120,
+                FromRelativeLength = 0,
+                ToRelativeLength = 1,
+                FromNodeId = 492807,
+                ToNodeId = 492808,
+                RoadNumber = 0,
+                Direction = RoadLinkDirection.BothWays,
+                SpeedLimit = 30,
+                SpeedLimitReversed = 30,
+                RoadType = "",
+                Geometry = new[] { new Point3D(271190.8, 7040365.2, 78.036), new Point3D(271157.2, 7040327.5, 72.936) },
+                LaneCode = "",
+                Cost = 0.14846999943256378,
+                ReverseCost = 0.14846999943256378
             }
         });
     }

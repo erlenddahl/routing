@@ -66,7 +66,9 @@ public class RoadLink : ILinkPartGenerator
             LaneCode = LaneCode,
             Cost = Cost,
             ReverseCost = ReverseCost,
-            Bounds = Bounds
+            Bounds = Bounds,
+            NetworkGroup =  NetworkGroup,
+            _reference = _reference
         };
     }
 

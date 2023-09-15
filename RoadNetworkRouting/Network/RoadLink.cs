@@ -86,19 +86,19 @@ public class RoadLink : ILinkPartGenerator
         return _pointCache.QueryPointInfo(metersFromA);
     }
 
-    public TransportLinkPart[] GenerateLinkParts(double segmentLength = TransportLink.StandardSegmentLength)
+    public LinkPart[] GenerateLinkParts(double segmentLength = TransportLink.StandardSegmentLength)
     {
         var partIndex = 0;
 
         // Tangent at start of segment:
         var start = GetGeometricData(0);
         var lastKnownHeight = 0.0;
-        var linkParts = new TransportLinkPart[(int)Math.Ceiling(_pointCache.Length / segmentLength)];
+        var linkParts = new LinkPart[(int)Math.Ceiling(_pointCache.Length / segmentLength)];
 
         for (var posStart = 0d; posStart < _pointCache.Length; posStart += segmentLength)
         {
             //Create the new TransportLinkPart
-            var tlp = new TransportLinkPart
+            var tlp = new LinkPart
             {
                 LinkId = LinkId,
                 Width = 8, //TODO: Fix!

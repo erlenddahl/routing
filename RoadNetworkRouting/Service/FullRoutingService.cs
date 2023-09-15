@@ -56,7 +56,7 @@ namespace RoadNetworkRouting.Service
 
         public static InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter)
         {
-            return FromUtm(coordinates.Select(converter.Forward).ToArray(), config);
+            return FromUtm(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config);
         }
 
         public static InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config = null)

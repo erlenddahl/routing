@@ -16,6 +16,7 @@ using RoadNetworkRouting.Utils;
 using System.Diagnostics.Metrics;
 using EnergyModule.Network;
 using System.Drawing;
+using EnergyModule.Exceptions;
 using Extensions.Utilities;
 using NLog.Targets;
 
@@ -471,14 +472,14 @@ namespace RoadNetworkRouting
         public (RoadLink Link, NearestPointInfo Nearest) GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null)
         {
             (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
-            var d = config.InitialSearchRadius;
+            var d = (long)config.InitialSearchRadius;
             CreateNearbyLinkLookup();
 
             while (nearest.Link == null)
             {
-                if (d > config.MaxSearchRadius) throw new NoLinksFoundException("Found no links near the search point " + point);
+                if (d > config.MaxSearchRadius) throw new NoLinksFoundException($"Found no links near the search point [{point.To2DString()}], using search radius from {config.InitialSearchRadius} to {config.MaxSearchRadius}. Is there something wrong with the coordinates, coordinate system specifications, or radiuses?");
 
-                nearest = _nearbyLinksLookup.GetNearbyItems(point, d)
+                nearest = _nearbyLinksLookup.GetNearbyItems(point, (int)d)
                     .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup))
                     .Select(p => EnsureLinkDataLoaded(p))
                     .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry, point.X, point.Y)))
@@ -492,6 +493,8 @@ namespace RoadNetworkRouting
 
         public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)
         {
+            if (Equals(fromPoint, toPoint)) throw new InvalidRouteException("The from and to points sent into the routing function are identical (" + fromPoint + "). Is something wrong with the search coordinates?");
+
             config ??= new RoutingConfig();
             timer ??= new TaskTimer();
 
@@ -563,6 +566,8 @@ namespace RoadNetworkRouting
             sourceId = overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
             targetId = overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
 
+            if (sourceId == targetId) throw new InvalidRouteException("Source and target ids are identical. Is something wrong with the search coordinates?");
+
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
 
@@ -591,7 +596,7 @@ namespace RoadNetworkRouting
             // Store which nodeId the next link should start with.
             var nodeId = FindFirstNodeId(links, fromPoint);
             RotateAndCut(links, nodeId, source.Nearest.Distance, target.Nearest.Distance);
-
+            
             timer.Time("routing.post");
 
             return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine, timer);

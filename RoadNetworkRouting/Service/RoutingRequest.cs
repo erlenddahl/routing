@@ -120,4 +120,9 @@ public abstract class RoutingRequest
     /// Use OutputSrid on the Response definition to select which SRID the returned coordinates should use.
     /// </summary>
     public int SourceSrid { get; set; } = 32633;
+
+    /// <summary>
+    /// The SRID used in coordinates on the response.
+    /// </summary>
+    public int OutputSrid { get; set; } = 32633;
 }

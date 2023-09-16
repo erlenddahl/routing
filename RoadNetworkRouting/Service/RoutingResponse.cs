@@ -50,13 +50,13 @@ public class RoutingResponse : InternalRoutingResponse
     public RoutingResponse(RoutingRequest request, InternalRoutingResponse result)
     {
         var r = request.Response ?? new RoutingResponseDefinition() { Coordinates = true };
-        var converter = CoordinateConverter.FromUtm33(r.OutputSrid);
+        var converter = CoordinateConverter.FromUtm33(request.OutputSrid);
 
         var returnedCoordinates = result.Coordinates.Select(converter.Forward).ToList();
 
         DistanceM = LineTools.CalculateLength(result.Coordinates);
         SourceSrid = request.SourceSrid;
-        OutputSrid = r.OutputSrid;
+        OutputSrid = request.OutputSrid;
 
         if (r.EchoResponseDefinition)
             ResponseDefinition = r;

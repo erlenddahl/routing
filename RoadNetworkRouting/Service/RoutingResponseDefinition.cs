@@ -55,9 +55,4 @@ public class RoutingResponseDefinition
     /// Include timing data for the routing.
     /// </summary>
     public bool Timings { get; set; }
-
-    /// <summary>
-    /// The SRID used in coordinates on the response.
-    /// </summary>
-    public int OutputSrid { get; set; } = 32633;
 }

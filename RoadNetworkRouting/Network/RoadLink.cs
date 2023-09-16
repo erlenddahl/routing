@@ -123,9 +123,9 @@ public class RoadLink : ILinkPartGenerator
             TransportLink.CheckHeightValue(tlp, end, ref lastKnownHeight);
 
             // Update and store list element:   
-            tlp.HRadius = TransportLink.FindRadius(segmentLength, start.Angle, end.Angle);
+            tlp.HorizontalRadius = TransportLink.FindRadius(segmentLength, start.Angle, end.Angle);
             tlp.GradientPercent = 100 * (end.Z - start.Z) / segmentLength;
-            tlp.SegmentLength = posEnd - posStart;
+            tlp.SegmentLengthM = posEnd - posStart;
             tlp.Z1 = start.Z;
             tlp.Z2 = end.Z;
             tlp.X1 = start.X;

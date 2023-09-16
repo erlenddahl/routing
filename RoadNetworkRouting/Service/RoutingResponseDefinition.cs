@@ -6,12 +6,6 @@
 public class RoutingResponseDefinition
 {
     /// <summary>
-    /// Include the response definition object from the request.
-    /// </summary>
-    /// <example>false</example>
-    public bool EchoResponseDefinition { get; set; }
-
-    /// <summary>
     /// Include the list of requested waypoints, with indices pointing into
     /// the Coordinates and LinkReferences arrays in case you need to extract
     /// parts of these arrays for certain waypoints.

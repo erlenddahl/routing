@@ -28,11 +28,6 @@ public class RoutingResponse : InternalRoutingResponse
     public RoutingConfig RoutingConfig { get; set; }
 
     /// <summary>
-    /// Contains the response definition that was used to create this response.
-    /// </summary>
-    public RoutingResponseDefinition ResponseDefinition { get; set; }
-
-    /// <summary>
     /// The SRID of the input coordinates.
     /// </summary>
     public int SourceSrid { get; set; }
@@ -58,8 +53,6 @@ public class RoutingResponse : InternalRoutingResponse
         SourceSrid = request.SourceSrid;
         OutputSrid = request.OutputSrid;
 
-        if (r.EchoResponseDefinition)
-            ResponseDefinition = r;
         if (r.RoutingConfig)
             RoutingConfig = request.RoutingConfig ?? new RoutingConfig();
         if (r.Coordinates)

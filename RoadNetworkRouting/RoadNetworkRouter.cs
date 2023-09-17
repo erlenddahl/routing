@@ -597,7 +597,7 @@ namespace RoadNetworkRouting
             var nodeId = FindFirstNodeId(links, fromPoint);
             RotateAndCut(links, nodeId, source.Nearest.Distance, target.Nearest.Distance);
             
-            timer.Time("routing.post");
+            timer.Time("routing.cut");
 
             return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine, timer);
         }

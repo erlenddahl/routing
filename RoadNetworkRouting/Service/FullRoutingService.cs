@@ -88,7 +88,7 @@ namespace RoadNetworkRouting.Service
                     LinkReferenceIndex = rs.LinkReferences.Count
                 });
 
-                var path = _router.Search(fromCoord, toCoord, config);
+                var path = _router.Search(fromCoord, toCoord, config, rs.Timings);
 
                 if (!path.Success) throw new Exception("Couldn't find a route between these points.");
 
@@ -100,8 +100,6 @@ namespace RoadNetworkRouting.Service
                     rs.Links.Add(link);
                     rs.Coordinates.AddRange(link.Geometry.Select(p => new Point3D(p.X, p.Y, p.Z)));
                 }
-
-                rs.Timings.Append(path.Timer);
 
                 logger.Debug("Finished " + i);
             }

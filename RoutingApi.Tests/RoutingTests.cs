@@ -54,8 +54,8 @@ namespace RoutingApi.Tests
             Assert.AreEqual(7, response.Coordinates.Count);
             Assert.AreEqual(3, response.LinkReferences.Count);
 
-            foreach (var c in response.Coordinates)
-                Debug.WriteLine(c.X + ";" + c.Y);
+            //foreach (var c in response.Coordinates)
+            //    Debug.WriteLine(c.X + ";" + c.Y);
 
             var referenceString = "0,00000000-0,52123529@622787-2;0,48851538-0,50344980@1548623-2;0,00000000-1,00000000@490120-2";
             Assert.AreEqual(referenceString, string.Join(";", response.LinkReferences));

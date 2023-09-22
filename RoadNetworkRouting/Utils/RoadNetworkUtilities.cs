@@ -64,7 +64,7 @@ namespace RoadNetworkRouting.Utils
                 // Finally, find any nodes within 1 meter from this location.
                 // (Using ManhattanDistance as a filter first, as the Sqrt calculation in the actual calculation is expensive.)
                 var match = relevantNodes.FirstOrDefault(p => p.Location.ManhattanDistanceTo2D(location) < 2 && p.Location.DistanceTo2D(location) <= 1);
-                Debug.WriteLine($"{source}: Found matching node at {match.Location}");
+                //Debug.WriteLine($"{source}: Found matching node at {match.Location}");
 
                 // If there was no match (only the Location object will be null because it's a struct),
                 // create a new node at this location. Make sure to increment the next available ID,
@@ -73,7 +73,7 @@ namespace RoadNetworkRouting.Utils
                 {
                     match = new Node(location, id++);
                     AddNode(match);
-                    Debug.WriteLine($"{source}: Created new node {match.Id} at {match.Location}");
+                    //Debug.WriteLine($"{source}: Created new node {match.Id} at {match.Location}");
                 }
 
                 fixedNodes++;

@@ -21,14 +21,14 @@ test-results:
     - $ErrorActionPreference = "SilentlyContinue"
     - dotnet test Routing.sln --logger "trx;LogFileName=TestResults.trx" --verbosity minimal; if ($LASTEXITCODE -ne 0) { $LASTEXITCODE = 0 }
     - C:\Users\erlendd\.dotnet\tools\trx2junit.exe Routing.Tests/TestResults/TestResults.trx
-    - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" C:\Code\_gitlab-runner\builds\bvWzJah8\0\energycalculations\routing\RoadNetworkRouting.Tests\TestResults\TestResults.trx'
-    - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" RoutingApi.Tests/TestResults/TestResults.trx'
+    - C:\Users\erlendd\.dotnet\tools\trx2junit.exe RoadNetworkRouting.Tests/TestResults/TestResults.trx
+    - C:\Users\erlendd\.dotnet\tools\trx2junit.exe RoutingApi.Tests/TestResults/TestResults.trx
   artifacts:
     when: always
     reports:
       junit: 
         - 'Routing.Tests/TestResults/TestResults.xml'
-        - 'C:\Code\_gitlab-runner\builds\bvWzJah8\0\energycalculations\routing\RoadNetworkRouting.Tests\TestResults\TestResults.xml'
+        - 'RoadNetworkRouting.Tests/TestResults/TestResults.xml'
         - 'RoutingApi.Tests/TestResults/TestResults.xml'
 
 tests:

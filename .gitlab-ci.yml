@@ -15,11 +15,11 @@ build:
     - $ErrorActionPreference = "Stop"
     - dotnet build Routing.sln
 
-tests:
+test-results:
   stage: test
   script:
-    - $ErrorActionPreference = "Stop"
-    - dotnet test Routing.sln --logger "trx;LogFileName=TestResults.trx" --verbosity minimal
+    - $ErrorActionPreference = "SilentlyContinue"
+    - dotnet test Routing.sln --logger "trx;LogFileName=TestResults.trx" --verbosity minimal; if ($LASTEXITCODE -ne 0) { $LASTEXITCODE = 0 }
     - C:\Users\erlendd\.dotnet\tools\trx2junit.exe Routing.Tests/TestResults/TestResults.trx
     - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" C:\Code\_gitlab-runner\builds\bvWzJah8\0\energycalculations\routing\RoadNetworkRouting.Tests\TestResults\TestResults.trx'
     - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" RoutingApi.Tests/TestResults/TestResults.trx'
@@ -30,3 +30,9 @@ tests:
         - 'Routing.Tests/TestResults/TestResults.xml'
         - 'C:\Code\_gitlab-runner\builds\bvWzJah8\0\energycalculations\routing\RoadNetworkRouting.Tests\TestResults\TestResults.xml'
         - 'RoutingApi.Tests/TestResults/TestResults.xml'
+
+tests:
+  stage: test
+  script:
+    - $ErrorActionPreference = "Stop"
+    - dotnet test Routing.sln --logger "trx;LogFileName=TestResults.trx" --verbosity minimal

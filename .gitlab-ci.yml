@@ -19,9 +19,9 @@ tests:
   stage: test
   script:
     - $ErrorActionPreference = "Stop"
-    - dotnet test Routing.sln
-    - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" TestResults/*.trx'
+    - dotnet test Routing.sln --logger "trx;LogFileName=TestResults.trx"
+    - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" Routing/TestResults/*.trx'
   artifacts:
     when: always
     reports:
-      junit: 'TestResults/*.xml'
+      junit: 'Routing/TestResults/*.xml'

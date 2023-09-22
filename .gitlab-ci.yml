@@ -19,7 +19,7 @@ tests:
   stage: test
   script:
     - $ErrorActionPreference = "Stop"
-    - dotnet test Routing.sln --logger "trx;LogFileName=TestResults.trx"
+    - dotnet test Routing.sln --logger "trx;LogFileName=TestResults.trx" --verbosity minimal
     - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" Routing.Tests/TestResults/*.trx'
     - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" RoadNetworkRouting.Tests/TestResults/*.trx'
     - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" RoutingApi.Tests/TestResults/*.trx'

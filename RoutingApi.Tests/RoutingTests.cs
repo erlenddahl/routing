@@ -40,9 +40,9 @@ namespace RoutingApi.Tests
                 Response = new RoutingResponseDefinition()
                 {
                     LinkReferences = true,
-                    Coordinates = true,
-                    OutputSrid = 4326
+                    Coordinates = true
                 },
+                OutputSrid = 4326,
                 Waypoints = new[]
                 {
                     new Point3D(10.415004587765168, 63.41784215066588),
@@ -70,9 +70,9 @@ namespace RoutingApi.Tests
                 Response = new RoutingResponseDefinition()
                 {
                     LinkReferences = true,
-                    Coordinates = true,
-                    OutputSrid = 4326
+                    Coordinates = true
                 },
+                OutputSrid = 4326,
                 RoutingConfig = new RoutingConfig()
                 {
                     DifferentGroupHandling = GroupHandling.BestGroup
@@ -104,9 +104,9 @@ namespace RoutingApi.Tests
                 Response = new RoutingResponseDefinition()
                 {
                     LinkReferences = true,
-                    Coordinates = true,
-                    OutputSrid = 4326
+                    Coordinates = true
                 },
+                OutputSrid = 4326,
                 Waypoints = new[]
                 {
                     new Point3D(10.412028, 63.413602),
@@ -135,9 +135,9 @@ namespace RoutingApi.Tests
                 {
                     LinkReferences = true,
                     Coordinates = true,
-                    Links = true,
-                    OutputSrid = 25833
+                    Links = true
                 },
+                OutputSrid = 25833,
                 Waypoints = Enumerable.Range(0, 20)
                     .Select(p => new[]
                     {
@@ -170,9 +170,9 @@ namespace RoutingApi.Tests
                 SourceSrid = 4326,
                 Response = new RoutingResponseDefinition()
                 {
-                    OutputSrid = 4326,
                     RequestedWaypoints = true
                 },
+                OutputSrid = 4326,
                 Waypoints = new []
                 {
                     new[]

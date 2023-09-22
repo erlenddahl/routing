@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using EnergyModule.Geometry.SimpleStructures;
 using Extensions.Utilities;
+using Extensions.Utilities.Caching;
 using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Network;
@@ -88,6 +89,8 @@ namespace RoadNetworkRouting.Service
                     LinkReferenceIndex = rs.LinkReferences.Count
                 });
 
+                rs.Timings.Time("routing.service");
+
                 var path = _router.Search(fromCoord, toCoord, config, rs.Timings);
 
                 if (!path.Success) throw new Exception("Couldn't find a route between these points.");
@@ -112,6 +115,7 @@ namespace RoadNetworkRouting.Service
             }
 
             logger.Debug("Finished all");
+            rs.Timings.Time("routing.service");
 
             return rs;
         }

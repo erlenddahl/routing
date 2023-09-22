@@ -24,7 +24,7 @@
       <HintPath>..\Lib\EnergyModule.dll</HintPath>
     </Reference>
     <Reference Include="Extensions">
-      <HintPath>..\..\Lib\Extensions.dll</HintPath>
+      <HintPath>..\Lib\Extensions.dll</HintPath>
     </Reference>
   </ItemGroup>
 

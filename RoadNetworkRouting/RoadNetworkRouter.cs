@@ -18,6 +18,7 @@ using EnergyModule.Network;
 using System.Drawing;
 using EnergyModule.Exceptions;
 using Extensions.Utilities;
+using Extensions.Utilities.Caching;
 using NLog.Targets;
 
 namespace RoadNetworkRouting
@@ -469,9 +470,12 @@ namespace RoadNetworkRouting
             _nearbyLinksLookup = NearbyBoundsCache<RoadLink>.FromBounds(Links.Values, p => p.Bounds, _nearbyLinksRadius);
         }
 
+        private static readonly LruCache<Point3D, (RoadLink Link, NearestPointInfo Nearest)> _nearestCache = new(10_000);
         public (RoadLink Link, NearestPointInfo Nearest) GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null)
         {
-            (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
+            if (_nearestCache.TryGetValue(point, out var nearest)) return nearest;
+
+            nearest = (null, null);
             var d = (long)config.InitialSearchRadius;
             CreateNearbyLinkLookup();
 
@@ -487,6 +491,8 @@ namespace RoadNetworkRouting
 
                 d *= config.SearchRadiusIncrement;
             }
+
+            _nearestCache.Add(point, nearest);
 
             return nearest;
         }

@@ -1,0 +1,27 @@
+stages:
+  - restore
+  - build
+  - test
+
+restore:
+  stage: restore
+  script:
+    - $ErrorActionPreference = "Stop"
+    - dotnet restore Routing.sln --source "https://api.nuget.org/v3/index.json"
+
+build:
+  stage: build
+  script:
+    - $ErrorActionPreference = "Stop"
+    - dotnet build Routing.sln
+
+tests:
+  stage: test
+  script:
+    - $ErrorActionPreference = "Stop"
+    - dotnet test Routing.sln
+    - '& "C:\Users\erlendd\.dotnet\tools\trx2junit.exe" TestResults/*.trx'
+  artifacts:
+    when: always
+    reports:
+      junit: 'TestResults/*.xml'

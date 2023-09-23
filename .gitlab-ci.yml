@@ -2,6 +2,7 @@ stages:
   - restore
   - build
   - test
+  - deploy
 
 restore:
   stage: restore
@@ -39,3 +40,14 @@ tests:
   script:
     - $ErrorActionPreference = "Stop"
     - dotnet test Routing.sln --logger "trx;LogFileName=TestResults.trx" --verbosity minimal
+
+pages:
+  stage: deploy
+  script:
+    - New-Item -ItemType Directory -Path public
+    - Copy-Item tests.svg public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - master

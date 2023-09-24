@@ -24,6 +24,9 @@ tests:
     - C:\Users\erlendd\.dotnet\tools\trx2junit.exe RoadNetworkRouting.Tests/TestResults/TestResults.trx
     - C:\Users\erlendd\.dotnet\tools\trx2junit.exe RoutingApi.Tests/TestResults/TestResults.trx
     - Get-ChildItem -Path './**/TestResults/*.trx' -Recurse | C:\Code\Gitlab\badge-tests.ps1 -labelValue "routing" -fileValue "tests.svg"
+    - Get-ChildItem -Path './Routing.Tests/TestResults/*.trx' -Recurse | C:\Code\Gitlab\badge-tests.ps1 -label "routing"
+    - Get-ChildItem -Path './RoadNetworkRouting.Tests/TestResults/*.trx' -Recurse | C:\Code\Gitlab\badge-tests.ps1 -label "road-network-routing"
+    - Get-ChildItem -Path './RoutingApi.Tests/TestResults/*.trx' -Recurse | C:\Code\Gitlab\badge-tests.ps1 -label "routing-api"
   artifacts:
     when: always
     paths:

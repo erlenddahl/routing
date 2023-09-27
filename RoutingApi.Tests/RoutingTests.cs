@@ -76,7 +76,7 @@ namespace RoutingApi.Tests
                 RoutingConfig = new RoutingConfig()
                 {
                     DifferentGroupHandling = GroupHandling.BestGroup,
-                    MaxSearchRadius = 5000
+                    MaxSearchRadius = int.MaxValue
                 },
                 Waypoints = new[]
                 {

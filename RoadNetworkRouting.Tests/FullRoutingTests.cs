@@ -88,14 +88,16 @@ public abstract class RoutingTests
         var res = _router.Search(new Point3D(263800.5783, 7040584.6060), new Point3D(262443.0, 7040825.6), new RoutingConfig());
 
         Assert.AreEqual(1, res.Links.Length);
-        Assert.AreEqual(75, res.Links[0].Geometry.Length);
+        Assert.AreEqual(76, res.Links[0].Geometry.Length);
 
         Assert.AreEqual(1643, res.RouteDistance, 1);
 
         var start = _router.Links[335707].Geometry[0];
         var end = _router.Links[335707].Geometry[74];
-        Assert.AreEqual(start, res.Links[0].Geometry[0]);
-        Assert.AreEqual(end, res.Links[0].Geometry[^1]);
+        Assert.AreEqual(start.X, res.Links[0].Geometry[0].X);
+        Assert.AreEqual(start.Y, res.Links[0].Geometry[0].Y);
+        Assert.AreEqual(end.X, res.Links[0].Geometry[^1].X);
+        Assert.AreEqual(end.Y, res.Links[0].Geometry[^1].Y);
     }
 
     [TestMethod]

@@ -470,12 +470,9 @@ namespace RoadNetworkRouting
             _nearbyLinksLookup = NearbyBoundsCache<RoadLink>.FromBounds(Links.Values, p => p.Bounds, _nearbyLinksRadius);
         }
 
-        private static readonly LruCache<Point3D, (RoadLink Link, NearestPointInfo Nearest)> _nearestCache = new(10_000);
         public (RoadLink Link, NearestPointInfo Nearest) GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null)
         {
-            if (_nearestCache.TryGetValue(point, out var nearest)) return nearest;
-
-            nearest = (null, null);
+            (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
             var d = (long)config.InitialSearchRadius;
             CreateNearbyLinkLookup();
 
@@ -490,12 +487,6 @@ namespace RoadNetworkRouting
                     .MinBy(p => p.Nearest.DistanceFromLine);
 
                 d *= config.SearchRadiusIncrement;
-            }
-
-            lock (_nearestCache)
-            {
-                if (!_nearestCache.ContainsKey(point))
-                    _nearestCache.Add(point, nearest);
             }
 
             return nearest;

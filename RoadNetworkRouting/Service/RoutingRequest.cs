@@ -23,6 +23,7 @@ public class SingleRoutingRequest : RoutingRequest
         {
             RoutingConfig = source.RoutingConfig,
             SourceSrid = source.SourceSrid,
+            OutputSrid = source.OutputSrid,
             Response = source.Response,
             Waypoints = waypoints
         };

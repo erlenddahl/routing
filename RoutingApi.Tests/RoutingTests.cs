@@ -75,7 +75,8 @@ namespace RoutingApi.Tests
                 OutputSrid = 4326,
                 RoutingConfig = new RoutingConfig()
                 {
-                    DifferentGroupHandling = GroupHandling.BestGroup
+                    DifferentGroupHandling = GroupHandling.BestGroup,
+                    MaxSearchRadius = 5000
                 },
                 Waypoints = new[]
                 {
@@ -168,11 +169,11 @@ namespace RoutingApi.Tests
             var responses = new MultiRoutingRequest()
             {
                 SourceSrid = 4326,
+                OutputSrid = 4326,
                 Response = new RoutingResponseDefinition()
                 {
                     RequestedWaypoints = true
                 },
-                OutputSrid = 4326,
                 Waypoints = new []
                 {
                     new[]

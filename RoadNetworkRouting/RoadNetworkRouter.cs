@@ -492,7 +492,11 @@ namespace RoadNetworkRouting
                 d *= config.SearchRadiusIncrement;
             }
 
-            _nearestCache.Add(point, nearest);
+            lock (_nearestCache)
+            {
+                if (!_nearestCache.ContainsKey(point))
+                    _nearestCache.Add(point, nearest);
+            }
 
             return nearest;
         }
@@ -576,6 +580,8 @@ namespace RoadNetworkRouting
 
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
+
+            if (route.Items == null) throw new Exception("Unable to find a route between these coordinates.");
 
             timer.Time("routing.routing");
 

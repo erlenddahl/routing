@@ -22,6 +22,21 @@ public class RoutingTests_FullNetwork : RoutingTests
         var skeletonConfig = new SkeletonConfig() { LinkDataDirectory = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\geometries" };
         _router = RoadNetworkRouter.LoadFrom(networkFile, skeletonConfig: skeletonConfig);
     }
+
+    [TestMethod]
+    public void LastLinkIsEntirelyRemoved()
+    {
+        var waypoints = new[]
+        {
+            new Point3D(271047.81, 7039885.66),
+            new Point3D(269319.20, 7039903.40)
+        };
+
+        var res = _router.Search(waypoints[0], waypoints[1]);
+
+        // Originally, it returns 152 links where the final link has an empty Geometry, but this should be cut.
+        Assert.AreEqual(151, res.Links.Length);
+    }
 }
 
 public abstract class RoutingTests

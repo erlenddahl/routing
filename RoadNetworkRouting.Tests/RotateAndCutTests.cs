@@ -2,6 +2,7 @@ using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
 using RoadNetworkRouting.Network;
+using RoadNetworkRouting.Service;
 
 namespace RoadNetworkRouting.Tests;
 

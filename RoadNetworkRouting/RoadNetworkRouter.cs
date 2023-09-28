@@ -599,6 +599,12 @@ namespace RoadNetworkRouting
             // Store which nodeId the next link should start with.
             var nodeId = FindFirstNodeId(links, fromPoint);
             RotateAndCut(links, nodeId, source.Nearest.Distance, target.Nearest.Distance);
+
+            // If the first or last links are entirely cut, remove them from the link lists.
+            if (links[0].Geometry.Length == 0 || links[^1].Geometry.Length == 0)
+            {
+                links = links.Where(p => p.Geometry.Length > 0).ToArray();
+            }
             
             timer.Time("routing.cut");
 

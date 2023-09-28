@@ -666,11 +666,11 @@ namespace RoadNetworkRouting
                     // For example, if we cut 10 meters of a segment that was 40 meters, and the FromRelativeLength was 0.3 and the
                     // ToRelativeLength was 0.7, that means we had a full link of a 100 meters, resulting in a new FromRelativeLength
                     // that should be 0.3 + 10 / (40 / 0.4) = 0.3 + 10 / 100 = 0.3 + 0.1 = 0.4.
-                    if (cutStart > 0)
+                    if (i == 0 && cutStart > 0)
                         links[i].FromRelativeLength += cutStart / (originalLength / originalRelativeLength);
 
                     // ... and/or at the end
-                    if (cutEnd > 0)
+                    if (i == links.Length - 1 && cutEnd > 0)
                         links[i].ToRelativeLength -= cutEnd / (originalLength / originalRelativeLength);
 
                     if (swapNodes)

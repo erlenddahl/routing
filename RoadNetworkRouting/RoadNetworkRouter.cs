@@ -625,7 +625,7 @@ namespace RoadNetworkRouting
             for (var i = 0; i < links.Length; i++)
             {
                 // Store the links geometry, and a flag for if it has been modified or not.
-                var (geometry, modified, swapNodes) = (links[i].Geometry, false, false);
+                var (geometry, modified, swapNodes, originalLength) = (links[i].Geometry, false, false, links[i].Length);
 
                 // If the next link does not start with this nodeId, turn it around
                 // (because it presumably ends with this nodeId -- if not, we're out of luck).
@@ -658,8 +658,25 @@ namespace RoadNetworkRouting
                 if (modified)
                 {
                     links[i] = links[i].Clone(geometry);
-                    if(swapNodes)
+
+                    // Update the FromRelLen and ToRelLen. Calculate how large part of the link this part represented before.
+                    var originalRelativeLength = links[i].ToRelativeLength - links[i].FromRelativeLength;
+
+                    // Calculate how large ratio was cut at the start
+                    // For example, if we cut 10 meters of a segment that was 40 meters, and the FromRelativeLength was 0.3 and the
+                    // ToRelativeLength was 0.7, that means we had a full link of a 100 meters, resulting in a new FromRelativeLength
+                    // that should be 0.3 + 10 / (40 / 0.4) = 0.3 + 10 / 100 = 0.3 + 0.1 = 0.4.
+                    if (cutStart > 0)
+                        links[i].FromRelativeLength += cutStart / (originalLength / originalRelativeLength);
+
+                    // ... and/or at the end
+                    if (cutEnd > 0)
+                        links[i].ToRelativeLength -= cutEnd / (originalLength / originalRelativeLength);
+
+                    if (swapNodes)
+                    {
                         (links[i].FromNodeId, links[i].ToNodeId) = (links[i].ToNodeId, links[i].FromNodeId);
+                    }
                 }
 
                 // Now save the end node of this link as the node the next link should 

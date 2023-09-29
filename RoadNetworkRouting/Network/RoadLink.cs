@@ -16,12 +16,44 @@ public class RoadLink : ILinkPartGenerator
     private LinkReference _reference;
     private CachedLineTools _pointCache;
     private double? _length;
+    private double _fromRelativeLength;
+    private double _toRelativeLength;
+    private RoadLinkDirection _direction;
+    private int _linkId;
 
     public LinkReference Reference => _reference ??= new LinkReference(LinkId.ToString(), FromRelativeLength, ToRelativeLength, Direction);
     public int RoadClass { get; set; }
-    public int LinkId { get; set; }
-    public double FromRelativeLength { get; set; }
-    public double ToRelativeLength { get; set; }
+
+    public int LinkId
+    {
+        get => _linkId;
+        set
+        {
+            _linkId = value;
+            _reference = null;
+        }
+    }
+
+    public double FromRelativeLength
+    {
+        get => _fromRelativeLength;
+        set
+        {
+            _fromRelativeLength = value;
+            _reference = null;
+        }
+    }
+
+    public double ToRelativeLength
+    {
+        get => _toRelativeLength;
+        set
+        {
+            _toRelativeLength = value;
+            _reference = null;
+        }
+    }
+
     public int FromNodeId { get; set; }
     public int ToNodeId { get; set; }
     public short RoadNumber { get; set; }
@@ -32,7 +64,16 @@ public class RoadLink : ILinkPartGenerator
     public string LaneCode { get; set; } = "";
     public double Cost { get; set; }
     public double ReverseCost { get; set; }
-    public RoadLinkDirection Direction { get; set; }
+
+    public RoadLinkDirection Direction
+
+    {
+        get => _direction;
+        set {
+            _direction = value;
+            _reference = null;
+        }
+    }
 
     public BoundingBox2D Bounds { get; set; }
 

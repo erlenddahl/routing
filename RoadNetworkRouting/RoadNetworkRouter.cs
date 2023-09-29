@@ -707,7 +707,9 @@ namespace RoadNetworkRouting
             {
                 if (_linkReferenceLookup == null)
                 {
-                    _linkReferenceLookup = Links.ToDictionary(k => k.Value.Reference.ToShortRepresentation(), v => v.Value);
+                    _linkReferenceLookup = Links
+                        .Select(p => EnsureLinkDataLoaded(p.Value))
+                        .ToDictionary(k => k.Reference.ToShortRepresentation(), v => v);
                 }
             }
 

@@ -1,4 +1,6 @@
-﻿namespace RoadNetworkRouting.Network
+﻿using RoadNetworkRouting.GeoJson;
+
+namespace RoadNetworkRouting.Network
 {
     public class Node
     {
@@ -14,6 +16,16 @@
             Y = y;
             Id = id;
             Edges = 1;
+        }
+
+        public GeoJsonFeature ToGeoJsonFeature()
+        {
+            return GeoJsonFeature.Point(X, Y, 32633, new
+            {
+                Id,
+                Edges,
+                VertexGroup
+            });
         }
     }
 }

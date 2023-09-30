@@ -3,10 +3,12 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
 using EnergyModule.Road;
+using RoadNetworkRouting.GeoJson;
 using RoadNetworkRouting.Geometry;
 
 namespace RoadNetworkRouting.Network;
@@ -300,6 +302,25 @@ public class RoadLink : ILinkPartGenerator
             Cost = " + Cost.ToString(CultureInfo.InvariantCulture) + @",
             ReverseCost = " + ReverseCost.ToString(CultureInfo.InvariantCulture) + @"
         };";
+    }
+
+    public GeoJsonFeature ToGeoJsonFeature()
+    {
+        return GeoJsonFeature.LineString(Geometry, 32633, new
+        {
+            RoadClass,
+            Length,
+            Cost,
+            ReverseCost,
+            Direction,
+            FromNodeId,
+            ToNodeId,
+            FromRelativeLength,
+            ToRelativeLength,
+            LinkId,
+            Reference.Id,
+            NetworkGroup
+        });
     }
 
     private string ToCsharp(Point3D p)

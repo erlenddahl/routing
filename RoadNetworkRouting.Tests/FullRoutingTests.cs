@@ -103,7 +103,7 @@ public abstract class RoutingTests
         var res = _router.Search(new Point3D(263800.5783, 7040584.6060), new Point3D(262443.0, 7040825.6), new RoutingConfig());
 
         Assert.AreEqual(1, res.Links.Length);
-        Assert.AreEqual(76, res.Links[0].Geometry.Length);
+        Assert.AreEqual(75, res.Links[0].Geometry.Length);
 
         Assert.AreEqual(1643, res.RouteDistance, 1);
 

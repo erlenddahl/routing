@@ -20,6 +20,7 @@ using EnergyModule.Exceptions;
 using Extensions.Utilities;
 using Extensions.Utilities.Caching;
 using NLog.Targets;
+using RoadNetworkRouting.GeoJson;
 
 namespace RoadNetworkRouting
 {
@@ -79,24 +80,29 @@ namespace RoadNetworkRouting
 
         public Dictionary<int, Node> GenerateVertices()
         {
+            return GenerateVertices(Links.Values, p => EnsureLinkDataLoaded(p));
+        }
+
+        private static Dictionary<int, Node> GenerateVertices(IEnumerable<RoadLink> links, Func<RoadLink, RoadLink> ensureLinkDataLoaded)
+        {
             var vertices = new Dictionary<int, Node>();
-            foreach (var link in Links)
+            foreach (var link in links)
             {
-                EnsureLinkDataLoaded(link.Value);
-                if (vertices.TryGetValue(link.Value.FromNodeId, out var node))
+                ensureLinkDataLoaded(link);
+                if (vertices.TryGetValue(link.FromNodeId, out var node))
                     node.Edges++;
                 else
                 {
-                    var point = link.Value.Geometry.First();
-                    vertices.Add(link.Value.FromNodeId, new Node(point.X, point.Y, link.Value.FromNodeId));
+                    var point = link.Geometry.First();
+                    vertices.Add(link.FromNodeId, new Node(point.X, point.Y, link.FromNodeId));
                 }
 
-                if (vertices.TryGetValue(link.Value.ToNodeId, out node))
+                if (vertices.TryGetValue(link.ToNodeId, out node))
                     node.Edges++;
                 else
                 {
-                    var point = link.Value.Geometry.Last();
-                    vertices.Add(link.Value.ToNodeId, new Node(point.X, point.Y, link.Value.ToNodeId));
+                    var point = link.Geometry.Last();
+                    vertices.Add(link.ToNodeId, new Node(point.X, point.Y, link.ToNodeId));
                 }
             }
 
@@ -565,6 +571,7 @@ namespace RoadNetworkRouting
 
             // Configure the overloader
             sourceId = overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
+
             targetId = overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
 
             if (sourceId == targetId) throw new InvalidRouteException("Source and target ids are identical. Is something wrong with the search coordinates?");
@@ -572,12 +579,12 @@ namespace RoadNetworkRouting
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
 
-            if (route.Items == null) throw new Exception("Unable to find a route between these coordinates.");
+            if (route.Edges == null) throw new Exception("Unable to find a route between these coordinates.");
 
             timer.Time("routing.routing");
 
             // Extract the road links (if there are any)
-            var links = route.Items?.Select(p => EnsureLinkDataLoaded(Links[p], timer)).ToArray() ?? Array.Empty<RoadLink>();
+            var links = route.Edges?.Select(p => EnsureLinkDataLoaded(Links[p], timer)).ToArray() ?? Array.Empty<RoadLink>();
 
             // In cases where the routing result is a single link, it will be listed twice because of the
             // GraphOverloader's fake edges. Use only one of them in those cases.
@@ -598,12 +605,19 @@ namespace RoadNetworkRouting
             // and reverse the geometry of any links that are FT/TF when they should be TF/FT.
             // Store which nodeId the next link should start with.
             var nodeId = FindFirstNodeId(links, route.Vertices, fromPoint, toPoint);
-            RotateAndCut(links, nodeId, source.Nearest.Distance, target.Nearest.Distance);
+
+            var distanceAlongFirst = source.Nearest.Distance;
+            if (source.Link.LinkId != links[0].LinkId) distanceAlongFirst = 0;
+            var distanceAlongLast = target.Nearest.Distance;
+            if (target.Link.LinkId != links[^1].LinkId) distanceAlongLast = 0;
+
+            RotateAndCut(links, nodeId, distanceAlongFirst, distanceAlongLast);
 
             // If the first or last links are entirely cut, remove them from the link lists.
             if (links[0].Geometry.Length == 0 || links[^1].Geometry.Length == 0)
             {
                 links = links.Where(p => p.Geometry.Length > 0).ToArray();
+                if (!links.Any()) throw new Exception("Unable to find a route between these coordinates.");
             }
             
             timer.Time("routing.cut");
@@ -643,13 +657,13 @@ namespace RoadNetworkRouting
                 // the search point/start point is inside the link).
                 if (i == 0 && cutStart > 0)
                 {
-                    geometry = LineTools.CutStart(geometry, cutStart);
+                    geometry = LineTools.CutStart(geometry, cutStart, 0.0000001);
                     modified = true;
                 }
 
                 if (i == links.Length - 1 && cutEnd > 0)
                 {
-                    geometry = LineTools.CutEnd(geometry, cutEnd);
+                    geometry = LineTools.CutEnd(geometry, cutEnd, 0.0000001);
                     modified = true;
                 }
 

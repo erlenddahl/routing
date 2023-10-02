@@ -15,7 +15,7 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(3, path.Target.Vertex.Id);
 
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Items);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges);
         }
 
 
@@ -93,8 +93,8 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Items));
-            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Items);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
+            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges);
         }
 
 
@@ -174,8 +174,8 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Items));
-            CollectionAssert.AreEqual(new[] { 1000, 1002, 1004, 1006, 1007 }, path.Items);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
+            CollectionAssert.AreEqual(new[] { 1000, 1002, 1004, 1006, 1007 }, path.Edges);
         }
 
 
@@ -239,8 +239,8 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Items));
-            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Items);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
+            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges);
         }
 
 
@@ -305,8 +305,8 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Items));
-            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Items);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
+            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges);
         }
 
 
@@ -372,8 +372,8 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Items));
-            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Items);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
+            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges);
         }
 
 
@@ -437,8 +437,8 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Items));
-            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Items);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
+            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges);
         }
 
 
@@ -505,8 +505,8 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Items));
-            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Items);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
+            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges);
         }
 
         [TestMethod]
@@ -546,8 +546,8 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(3, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Items));
-            CollectionAssert.AreEqual(new[] { 1000, 1001, 1002 }, path.Items);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
+            CollectionAssert.AreEqual(new[] { 1000, 1001, 1002 }, path.Edges);
         }
     }
 }

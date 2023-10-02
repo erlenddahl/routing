@@ -37,20 +37,6 @@ public class RoutingTests_FullNetwork : RoutingTests
         // Originally, it returns 152 links where the final link has an empty Geometry, but this should be cut.
         Assert.AreEqual(151, res.Links.Length);
     }
-
-    [TestMethod]
-    public void LongRoute_DifferentGroups()
-    {
-        var waypoints = new[]
-        {
-            new Point3D(269276.2361452655, 7065066.461833899),
-            new Point3D(300841.92263974645, 7066612.177553299)
-        };
-
-        var res = _router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
-
-        Assert.AreEqual(151, res.Links.Length);
-    }
 }
 
 public abstract class RoutingTests

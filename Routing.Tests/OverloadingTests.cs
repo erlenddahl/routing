@@ -20,7 +20,7 @@ namespace Routing.Tests
             Assert.AreEqual(-1, path.Source.Vertex.Id);
             Assert.AreEqual(3, path.Target.Vertex.Id);
 
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Items);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges);
         }
 
         [TestMethod]
@@ -37,7 +37,7 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(-1, path.Target.Vertex.Id);
 
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Items);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges);
         }
 
         [TestMethod]
@@ -55,7 +55,7 @@ namespace Routing.Tests
             Assert.AreEqual(-1, path.Source.Vertex.Id);
             Assert.AreEqual(-2, path.Target.Vertex.Id);
 
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Items);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges);
         }
         [TestMethod]
         public void SourceOverloading_NegativeFactorThrows()

@@ -7,7 +7,8 @@ namespace Routing
     {
         public VertexData Source { get; }
         public VertexData Target { get; }
-        public int[] Items { get; set; }
+        public int[] Edges { get; set; }
+        public int[] Vertices { get; set; }
 
         public DijkstraResult InternalData { get; set; }
 
@@ -27,11 +28,21 @@ namespace Routing
             if (Target == null) return;
 
             var vertex = dr.Target;
-            Items = new int[vertex.VertexCount];
-            var ix = Items.Length - 1;
+            Edges = new int[vertex.VertexCount];
+            var ix = Edges.Length - 1;
             while (vertex?.PreviousEdge != null)
             {
-                Items[ix--] = vertex.PreviousEdge.DataItem.EdgeId;
+                Edges[ix--] = vertex.PreviousEdge.DataItem.EdgeId;
+                vertex = vertex.PreviousVertex;
+            }
+
+            vertex = dr.Target;
+            Vertices = new int[vertex.VertexCount + 1];
+            ix = Vertices.Length - 2;
+            Vertices[^1] = vertex.Vertex.Id;
+            while (vertex?.PreviousVertex != null)
+            {
+                Vertices[ix--] = vertex.PreviousVertex.Vertex.Id;
                 vertex = vertex.PreviousVertex;
             }
         }

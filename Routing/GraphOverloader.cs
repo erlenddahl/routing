@@ -109,9 +109,9 @@ namespace Routing
             if (_built) throw new Exception("This graph overloader has already been built, and cannot be modified.");
             if (costFactor < 0 || costFactor > 1) throw new Exception($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
 
-            if (costFactor == 0)
+            if (costFactor < 0.00001)
                 return toVertexA;
-            if(Math.Abs(costFactor - 1) < 0.1)
+            if(Math.Abs(costFactor - 1) < 0.00001)
                 return toVertexB;
 
             _sourceOverloads.Add(id, new OverloadVertex()
@@ -142,9 +142,9 @@ namespace Routing
             if (_built) throw new Exception("This graph overloader has already been built, and cannot be modified.");
             if (costFactor < 0 || costFactor > 1) throw new Exception($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
 
-            if (costFactor == 0)
+            if (costFactor < 0.00001)
                 return fromVertexA;
-            if (Math.Abs(costFactor - 1) < 0.1)
+            if (Math.Abs(costFactor - 1) < 0.00001)
                 return fromVertexB;
 
             _targetOverloads.Add(id, new OverloadVertex()

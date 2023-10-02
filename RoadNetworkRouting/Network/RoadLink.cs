@@ -300,6 +300,7 @@ public class RoadLink : ILinkPartGenerator
             Geometry = new[]{" + string.Join(", ", Geometry.Select(ToCsharp)) + @"},
             LaneCode = """ + LaneCode + @""",
             Cost = " + Cost.ToString(CultureInfo.InvariantCulture) + @",
+            NetworkGroup = " + NetworkGroup + @",
             ReverseCost = " + ReverseCost.ToString(CultureInfo.InvariantCulture) + @"
         };";
     }

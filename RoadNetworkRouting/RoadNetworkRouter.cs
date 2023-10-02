@@ -597,7 +597,7 @@ namespace RoadNetworkRouting
             // Chop the first and last links so that they start and stop at the search points,
             // and reverse the geometry of any links that are FT/TF when they should be TF/FT.
             // Store which nodeId the next link should start with.
-            var nodeId = FindFirstNodeId(links, fromPoint);
+            var nodeId = FindFirstNodeId(links, route.Vertices, fromPoint, toPoint);
             RotateAndCut(links, nodeId, source.Nearest.Distance, target.Nearest.Distance);
 
             // If the first or last links are entirely cut, remove them from the link lists.
@@ -690,15 +690,40 @@ namespace RoadNetworkRouting
         /// that is the first node of the route. 
         /// </summary>
         /// <param name="links"></param>
+        /// <param name="vertexIds"></param>
         /// <param name="fromPoint"></param>
+        /// <param name="toPoint"></param>
         /// <returns></returns>
-        protected static int FindFirstNodeId(RoadLink[] links, Point3D fromPoint)
+        protected static int FindFirstNodeId(RoadLink[] links, int[] vertexIds, Point3D fromPoint, Point3D toPoint)
         {
-            var f = links[0];
-            if (links.Length == 1) return f.Geometry[0].DistanceTo2D(fromPoint) < f.Geometry[^1].DistanceTo2D(fromPoint) ? f.FromNodeId : f.ToNodeId;
-            var s = links[1];
-            if (f.FromNodeId == s.FromNodeId || f.FromNodeId == s.ToNodeId) return f.ToNodeId;
-            return f.FromNodeId;
+            // The list of traversed vertices will normally be something like -999, 1, 2, 3, -998, since the
+            // first and last vertices are overloaded unless the search points are directly on a vertex.
+            
+            // If the first vertex is positive, like for example 1, 2, 3, we can return it immediately.
+            if (vertexIds[0] >= 0) return vertexIds[0];
+
+            // If the second vertex is positive, like for example -999, 1, 2, 3, -999,
+            // we need to make sure the first link is rotated correctly, then return its 
+            // first node.
+            if (vertexIds.Length > 1 && vertexIds[1] >= 0)
+            {
+                // If the link's ToNode (end node) is the second vertex,
+                // the link is rotated correctly. Return its FromNode.
+                if (links[0].ToNodeId == vertexIds[1])
+                    return links[0].FromNodeId;
+
+                // Otherwise, it's rotated the wrong way, and we return
+                // its ToNode.
+                return links[0].ToNodeId;
+            }
+
+            // If the second vertex is also negative, that means we have a search on a single link,
+            // where both nodes are overloaded. In that case, return the node that minimizes the distances
+            // between the nodes and the search points.
+            var distancesThisWay = fromPoint.ManhattanDistanceTo(links[0].Geometry[0]) + toPoint.ManhattanDistanceTo(links[0].Geometry[^1]);
+            var distancesRotated = fromPoint.ManhattanDistanceTo(links[0].Geometry[^1]) + toPoint.ManhattanDistanceTo(links[0].Geometry[0]);
+            if(distancesThisWay < distancesRotated) return links[0].FromNodeId;
+            return links[0].ToNodeId;
         }
 
         public IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<string> linkReferences)

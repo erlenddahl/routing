@@ -62,6 +62,11 @@ namespace RoadNetworkRouting.Service
 
         public static InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config = null)
         {
+            return FromUtm(coordinates.Select(p => new RoutingPoint(p)).ToArray(), config);
+        }
+
+        public static InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config = null)
+        {
             if (_router == null)
                 Initialize();
 
@@ -83,8 +88,8 @@ namespace RoadNetworkRouting.Service
 
                 rs.RequestedWaypoints.Add(new WayPointData()
                 {
-                    FromWaypoint = fromCoord,
-                    ToWaypoint = toCoord,
+                    FromWaypoint = fromCoord.Point,
+                    ToWaypoint = toCoord.Point,
                     CoordinateIndex = rs.Coordinates.Count,
                     LinkReferenceIndex = rs.LinkReferences.Count
                 });
@@ -92,6 +97,8 @@ namespace RoadNetworkRouting.Service
                 rs.Timings.Time("routing.service");
 
                 var path = _router.Search(fromCoord, toCoord, config, rs.Timings);
+                coordinates[i - 1].Update(path.Source);
+                coordinates[i].Update(path.Target);
 
                 if (!path.Success) throw new Exception("Couldn't find a route between these points.");
 
@@ -132,6 +139,31 @@ namespace RoadNetworkRouting.Service
             SkeletonConfig = skeletonConfig;
 
             Initialize();
+        }
+    }
+
+    public class RoutingPoint
+    {
+        public Point3D Point { get; }
+        public RoadLink Link { get; set; }
+        public NearestPointInfo Nearest { get; set; }
+
+        public RoutingPoint(Point3D point)
+        {
+            Point = point;
+        }
+
+        public RoutingPoint(Point3D point, RoadLink roadLink, NearestPointInfo nearest)
+        {
+            Point = point;
+            Link = roadLink;
+            Nearest = nearest;
+        }
+
+        public void Update(RoutingPoint point)
+        {
+            Link = point.Link;
+            Nearest = point.Nearest;
         }
     }
 }

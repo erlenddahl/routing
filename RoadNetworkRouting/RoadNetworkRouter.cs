@@ -21,6 +21,7 @@ using Extensions.Utilities;
 using Extensions.Utilities.Caching;
 using NLog.Targets;
 using RoadNetworkRouting.GeoJson;
+using RoadNetworkRouting.Service;
 
 namespace RoadNetworkRouting
 {
@@ -476,20 +477,20 @@ namespace RoadNetworkRouting
             _nearbyLinksLookup = NearbyBoundsCache<RoadLink>.FromBounds(Links.Values, p => p.Bounds, _nearbyLinksRadius);
         }
 
-        public (RoadLink Link, NearestPointInfo Nearest) GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null)
+        public RoutingPoint GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null)
         {
-            (RoadLink Link, NearestPointInfo Nearest) nearest = (null, null);
+            RoutingPoint nearest = null;
             var d = (long)config.InitialSearchRadius;
             CreateNearbyLinkLookup();
 
-            while (nearest.Link == null)
+            while (nearest == null)
             {
                 if (d > config.MaxSearchRadius) throw new NoLinksFoundException($"Found no links near the search point [{point.To2DString()}], using search radius from {config.InitialSearchRadius} to {config.MaxSearchRadius}. Is there something wrong with the coordinates, coordinate system specifications, or radiuses?");
 
                 nearest = _nearbyLinksLookup.GetNearbyItems(point, (int)d)
                     .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup))
                     .Select(p => EnsureLinkDataLoaded(p))
-                    .Select(p => (Link: p, Nearest: LineTools.FindNearestPoint(p.Geometry, point.X, point.Y)))
+                    .Select(p => new RoutingPoint(point, p, LineTools.FindNearestPoint(p.Geometry, point.X, point.Y)))
                     .MinBy(p => p.Nearest.DistanceFromLine);
 
                 d *= config.SearchRadiusIncrement;
@@ -510,6 +511,14 @@ namespace RoadNetworkRouting
             var source = GetNearestLink(fromPoint, config);
             var target = GetNearestLink(toPoint, config);
 
+            //var bounds = BoundingBox2D.FromPoints(new[] { fromPoint, toPoint }).Extend(5000);
+            //var relevantLinks = Links.Values.Where(p => bounds.Overlaps(p.Bounds)).ToArray();
+            //var relevantNodes = GenerateVertices(relevantLinks, p => EnsureLinkDataLoaded(p)).Select(p => p.Value).ToArray();
+            //GeoJsonCollection.From(relevantLinks.Select(p => p.ToGeoJsonFeature())).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\links.geojson");
+            //GeoJsonCollection.From(relevantNodes.Select(p => p.ToGeoJsonFeature())).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\nodes.geojson");
+            //GeoJsonCollection.From(new []{ fromPoint, toPoint }, 32633).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\search-points.geojson");
+            //GeoJsonCollection.From(new[] { source.Nearest.ToPoint(), target.Nearest.ToPoint()}, 32633).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\entry-points.geojson");
+
             // If the source and target entry points are in different disconnected parts of the road network (for example if one of them is on an island),
             // we can't directly find a route between them.
             if (source.Link.NetworkGroup != target.Link.NetworkGroup)
@@ -524,8 +533,8 @@ namespace RoadNetworkRouting
                 if (config.DifferentGroupHandling == GroupHandling.BestGroup)
                 {
                     // Find the alternative entry/exit points in each of the two network groups.
-                    var alternativeSource = GetNearestLink(fromPoint, config, target.Link.NetworkGroup);
-                    var alternativeTarget = GetNearestLink(toPoint, config, source.Link.NetworkGroup);
+                    var alternativeSource = GetNearestLink(source.Point, config, target.Link.NetworkGroup);
+                    var alternativeTarget = GetNearestLink(target.Point, config, source.Link.NetworkGroup);
 
                     // Update either the source or the target, depending on which gives the smallest distance from the entry/exit points to the source/target coordinates.
                     if (source.Nearest.DistanceFromLine + alternativeTarget.Nearest.DistanceFromLine < alternativeSource.Nearest.DistanceFromLine + target.Nearest.DistanceFromLine)
@@ -543,8 +552,22 @@ namespace RoadNetworkRouting
                 }
             }
 
+            //GeoJsonCollection.From(new[] { source.Nearest.ToPoint(), target.Nearest.ToPoint() }, 32633).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\entry-points-adjusted.geojson");
+
             timer.Time("routing.entry");
 
+            return Search(source, target, timer);
+        }
+
+        public RoadNetworkRoutingResult Search(RoutingPoint fromPoint, RoutingPoint toPoint, RoutingConfig config = null, TaskTimer timer = null)
+        {
+            if (fromPoint.Link == null || toPoint.Link == null)
+                return Search(fromPoint.Point, toPoint.Point, config, timer);
+            return Search(fromPoint, toPoint, timer);
+        }
+
+        public RoadNetworkRoutingResult Search(RoutingPoint source, RoutingPoint target, TaskTimer timer = null)
+        {
             // Build a network graph for searching
             var graph = Graph;
 
@@ -592,7 +615,7 @@ namespace RoadNetworkRouting
             {
                 links = links.Take(1).ToArray();
             }
-            
+
             // In cases where the routing is along a single one-way link, we may get weird results. This is a hack for that.
             if (source.Link.LinkId == target.Link.LinkId && (source.Link.Direction == RoadLinkDirection.AlongGeometry && target.Nearest.Distance > source.Nearest.Distance || source.Link.Direction == RoadLinkDirection.AgainstGeometry && target.Nearest.Distance < source.Nearest.Distance))
             {
@@ -604,7 +627,7 @@ namespace RoadNetworkRouting
             // Chop the first and last links so that they start and stop at the search points,
             // and reverse the geometry of any links that are FT/TF when they should be TF/FT.
             // Store which nodeId the next link should start with.
-            var nodeId = FindFirstNodeId(links, route.Vertices, fromPoint, toPoint);
+            var nodeId = FindFirstNodeId(links, route.Vertices, source.Point, target.Point);
 
             var distanceAlongFirst = source.Nearest.Distance;
             if (source.Link.LinkId != links[0].LinkId) distanceAlongFirst = 0;
@@ -619,10 +642,10 @@ namespace RoadNetworkRouting
                 links = links.Where(p => p.Geometry.Length > 0).ToArray();
                 if (!links.Any()) throw new Exception("Unable to find a route between these coordinates.");
             }
-            
+
             timer.Time("routing.cut");
 
-            return new RoadNetworkRoutingResult(route, links, source.Nearest.DistanceFromLine, target.Nearest.DistanceFromLine, timer);
+            return new RoadNetworkRoutingResult(route, links, source, target, timer);
         }
 
         /// <summary>

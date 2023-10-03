@@ -37,6 +37,15 @@ public class RoutingTests_FullNetwork : RoutingTests
         // Originally, it returns 152 links where the final link has an empty Geometry, but this should be cut.
         Assert.AreEqual(151, res.Links.Length);
     }
+
+    [TestMethod]
+    public void Bounds()
+    {
+        Assert.AreEqual(-75594, _router.SearchBounds.Xmin);
+        Assert.AreEqual(1113325, _router.SearchBounds.Xmax);
+        Assert.AreEqual(6451216, _router.SearchBounds.Ymin);
+        Assert.AreEqual(7939422, _router.SearchBounds.Ymax);
+    }
 }
 
 public abstract class RoutingTests
@@ -383,6 +392,14 @@ public abstract class RoutingTests
 [TestClass]
 public class RoutingTests_TinyNetwork : RoutingTests
 {
+    [TestMethod]
+    public void Bounds()
+    {
+        Assert.AreEqual(261082.04, _router.SearchBounds.Xmin, 1);
+        Assert.AreEqual(271259.7, _router.SearchBounds.Xmax, 1);
+        Assert.AreEqual(7040286.4, _router.SearchBounds.Ymin, 1);
+        Assert.AreEqual(7042108.8, _router.SearchBounds.Ymax, 1);
+    }
 
     [TestInitialize]
     public override void Init()

@@ -40,6 +40,8 @@ namespace RoadNetworkRouting
         private NearbyBoundsCache<RoadLink> _nearbyLinksLookup = null;
         private readonly int _nearbyLinksRadius = 5000;
 
+        public BoundingBox2D SearchBounds { get; private set; }
+
         /// <summary>
         /// Network graph that is created the first time this property is accessed, then cached. If changing Links or Vertices, it should be reset.
         /// </summary>
@@ -118,11 +120,13 @@ namespace RoadNetworkRouting
         public RoadNetworkRouter(Dictionary<int, RoadLink> links)
         {
             Links = links;
+            SearchBounds=BoundingBox2D.Empty();
 
             foreach (var link in Links)
             {
                 if (link.Value.Bounds == null)
                     link.Value.Bounds = BoundingBox2D.FromPoints(link.Value.Geometry);
+                SearchBounds.ExtendSelf(link.Value.Bounds);
             }
         }
 
@@ -269,6 +273,8 @@ namespace RoadNetworkRouting
             var linkCount = reader.ReadInt32();
             router.Links = new Dictionary<int, RoadLink>(linkCount);
 
+            router.SearchBounds = BoundingBox2D.Empty();
+
             // If this is a skeleton file, only id and costs are included. The rest must be loaded from individual files later.
             if (formatVersion >= 1000)
             {
@@ -292,6 +298,7 @@ namespace RoadNetworkRouting
                         NetworkGroup = BitConverter.ToInt32(buffer, pos + 40)
                     };
                     router._skeletonConfig.SetSequence(link.LinkId);
+                    router.SearchBounds.ExtendSelf(link.Bounds);
 
                     router.Links.Add(link.LinkId, link);
 
@@ -306,6 +313,7 @@ namespace RoadNetworkRouting
                 {
                     var link = new RoadLink();
                     link.ReadFrom(reader);
+                    router.SearchBounds.ExtendSelf(link.Bounds);
                     router.Links.Add(link.LinkId, link);
                     progress?.Invoke(i, linkCount);
                 }
@@ -501,11 +509,8 @@ namespace RoadNetworkRouting
 
         private bool OutsideBounds(Point3D point)
         {
-            if (point.X < -203771) return true;
-            if (point.Y < 6406745) return true;
-            if (point.X > 1089151) return true;
-            if (point.Y > 8042694) return true;
-            return false;
+            if(SearchBounds == null) return false;
+            return SearchBounds.Contains(point);
         }
 
         public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)

@@ -90,7 +90,7 @@ namespace RoadNetworkRouting.Tests
         {
             var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
 
-            router.Search(new Point3D(-41025, 6868128), new Point3D(-32489, 6859998), new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+            router.Search(new Point3D(-41025, 6868128), new Point3D(-32489, 6859998), new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, MaxSearchRadius = 10_000_000 });
         }
 
         [TestMethod]
@@ -98,7 +98,7 @@ namespace RoadNetworkRouting.Tests
         {
             var router = RoadNetworkRouter.LoadFrom(@"..\..\..\..\Data\network_three_islands.bin");
             
-            router.Search(new Point3D(-41025, 6868128), new Point3D(-23826, 6857736), new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+            router.Search(new Point3D(-41025, 6868128), new Point3D(-23826, 6857736), new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, MaxSearchRadius = 10_000_000 });
         }
     }
 }

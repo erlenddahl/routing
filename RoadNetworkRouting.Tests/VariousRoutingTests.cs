@@ -78,7 +78,7 @@ public class VariousRoutingTests
             new Point3D(300841.92263974645, 7066612.177553299)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, MaxSearchRadius = 10_000_000});
 
         Assert.AreEqual(2, res.Links.Length);
         Assert.AreEqual(457, res.RouteDistance, 1);
@@ -136,7 +136,7 @@ public class VariousRoutingTests
             new Point3D(300841.92263974645, 7066612.177553299)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, MaxSearchRadius = 10_000_000});
 
         Assert.AreEqual(2, res.Links.Length);
         Assert.AreEqual(457, res.RouteDistance, 1);

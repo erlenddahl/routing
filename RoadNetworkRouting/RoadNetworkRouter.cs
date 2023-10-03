@@ -515,7 +515,7 @@ namespace RoadNetworkRouting
 
         public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)
         {
-            if (OutsideBounds(fromPoint) | OutsideBounds(toPoint)) throw new InvalidRouteException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
+            if (OutsideBounds(fromPoint) || OutsideBounds(toPoint)) throw new InvalidRouteException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
             if (Equals(fromPoint, toPoint)) throw new InvalidRouteException("The from and to points sent into the routing function are identical (" + fromPoint + "). Is something wrong with the search coordinates?");
 
             config ??= new RoutingConfig();

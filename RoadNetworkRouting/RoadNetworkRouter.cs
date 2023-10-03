@@ -510,7 +510,7 @@ namespace RoadNetworkRouting
         private bool OutsideBounds(Point3D point)
         {
             if(SearchBounds == null) return false;
-            return SearchBounds.Contains(point);
+            return !SearchBounds.Contains(point.X, point.Y, 5_000);
         }
 
         public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)

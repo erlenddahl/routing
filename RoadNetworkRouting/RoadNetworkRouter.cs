@@ -507,19 +507,20 @@ namespace RoadNetworkRouting
             return nearest;
         }
 
-        private bool OutsideBounds(Point3D point)
+        private bool OutsideBounds(Point3D point, RoutingConfig config)
         {
             if(SearchBounds == null) return false;
-            return !SearchBounds.Contains(point.X, point.Y, 5_000);
+            return !SearchBounds.Contains(point.X, point.Y, config.MaxSearchRadius);
         }
 
         public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)
         {
-            if (OutsideBounds(fromPoint) || OutsideBounds(toPoint)) throw new InvalidRouteException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
             if (Equals(fromPoint, toPoint)) throw new InvalidRouteException("The from and to points sent into the routing function are identical (" + fromPoint + "). Is something wrong with the search coordinates?");
-
+            
             config ??= new RoutingConfig();
             timer ??= new TaskTimer();
+
+            if (OutsideBounds(fromPoint, config) || OutsideBounds(toPoint, config)) throw new InvalidRouteException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
 
             if (config.SearchRadiusIncrement < 1) throw new InvalidDataException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
 

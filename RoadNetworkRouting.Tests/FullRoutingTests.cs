@@ -16,11 +16,8 @@ public class RoutingTests_FullNetwork : RoutingTests
     [TestInitialize]
     public override void Init()
     {
-        //var networkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
-
-        var networkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network_skeleton.bin";
-        var skeletonConfig = new SkeletonConfig() { LinkDataDirectory = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\geometries" };
-        _router = RoadNetworkRouter.LoadFrom(networkFile, skeletonConfig: skeletonConfig);
+        var networkFile = @"..\\..\\..\\..\\Data\\network_troendelag.bin";
+        _router = RoadNetworkRouter.LoadFrom(networkFile);
     }
 
     [TestMethod]
@@ -41,10 +38,12 @@ public class RoutingTests_FullNetwork : RoutingTests
     [TestMethod]
     public void Bounds()
     {
-        Assert.AreEqual(-75594, _router.SearchBounds.Xmin);
-        Assert.AreEqual(1113325, _router.SearchBounds.Xmax);
-        Assert.AreEqual(6451216, _router.SearchBounds.Ymin);
-        Assert.AreEqual(7939422, _router.SearchBounds.Ymax);
+        var troendelag = new BoundingBox2D(253378, 311643, 7022830, 7075589);
+
+        Assert.AreEqual(253378, _router.SearchBounds.Xmin, 1000);
+        Assert.AreEqual(317456, _router.SearchBounds.Xmax, 1000);
+        Assert.AreEqual(7022830, _router.SearchBounds.Ymin, 1000);
+        Assert.AreEqual(7080190, _router.SearchBounds.Ymax, 1000);
     }
 }
 

@@ -11,7 +11,7 @@ public class FindNearestLinkTests
     [TestInitialize]
     public void Init()
     {
-        var networkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
+        var networkFile = @"..\\..\\..\\..\\Data\\network_troendelag.bin";
         _router = RoadNetworkRouter.LoadFrom(networkFile);
     }
 

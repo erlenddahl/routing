@@ -649,6 +649,9 @@ namespace RoadNetworkRouting
             var sourceId = int.MinValue;
             var targetId = int.MinValue + 1;
 
+            EnsureLinkDataLoaded(source.Link);
+            EnsureLinkDataLoaded(target.Link);
+
             // Calculate the cost factor by dividing the distance along the link from start to source point
             // by the total length of the link. This is an estimation of how large part of the total edge cost
             // that should count for the "fake" edges from the links FromNode/ToNode to the fake overloaded

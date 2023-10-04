@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -203,7 +204,7 @@ public class RoadLink : ILinkPartGenerator
         throw new Exception("Unknown road link direction: '" + direction + "' (must be B, FT, TF, or N).");
     }
 
-    public void WriteTo(BinaryWriter writer)
+    public void WriteTo(BinaryWriter writer, Dictionary<string, int> strings)
     {
         writer.Write(LinkId);
 
@@ -220,6 +221,8 @@ public class RoadLink : ILinkPartGenerator
         writer.Write(SpeedLimitReversed);
         writer.Write(Cost);
         writer.Write(ReverseCost);
+        writer.Write(strings[RoadType ?? ""]);
+        writer.Write(strings[LaneCode ?? ""]);
 
         foreach (var p in Geometry)
         {
@@ -227,26 +230,23 @@ public class RoadLink : ILinkPartGenerator
             writer.Write(p.Y);
             writer.Write(p.Z);
         }
-
-        writer.Write(RoadType);
-        writer.Write(LaneCode ?? "");
     }
 
-    public void ReadFrom(BinaryReader reader, bool skipLinkId = false)
+    public void ReadFrom(BinaryReader reader, Dictionary<int, string> strings, bool skipLinkId = false, byte[] buffer = null)
     {
         if (!skipLinkId) LinkId = reader.ReadInt32();
 
         // Fetch the point count, and calculate the length of the rest of this link object, and read it all in at the same time
         var pointCount = reader.ReadInt32();
 
-        var itemSize = 1 + 4 + 8 + 8 + 4 + 4 + 4 + 2 + 2 + 8 + 8 + pointCount * (8 + 8 + 8);
+        var itemSize = CalculateItemSize(pointCount);
 
-        var buffer = new byte[itemSize];
-        reader.Read(buffer, 0, buffer.Length);
+        if (buffer == null)
+        {
+            buffer = new byte[itemSize];
+        }
 
-        // Then read the dynamic strings.
-        RoadType = reader.ReadString();
-        LaneCode = reader.ReadString();
+        reader.Read(buffer, 0, itemSize);
 
         // Read all the normal properties from the already read byte array
 
@@ -262,17 +262,26 @@ public class RoadLink : ILinkPartGenerator
         Cost = BitConverter.ToDouble(buffer, 37);
         ReverseCost = BitConverter.ToDouble(buffer, 45);
 
+        // Then read the dynamic strings.
+        RoadType = strings[BitConverter.ToInt32(buffer, 53)];
+        LaneCode = strings[BitConverter.ToInt32(buffer, 57)];
+
         // Update the position to the end of the normal properties, and read all points
-        var pos = 53;
+        var pos = 61;
         Geometry = new Point3D[pointCount];
+        Bounds = BoundingBox2D.Empty();
         for (var j = 0; j < pointCount; j++)
         {
-            Geometry[j] = new Point3D(BitConverter.ToDouble(buffer, pos), BitConverter.ToDouble(buffer, pos + 8), BitConverter.ToDouble(buffer, pos + 16));
+            var point = new Point3D(BitConverter.ToDouble(buffer, pos), BitConverter.ToDouble(buffer, pos + 8), BitConverter.ToDouble(buffer, pos + 16));
+            Geometry[j] = point;
+            Bounds.ExtendSelf(point);
             pos += 24;
         }
+    }
 
-        // Initialize a polyline from the read points
-        Bounds = BoundingBox2D.FromPoints(Geometry);
+    public static int CalculateItemSize(int pointCount)
+    {
+        return 1 + 4 + 8 + 8 + 4 + 4 + 4 + 2 + 2 + 8 + 8 + 4 + 4 + pointCount * (8 + 8 + 8);
     }
 
     public RoadLink ConvertCoordinates(CoordinateConverter converter)

@@ -71,10 +71,7 @@ namespace RoadNetworkRouting
 
         public static RoadNetworkRouter Build(IEnumerable<RoadLink> links)
         {
-            var router = new RoadNetworkRouter()
-            {
-                Links = links.ToDictionary(k => k.LinkId, v => v)
-            };
+            var router = new RoadNetworkRouter(links);
 
             router.FixedMissingNodeIdCount = RoadNetworkUtilities.FixMissingNodeIds(router);
 
@@ -120,7 +117,7 @@ namespace RoadNetworkRouting
         public RoadNetworkRouter(Dictionary<int, RoadLink> links)
         {
             Links = links;
-            SearchBounds=BoundingBox2D.Empty();
+            SearchBounds = BoundingBox2D.Empty();
 
             foreach (var link in Links)
             {
@@ -266,14 +263,16 @@ namespace RoadNetworkRouting
         {
             using var reader = new BinaryReader(stream);
 
-            var formatVersion = reader.ReadInt32(); // Currently at 2
+            var formatVersion = reader.ReadInt32(); // Currently at 3
 
             var router = new RoadNetworkRouter();
 
+            router.SearchBounds = new BoundingBox2D(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble());
+            var maxPointCount = reader.ReadInt32();
+            _binaryStrings = ReadLookup(reader);
+
             var linkCount = reader.ReadInt32();
             router.Links = new Dictionary<int, RoadLink>(linkCount);
-
-            router.SearchBounds = BoundingBox2D.Empty();
 
             // If this is a skeleton file, only id and costs are included. The rest must be loaded from individual files later.
             if (formatVersion >= 1000)
@@ -298,7 +297,6 @@ namespace RoadNetworkRouting
                         NetworkGroup = BitConverter.ToInt32(buffer, pos + 40)
                     };
                     router._skeletonConfig.SetSequence(link.LinkId);
-                    router.SearchBounds.ExtendSelf(link.Bounds);
 
                     router.Links.Add(link.LinkId, link);
 
@@ -309,11 +307,11 @@ namespace RoadNetworkRouting
             }
             else
             {
+                var buffer = new byte[RoadLink.CalculateItemSize(maxPointCount)];
                 for (var i = 0; i < linkCount; i++)
                 {
                     var link = new RoadLink();
-                    link.ReadFrom(reader);
-                    router.SearchBounds.ExtendSelf(link.Bounds);
+                    link.ReadFrom(reader, _binaryStrings, buffer: buffer);
                     router.Links.Add(link.LinkId, link);
                     progress?.Invoke(i, linkCount);
                 }
@@ -353,13 +351,61 @@ namespace RoadNetworkRouting
                 Directory.CreateDirectory(dir);
 
             using var writer = new BinaryWriter(File.Create(file));
-            writer.Write(2); // Version
+
+            var strings = WriteHeader(writer, 3);
 
             writer.Write(Links.Count);
             foreach (var link in Links.Values)
             {
-                link.WriteTo(writer);
+                link.WriteTo(writer, strings);
             }
+        }
+
+        private Dictionary<string, int> WriteHeader(BinaryWriter writer, int version)
+        {
+            writer.Write(version);
+
+            writer.Write(SearchBounds.Xmin);
+            writer.Write(SearchBounds.Xmax);
+            writer.Write(SearchBounds.Ymin);
+            writer.Write(SearchBounds.Ymax);
+            writer.Write(Links.Max(p => p.Value.Geometry.Length));
+
+            var strings = new HashSet<string>();
+            foreach (var link in Links.Values)
+            {
+                strings.Add(link.RoadType ?? "");
+                strings.Add(link.LaneCode ?? "");
+            }
+
+            var stringLookup = ToLookup(strings);
+
+            WriteLookup(writer, stringLookup);
+
+            return stringLookup.ToDictionary(k => k.Value, v => v.Key);
+        }
+
+        private Dictionary<int, string> ToLookup(HashSet<string> data)
+        {
+            return data.Select((p, i) => (p, i)).ToDictionary(k => k.i, v => v.p);
+        }
+
+        private void WriteLookup(BinaryWriter writer, Dictionary<int, string> data)
+        {
+            writer.Write(data.Count);
+            foreach (var d in data.OrderBy(p => p.Key)) writer.Write(d.Value);
+        }
+
+        private static Dictionary<int, string> ReadLookup(BinaryReader reader)
+        {
+            var count = reader.ReadInt32();
+            var lookup = new Dictionary<int, string>(count);
+            for (var i = 0; i < count; i++)
+            {
+                lookup.Add(i, reader.ReadString());
+            }
+
+            return lookup;
         }
 
         /// <summary>
@@ -382,9 +428,10 @@ namespace RoadNetworkRouting
                 .Select((p, i) => (links:p, ix:i))
                 .ToArray();
 
+            Dictionary<string, int> strings;
             using (var writer = new BinaryWriter(File.Create(file)))
             {
-                writer.Write(1000 + 2); // Version -- the skeleton version starts at 1000.
+                strings = WriteHeader(writer, 1000 + 3); // The skeleton version starts at 1000.
 
                 writer.Write(Links.Count);
 
@@ -412,7 +459,7 @@ namespace RoadNetworkRouting
                 writer.Write(lf.links.Count);
                 foreach (var link in lf.links)
                 {
-                    link.WriteTo(writer);
+                    link.WriteTo(writer, strings);
                 }
             });
         }
@@ -449,6 +496,7 @@ namespace RoadNetworkRouting
         }
 
         private HashSet<string> _loadedFiles = new();
+        private static Dictionary<int, string> _binaryStrings;
 
         private void LoadLinksFromFile(string file)
         {
@@ -472,7 +520,7 @@ namespace RoadNetworkRouting
                     var linkIdToRead = reader.ReadInt32();
 
                     // Overwrite properties on this link with data from the stream
-                    Links[linkIdToRead].ReadFrom(reader, true);
+                    Links[linkIdToRead].ReadFrom(reader, _binaryStrings, true);
                 }
 
                 _loadedFiles.Add(file);

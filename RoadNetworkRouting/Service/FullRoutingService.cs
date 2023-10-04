@@ -22,7 +22,7 @@ namespace RoadNetworkRouting.Service
         }
 
         private static readonly object _lockObject = new();
-        private static RoadNetworkRouter _router;
+        public static RoadNetworkRouter Router { get; private set; }
 
         public static string NetworkFile { get; set; }
         public static SkeletonConfig SkeletonConfig { get; set; }
@@ -36,7 +36,7 @@ namespace RoadNetworkRouting.Service
         {
             lock (_lockObject)
             {
-                if (_router == null)
+                if (Router == null)
                 {
                     logger.Info("Reading road network");
                     logger.Info("NetworkFile: " + NetworkFile);
@@ -44,12 +44,12 @@ namespace RoadNetworkRouting.Service
                     StartedAt = DateTime.Now;
                     Timings = new TaskTimer();
                     
-                    _router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
+                    Router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
 
                     Timings.Time("Loaded network");
-                    _router.Graph = _router.CreateGraph();
+                    Router.Graph = Router.CreateGraph();
                     Timings.Time("Created graph");
-                    _router.CreateNearbyLinkLookup();
+                    Router.CreateNearbyLinkLookup();
                     Timings.Time("Created nearby lookup");
                 }
             }
@@ -67,7 +67,7 @@ namespace RoadNetworkRouting.Service
 
         public static InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config = null)
         {
-            if (_router == null)
+            if (Router == null)
                 Initialize();
 
             var rs = new InternalRoutingResponse()
@@ -96,7 +96,7 @@ namespace RoadNetworkRouting.Service
 
                 rs.Timings.Time("routing.service");
 
-                var path = _router.Search(fromCoord, toCoord, config, rs.Timings);
+                var path = Router.Search(fromCoord, toCoord, config, rs.Timings);
                 coordinates[i - 1].Update(path.Source);
                 coordinates[i].Update(path.Target);
 
@@ -130,7 +130,7 @@ namespace RoadNetworkRouting.Service
         public static IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<string> linkReferences)
         {
             Initialize();
-            return _router.GetLinksFromReferences(linkReferences);
+            return Router.GetLinksFromReferences(linkReferences);
         }
 
         public static void Initialize(string networkFile, SkeletonConfig skeletonConfig)

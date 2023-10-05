@@ -47,7 +47,7 @@ public class RoutingResponse : InternalRoutingResponse
         var r = request.Response ?? new RoutingResponseDefinition() { Coordinates = true };
         var converter = CoordinateConverter.FromUtm33(request.OutputSrid);
 
-        var returnedCoordinates = result.Coordinates.Select(converter.Forward).ToList();
+        var returnedCoordinates = (r.Coordinates || r.CompressedCoordinates) ? result.Coordinates.Select(converter.Forward).ToList() : null;
 
         DistanceM = LineTools.CalculateLength(result.Coordinates);
         SourceSrid = request.SourceSrid;

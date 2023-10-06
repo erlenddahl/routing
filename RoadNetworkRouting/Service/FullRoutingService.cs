@@ -36,23 +36,30 @@ namespace RoadNetworkRouting.Service
         {
             lock (_lockObject)
             {
-                if (Router == null)
-                {
-                    logger.Info("Reading road network");
-                    logger.Info("NetworkFile: " + NetworkFile);
+                if (Router != null) return;
 
-                    StartedAt = DateTime.Now;
-                    Timings = new TaskTimer();
+                logger.Info("Reading road network");
+                logger.Info("NetworkFile: " + NetworkFile);
+
+                StartedAt = DateTime.Now;
+                Timings = new TaskTimer();
                     
-                    Router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
+                Router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
 
-                    Timings.Time("Loaded network");
-                    Router.Graph = Router.CreateGraph();
-                    Timings.Time("Created graph");
-                    Router.CreateNearbyLinkLookup();
-                    Timings.Time("Created nearby lookup");
-                }
+                Timings.Time("Loaded network");
+                Router.Graph = Router.CreateGraph();
+                Timings.Time("Created graph");
+                Router.CreateNearbyLinkLookup();
+                Timings.Time("Created nearby lookup");
             }
+        }
+
+        public static void Initialize(string networkFile, SkeletonConfig skeletonConfig)
+        {
+            NetworkFile = networkFile;
+            SkeletonConfig = skeletonConfig;
+
+            Initialize();
         }
 
         public static InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences)
@@ -141,14 +148,6 @@ namespace RoadNetworkRouting.Service
         {
             Initialize();
             return Router.GetLinksFromReferences(linkReferences);
-        }
-
-        public static void Initialize(string networkFile, SkeletonConfig skeletonConfig)
-        {
-            NetworkFile = networkFile;
-            SkeletonConfig = skeletonConfig;
-
-            Initialize();
         }
     }
 

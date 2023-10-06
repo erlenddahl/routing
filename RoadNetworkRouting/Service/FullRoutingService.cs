@@ -46,11 +46,11 @@ namespace RoadNetworkRouting.Service
                     
                 Router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
 
-                Timings.Time("Loaded network");
+                Timings.Time("load.network");
                 Router.Graph = Router.CreateGraph();
-                Timings.Time("Created graph");
+                Timings.Time("create.graph");
                 Router.CreateNearbyLinkLookup();
-                Timings.Time("Created nearby lookup");
+                Timings.Time("create.nearby");
             }
         }
 

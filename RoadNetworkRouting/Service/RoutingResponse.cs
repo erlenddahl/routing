@@ -49,7 +49,7 @@ public class RoutingResponse : InternalRoutingResponse
 
         var returnedCoordinates = (r.Coordinates || r.CompressedCoordinates) ? result.Coordinates.Select(converter.Forward).ToList() : null;
 
-        DistanceM = LineTools.CalculateLength(result.Coordinates);
+        DistanceM = result.Links.Sum(p => p.Length);
         SourceSrid = request.SourceSrid;
         OutputSrid = request.OutputSrid;
 

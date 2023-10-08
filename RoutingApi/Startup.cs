@@ -21,7 +21,6 @@ namespace RoutingApi
             Configuration = configuration;
 
             var networkFile = "";
-            SkeletonConfig skeletonConfig = null;
             if (Directory.Exists(@"data\networks\road\2023-01-09"))
             {
                 networkFile = @"data\networks\road\2023-01-09\network.bin";
@@ -32,10 +31,9 @@ namespace RoutingApi
             else if (configuration != null)
             {
                 networkFile = configuration.GetValue<string>("RoadNetworkLocation");
-                skeletonConfig = new SkeletonConfig() { LinkDataDirectory = configuration.GetValue<string>("RoadNetworkLinkLocation") };
             }
 
-            FullRoutingService.Initialize(networkFile, skeletonConfig);
+            FullRoutingService.Initialize(networkFile);
         }
 
         public IConfiguration Configuration { get; }

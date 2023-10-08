@@ -7,8 +7,6 @@
         public int TargetVertexId { get; set; }
         public double Cost { get; set; } = 1;
         public double ReverseCost { get; set; }
-        public bool IsReverse { get; set; }
-        public int Num { get; set; }
 
         public GraphDataItem Clone()
         {

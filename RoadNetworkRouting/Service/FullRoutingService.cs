@@ -25,7 +25,6 @@ namespace RoadNetworkRouting.Service
         public static RoadNetworkRouter Router { get; private set; }
 
         public static string NetworkFile { get; set; }
-        public static SkeletonConfig SkeletonConfig { get; set; }
         public static TaskTimer GlobalTimings { get; } = new();
         public static DateTime StartedAt { get; private set; }
         public static TaskTimer Timings { get; private set; }
@@ -44,20 +43,17 @@ namespace RoadNetworkRouting.Service
                 StartedAt = DateTime.Now;
                 Timings = new TaskTimer();
                     
-                Router = RoadNetworkRouter.LoadFrom(NetworkFile, skeletonConfig: SkeletonConfig);
+                Router = RoadNetworkRouter.LoadFrom(NetworkFile);
 
                 Timings.Time("load.network");
-                Router.Graph = Router.CreateGraph();
-                Timings.Time("create.graph");
                 Router.CreateNearbyLinkLookup();
                 Timings.Time("create.nearby");
             }
         }
 
-        public static void Initialize(string networkFile, SkeletonConfig skeletonConfig)
+        public static void Initialize(string networkFile)
         {
             NetworkFile = networkFile;
-            SkeletonConfig = skeletonConfig;
 
             Initialize();
         }

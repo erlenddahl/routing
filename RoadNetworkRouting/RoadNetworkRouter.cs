@@ -32,7 +32,6 @@ namespace RoadNetworkRouting
         public static string Version = "2023-05-29";
 
         private Graph _graph;
-        private SkeletonConfig _skeletonConfig;
         private Dictionary<string, RoadLink> _linkReferenceLookup;
         private readonly object _locker = new();
         public Dictionary<int, RoadLink> Links { get; set; } = null;
@@ -41,6 +40,8 @@ namespace RoadNetworkRouting
         private readonly int _nearbyLinksRadius = 5000;
 
         public BoundingBox2D SearchBounds { get; private set; }
+
+        public ILinkDataLoader Loader { get; set; }
 
         /// <summary>
         /// Network graph that is created the first time this property is accessed, then cached. If changing Links or Vertices, it should be reset.
@@ -61,9 +62,9 @@ namespace RoadNetworkRouting
         {
             return Graph.Create(Links.Values.Select(p => new GraphDataItem()
             {
-                Cost = p.Cost,
+                Cost = (float)p.Cost,
                 EdgeId = p.LinkId,
-                ReverseCost = p.ReverseCost,
+                ReverseCost = (float)p.ReverseCost,
                 SourceVertexId = p.FromNodeId,
                 TargetVertexId = p.ToNodeId
             }));
@@ -245,11 +246,10 @@ namespace RoadNetworkRouting
         /// </summary>
         /// <param name="file"></param>
         /// <param name="progress"></param>
-        /// <param name="skeletonConfig"></param>
         /// <returns></returns>
-        public static RoadNetworkRouter LoadFrom(string file, Action<int, int> progress = null, SkeletonConfig skeletonConfig = null)
+        public static RoadNetworkRouter LoadFrom(string file, Action<int, int> progress = null)
         {
-            return LoadFrom(File.OpenRead(file), progress, skeletonConfig);
+            return LoadFrom(File.OpenRead(file), progress);
         }
 
         /// <summary>
@@ -257,9 +257,8 @@ namespace RoadNetworkRouting
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="progress"></param>
-        /// <param name="skeletonConfig"></param>
         /// <returns></returns>
-        public static RoadNetworkRouter LoadFrom(Stream stream, Action<int, int> progress = null, SkeletonConfig skeletonConfig = null)
+        public static RoadNetworkRouter LoadFrom(Stream stream, Action<int, int> progress = null)
         {
             using var reader = new BinaryReader(stream);
 
@@ -274,47 +273,13 @@ namespace RoadNetworkRouting
             var linkCount = reader.ReadInt32();
             router.Links = new Dictionary<int, RoadLink>(linkCount);
 
-            // If this is a skeleton file, only id and costs are included. The rest must be loaded from individual files later.
-            if (formatVersion >= 1000)
+            var buffer = new byte[RoadLink.CalculateItemSize(maxPointCount)];
+            for (var i = 0; i < linkCount; i++)
             {
-                if (skeletonConfig == null) throw new MissingConfigException("Must include a SkeletonConfig object with information about the link data files when loading a skeleton file.");
-                router._skeletonConfig = skeletonConfig;
-                var itemSize = 4 + 2 * 8 + 7 * 4;
-                var buffer = new byte[linkCount * itemSize];
-                reader.Read(buffer, 0, buffer.Length);
-                var pos = 0;
-
-                for (var i = 0; i < linkCount; i++)
-                {
-                    var link = new RoadLink
-                    {
-                        LinkId = BitConverter.ToInt32(buffer, pos),
-                        Cost = BitConverter.ToDouble(buffer, pos + 4),
-                        ReverseCost = BitConverter.ToDouble(buffer, pos + 12),
-                        FromNodeId = BitConverter.ToInt32(buffer, pos + 20),
-                        ToNodeId = BitConverter.ToInt32(buffer, pos + 24),
-                        Bounds = new BoundingBox2D(BitConverter.ToInt32(buffer, pos + 28), BitConverter.ToInt32(buffer, pos + 32), BitConverter.ToInt32(buffer, pos + 36), BitConverter.ToInt32(buffer, pos + 40)),
-                        NetworkGroup = BitConverter.ToInt32(buffer, pos + 40)
-                    };
-                    router._skeletonConfig.SetSequence(link.LinkId);
-
-                    router.Links.Add(link.LinkId, link);
-
-                    progress?.Invoke(i, linkCount);
-
-                    pos += itemSize;
-                }
-            }
-            else
-            {
-                var buffer = new byte[RoadLink.CalculateItemSize(maxPointCount)];
-                for (var i = 0; i < linkCount; i++)
-                {
-                    var link = new RoadLink();
-                    link.ReadFrom(reader, _binaryStrings, buffer: buffer);
-                    router.Links.Add(link.LinkId, link);
-                    progress?.Invoke(i, linkCount);
-                }
+                var link = new RoadLink();
+                link.ReadFrom(reader, _binaryStrings, buffer: buffer);
+                router.Links.Add(link.LinkId, link);
+                progress?.Invoke(i, linkCount);
             }
 
             return router;
@@ -409,62 +374,6 @@ namespace RoadNetworkRouting
         }
 
         /// <summary>
-        /// Writes the network without detailed link data to a fast binary file.
-        /// </summary>
-        /// <param name="file"></param>
-        /// <param name="config"></param>
-        public void SaveSkeletonTo(string file, SkeletonConfig config)
-        {
-            SetNetworkGroups();
-
-            var dir = Path.GetDirectoryName(file);
-            if (!string.IsNullOrWhiteSpace(dir))
-                Directory.CreateDirectory(dir);
-
-            var linkFiles = Links.Values
-                .OrderBy(p => p.Bounds.Xmin / 1000) // An attempt to order links by geography to keep nearby links in the same file
-                .ThenBy(p => p.Bounds.Ymin)
-                .Sublists(config.LinksPerFile)
-                .Select((p, i) => (links:p, ix:i))
-                .ToArray();
-
-            Dictionary<string, int> strings;
-            using (var writer = new BinaryWriter(File.Create(file)))
-            {
-                strings = WriteHeader(writer, 1000 + 3); // The skeleton version starts at 1000.
-
-                writer.Write(Links.Count);
-
-                foreach (var linkFile in linkFiles)
-                foreach (var link in linkFile.links)
-                {
-                    writer.Write(link.LinkId);
-                    writer.Write(link.Cost);
-                    writer.Write(link.ReverseCost);
-                    writer.Write(link.FromNodeId);
-                    writer.Write(link.ToNodeId);
-                    writer.Write((int)link.Bounds.Xmin);
-                    writer.Write((int)link.Bounds.Xmax + 1);
-                    writer.Write((int)link.Bounds.Ymin);
-                    writer.Write((int)link.Bounds.Ymax + 1);
-                    writer.Write(link.NetworkGroup);
-                }
-            }
-
-            Directory.CreateDirectory(config.LinkDataDirectory);
-            linkFiles.AsParallel().ForAll(lf =>
-            {
-                using var writer = new BinaryWriter(File.Create(Path.Combine(config.LinkDataDirectory, lf.ix + ".bin")));
-                writer.Write(2); // Version
-                writer.Write(lf.links.Count);
-                foreach (var link in lf.links)
-                {
-                    link.WriteTo(writer, strings);
-                }
-            });
-        }
-
-        /// <summary>
         /// Loads link data for the given link if required, then returns the link (for easy usage in LINQ queries).
         /// </summary>
         /// <param name="link"></param>
@@ -474,58 +383,19 @@ namespace RoadNetworkRouting
         {
             if (link.Geometry == null)
             {
+                if (Loader == null) throw new Exception("Links are missing data, but no link data loader is defined.");
                 timer?.Restart();
 
-                // Find the ID of this link
-                var id = link.LinkId;
+                link = Loader.Load(this, link);
 
-                // Depending on the skeleton config, there might be more than one link per file.
-                // If there is, they are always saved in files of size N, the first file having links
-                // from 0 to N-1, the next from N to 2*N-1, and so on.
-                var file = _skeletonConfig.GetLinkDataFile(id);
-
-                LoadLinksFromFile(file);
-
-                link = Links[link.LinkId];
-
-                if (link.Geometry == null) throw new Exception("Geometry for link " + id + " was not found in the file '" + file + "'.");
+                if (link.Geometry == null) throw new Exception("Geometry for link " + link.LinkId + " could not be loaded.");
                 timer?.Time("routing.loadlinks");
             }
 
             return link;
         }
 
-        private HashSet<string> _loadedFiles = new();
         private static Dictionary<int, string> _binaryStrings;
-
-        private void LoadLinksFromFile(string file)
-        {
-            lock (_loadedFiles)
-            {
-                if (_loadedFiles.Contains(file))
-                {
-                    return;
-                }
-
-                // Read the links in this file
-                using var reader = new BinaryReader(File.OpenRead(file));
-
-                var formatVersion = reader.ReadInt32();
-                var linkCount = reader.ReadInt32();
-
-                // Read data about all links in this link data file onto the links already in the Links dictionary.
-                for (var i = 0; i < linkCount; i++)
-                {
-                    // Read the ID of this link
-                    var linkIdToRead = reader.ReadInt32();
-
-                    // Overwrite properties on this link with data from the stream
-                    Links[linkIdToRead].ReadFrom(reader, _binaryStrings, true);
-                }
-
-                _loadedFiles.Add(file);
-            }
-        }
 
         public void CreateNearbyLinkLookup()
         {
@@ -848,5 +718,10 @@ namespace RoadNetworkRouting
                 else
                     throw new Exception("A link with the reference code '" + lr + "' was not found in the current road network.");
         }
+    }
+
+    public interface ILinkDataLoader
+    {
+        public RoadLink Load(RoadNetworkRouter router, RoadLink id);
     }
 }

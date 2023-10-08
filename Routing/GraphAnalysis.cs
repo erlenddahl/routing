@@ -4,15 +4,15 @@ using System.Linq;
 
 namespace Routing
 {
-    public class GraphAnalysis
+    public class GraphAnalysis<T>
     {
-        public Graph Graph { get; set; }
+        public Graph<T> Graph { get; set; }
         public int Vertices { get; set; }
         public int Edges { get; set; }
         public int TotalNumberOfGroups { get; set; }
         public Dictionary<int, int> VertexIdGroup { get; set; }
 
-        public GraphAnalysis(Graph graph)
+        public GraphAnalysis(Graph<T> graph)
         {
             Graph = graph;
             var groupIx = 0;

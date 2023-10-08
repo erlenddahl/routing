@@ -2,9 +2,9 @@
 
 namespace Routing
 {
-    public class VertexDataComparer : IComparer<VertexData>
+    public class VertexDataComparer<T> : IComparer<VertexData<T>>
     {
-        public int Compare(VertexData x, VertexData y)
+        public int Compare(VertexData<T> x, VertexData<T> y)
         {
             var comp = x.Cost.CompareTo(y.Cost);
             if (comp == 0) return x.Vertex.Id.CompareTo(y.Vertex.Id);

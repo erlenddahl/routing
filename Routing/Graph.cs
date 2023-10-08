@@ -1,47 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace Routing
 {
-    public class Graph
+    public class Graph<T>
     {
         public static string Version = "2023-05-29";
 
-        private readonly Dictionary<long, Edge> _edges = new();
+        private readonly Dictionary<long, Edge<T>> _edges = new();
         public Dictionary<int, Vertex> Vertices { get; } = new();
         public int EdgeCount => _edges.Count;
 
-        private Graph(IEnumerable<GraphDataItem> items)
+        public static Graph<GraphDataItem> Create(IEnumerable<GraphDataItem> items)
         {
+            var graph = new Graph<GraphDataItem>();
             foreach (var item in items)
             {
-                CreateEdge(item);
+                graph.CreateEdge(item, item.EdgeId, item.SourceVertexId, item.TargetVertexId, item.Cost, item.ReverseCost);
             }
+            return graph;
         }
 
-        public static Graph Create(IEnumerable<GraphDataItem> items)
+        public Graph(){}
+
+        public GraphAnalysis<T> Analyze()
         {
-            return new Graph(items);
+            return new GraphAnalysis<T>(this);
         }
 
-        private Graph(){}
-
-        public GraphAnalysis Analyze()
-        {
-            return new GraphAnalysis(this);
-        }
-
-        public QuickGraphSearchResult GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader overloader = null)
+        public QuickGraphSearchResult<T> GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null)
         {
             var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId, overloader);
-            var result = new QuickGraphSearchResult(dr);
+            var result = new QuickGraphSearchResult<T>(dr);
 
             return result;
         }
 
-        public IEnumerable<QuickGraphSearchResult> GetShortestPathToAll(int sourceVertexId, HashSet<int> relevantVertices = null)
+        public IEnumerable<QuickGraphSearchResult<T>> GetShortestPathToAll(int sourceVertexId, HashSet<int> relevantVertices = null)
         {
             var dr = Dijkstra.GetShortestPath(this, sourceVertexId, -1);
 
@@ -57,7 +55,7 @@ namespace Routing
                     yield return null;
                     continue;
                 }
-                yield return new QuickGraphSearchResult(dr);
+                yield return new QuickGraphSearchResult<T>(dr);
             }
         }
 
@@ -76,17 +74,16 @@ namespace Routing
             }
         }
 
-
-        private void CreateEdge(GraphDataItem item)
+        public void CreateEdge(T item, int edgeId, int fromNodeId, int toNodeId, double cost, double reverseCost)
         {
-            if (item.Cost < 1_000_000)
+            if (cost < 1_000_000)
             {
-                var edge = new Edge
+                var edge = new Edge<T>
                 {
-                    Id = item.EdgeId,
-                    SourceVertex = EnsureVertex(item.SourceVertexId),
-                    TargetVertex = EnsureVertex(item.TargetVertexId),
-                    Cost = item.Cost,
+                    Id = edgeId,
+                    SourceVertex = EnsureVertex(fromNodeId),
+                    TargetVertex = EnsureVertex(toNodeId),
+                    Cost = cost,
                     IsReverse = false,
                     DataItem = item,
                 };
@@ -94,14 +91,14 @@ namespace Routing
                 EnsureEdge(edge);
             }
 
-            if (item.ReverseCost < 1_000_000)
+            if (reverseCost < 1_000_000)
             {
-                var edge = new Edge
+                var edge = new Edge<T>
                 {
-                    Id = item.EdgeId,
-                    SourceVertex = EnsureVertex(item.TargetVertexId),
-                    TargetVertex = EnsureVertex(item.SourceVertexId),
-                    Cost = item.ReverseCost,
+                    Id = edgeId,
+                    SourceVertex = EnsureVertex(toNodeId),
+                    TargetVertex = EnsureVertex(fromNodeId),
+                    Cost = reverseCost,
                     IsReverse = true,
                     DataItem = item,
                 };
@@ -109,8 +106,8 @@ namespace Routing
                 EnsureEdge(edge);
             }
         }
-
-        private void EnsureEdge(Edge edge)
+        
+        private void EnsureEdge(Edge<T> edge)
         {
             edge.SourceVertex.NeighbourIds.Add(edge.TargetVertex.Id);
 
@@ -141,7 +138,7 @@ namespace Routing
             return start * 10_000_000_000 + end;
         }
 
-        public Edge GetEdge(int startVertexId, int endVertexId)
+        public Edge<T> GetEdge(int startVertexId, int endVertexId)
         {
             return _edges[GetKey(startVertexId, endVertexId)];
         }
@@ -151,9 +148,43 @@ namespace Routing
             return _edges.ContainsKey(GetKey(startVertexId, endVertexId));
         }
 
-        public bool TryGetEdge(int startVertexId, int endVertexId, out Edge edge)
+        public bool TryGetEdge(int startVertexId, int endVertexId, out Edge<T> edge)
         {
             return _edges.TryGetValue(GetKey(startVertexId, endVertexId), out edge);
         }
+
+        /*public void SaveTo(string path)
+        {
+            using var writer = new BinaryWriter(File.Open(path, FileMode.Create));
+            writer.Write(_edges.Count);
+            foreach (var item in _edges.Values.Select(p => p.DataItem))
+            {
+                writer.Write(item.EdgeId);
+                writer.Write(item.FromNodeId);
+                writer.Write(item.ToNodeId);
+                writer.Write(item.Cost);
+                writer.Write(item.ReverseCost);
+            }
+        }
+
+        public static Graph<GraphDataItem> LoadFrom(string path)
+        {
+            using var reader = new BinaryReader(File.Open(path, FileMode.Open));
+            var count = reader.ReadInt32();
+
+            var graph = new Graph<GraphDataItem>();
+            var itemSize = sizeof(int) * 3 + sizeof(double) * 2; // Size for EdgeId, SourceVertexId, TargetVertexId, Cost, ReverseCost
+            var bufferArray = new byte[itemSize];
+            Span<byte>  buffer = bufferArray;
+
+            for (var i = 0; i < count; i++)
+            {
+                reader.Read(buffer);
+                var item = GraphDataItem.FromBytes(buffer);
+                graph.CreateEdge(item);
+            }
+
+            return graph;
+        }*/
     }
 }

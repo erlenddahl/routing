@@ -1,22 +1,22 @@
 ﻿namespace Routing
 {
-    public class Edge
+    public class Edge<T>
     {
         public int Id { get; set; }
         public Vertex SourceVertex { get; set; }
         public Vertex TargetVertex { get; set; }
         public double Cost { get; set; }
         public bool IsReverse { get; set; }
-        public GraphDataItem DataItem { get; set; }
+        public T DataItem { get; set; }
 
         /// <summary>
         /// Is set to true if this is an edge created due to an overloaded source or target node.
         /// </summary>
         public bool IsOverload { get; set; }
 
-        public Edge Clone()
+        public Edge<T> Clone()
         {
-            return new Edge()
+            return new Edge<T>()
             {
                 Id = Id,
                 SourceVertex = SourceVertex,

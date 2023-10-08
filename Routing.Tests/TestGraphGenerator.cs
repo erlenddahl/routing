@@ -2,9 +2,9 @@ namespace Routing.Tests
 {
     public static class TestGraphGenerator
     {
-        public static Graph StraightLine()
+        public static Graph<GraphDataItem> StraightLine()
         {
-            return Graph.Create(new[]
+            return Graph<GraphDataItem>.Create(new[]
             {
                 new GraphDataItem()
                 {

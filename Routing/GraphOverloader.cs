@@ -22,7 +22,7 @@ namespace Routing
     /// By doing it this way, the routing algorithm itself will choose which direction to start driving from
     /// the entry point, thus indirectly choosing the most reasonable "nearest vertex".
     /// </remarks>
-    public class GraphOverloader
+    public class GraphOverloader<T>
     {
         private class OverloadVertex
         {
@@ -54,7 +54,7 @@ namespace Routing
             /// full graph.
             /// </summary>
             public Vertex Vertex;
-            public Dictionary<int, Edge> Edges = new();
+            public Dictionary<int, Edge<T>> Edges = new();
 
             /// <summary>
             /// Adds a fake edge from this overload-vertex to the given targetVertex.
@@ -66,7 +66,7 @@ namespace Routing
             /// <param name="targetVertex"></param>
             /// <param name="costFactor"></param>
             /// <returns></returns>
-            public Edge CheckAddEdge(Graph graph, int sourceVertex, int targetVertex, double costFactor)
+            public Edge<T> CheckAddEdge(Graph<T> graph, int sourceVertex, int targetVertex, double costFactor)
             {
                 // Find the edge we are "replacing" with two sub-edges
                 // If the existing edge doesn't exist (for example if this is a one-way street), do nothing.
@@ -158,7 +158,7 @@ namespace Routing
             return id;
         }
 
-        public void Build(Graph graph)
+        public void Build(Graph<T> graph)
         {
             if (_built) return;
             _built = true;
@@ -217,7 +217,7 @@ namespace Routing
             return false;
         }
 
-        public bool TryGetEdge(int startVertexId, int endVertexId, out Edge edge)
+        public bool TryGetEdge(int startVertexId, int endVertexId, out Edge<T> edge)
         {
             if (_sourceOverloads.TryGetValue(startVertexId, out var ovS) && ovS.Edges.TryGetValue(endVertexId, out edge))
                 return true;

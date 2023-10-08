@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Routing.Tests
@@ -15,7 +16,7 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(3, path.Target.Vertex.Id);
 
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
 
@@ -87,14 +88,14 @@ namespace Routing.Tests
                 }
             };
 
-            var graph = Graph.Create(links);
+            var graph = Graph<GraphDataItem>.Create(links);
             var path = graph.GetShortestPath(0, 7);
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
-            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges.Select(p => p.EdgeId)));
+            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
 
@@ -168,14 +169,14 @@ namespace Routing.Tests
                 }
             };
 
-            var graph = Graph.Create(links);
+            var graph = Graph<GraphDataItem>.Create(links);
             var path = graph.GetShortestPath(0, 7);
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
-            CollectionAssert.AreEqual(new[] { 1000, 1002, 1004, 1006, 1007 }, path.Edges);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges.Select(p => p.EdgeId)));
+            CollectionAssert.AreEqual(new[] { 1000, 1002, 1004, 1006, 1007 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
 
@@ -233,14 +234,14 @@ namespace Routing.Tests
                 }
             };
 
-            var graph = Graph.Create(links);
+            var graph = Graph<GraphDataItem>.Create(links);
             var path = graph.GetShortestPath(0, 7);
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
-            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges.Select(p => p.EdgeId)));
+            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
 
@@ -299,14 +300,14 @@ namespace Routing.Tests
                 }
             };
 
-            var graph = Graph.Create(links);
+            var graph = Graph<GraphDataItem>.Create(links);
             var path = graph.GetShortestPath(0, 7);
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
-            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges.Select(p => p.EdgeId)));
+            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
 
@@ -366,14 +367,14 @@ namespace Routing.Tests
                 }
             };
 
-            var graph = Graph.Create(links);
+            var graph = Graph<GraphDataItem>.Create(links);
             var path = graph.GetShortestPath(0, 7);
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
-            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges.Select(p => p.EdgeId)));
+            CollectionAssert.AreEqual(new[] { 1000, 1001, 1003, 1005, 1007 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
 
@@ -431,14 +432,14 @@ namespace Routing.Tests
                 }
             };
 
-            var graph = Graph.Create(links);
+            var graph = Graph<GraphDataItem>.Create(links);
             var path = graph.GetShortestPath(0, 7);
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
-            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges.Select(p => p.EdgeId)));
+            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
 
@@ -499,14 +500,14 @@ namespace Routing.Tests
                 }
             };
 
-            var graph = Graph.Create(links);
+            var graph = Graph<GraphDataItem>.Create(links);
             var path = graph.GetShortestPath(0, 7);
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
-            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges.Select(p => p.EdgeId)));
+            CollectionAssert.AreEqual(new[] { 1000, 1002, 1007 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
         [TestMethod]
@@ -540,14 +541,14 @@ namespace Routing.Tests
                 }
             };
 
-            var graph = Graph.Create(links);
+            var graph = Graph<GraphDataItem>.Create(links);
             var path = graph.GetShortestPath(0, 3);
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(3, path.Target.Vertex.Id);
 
-            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges));
-            CollectionAssert.AreEqual(new[] { 1000, 1001, 1002 }, path.Edges);
+            Debug.WriteLine("Picked route: " + string.Join(", ", path.Edges.Select(p => p.EdgeId)));
+            CollectionAssert.AreEqual(new[] { 1000, 1001, 1002 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
     }
 }

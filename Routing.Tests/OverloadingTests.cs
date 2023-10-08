@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Routing.Tests
@@ -10,7 +11,7 @@ namespace Routing.Tests
         public void SourceOverloading()
         {
             var graph = TestGraphGenerator.StraightLine();
-            var overloader = new GraphOverloader();
+            var overloader = new GraphOverloader<GraphDataItem>();
             overloader.AddSourceOverload(-1, 0, 1, 0.3);
 
             var path = graph.GetShortestPath(-1, 3, overloader);
@@ -20,14 +21,14 @@ namespace Routing.Tests
             Assert.AreEqual(-1, path.Source.Vertex.Id);
             Assert.AreEqual(3, path.Target.Vertex.Id);
 
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
         [TestMethod]
         public void TargetOverloading()
         {
             var graph = TestGraphGenerator.StraightLine();
-            var overloader = new GraphOverloader();
+            var overloader = new GraphOverloader<GraphDataItem>();
             overloader.AddTargetOverload(-1, 2, 3, 0.3);
 
             var path = graph.GetShortestPath(0, -1, overloader);
@@ -37,14 +38,14 @@ namespace Routing.Tests
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(-1, path.Target.Vertex.Id);
 
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
 
         [TestMethod]
         public void SourceAndTargetOverloading()
         {
             var graph = TestGraphGenerator.StraightLine();
-            var overloader = new GraphOverloader();
+            var overloader = new GraphOverloader<GraphDataItem>();
             overloader.AddSourceOverload(-1, 0, 1, 0.3);
             overloader.AddTargetOverload(-2, 2, 3, 0.4);
 
@@ -55,12 +56,12 @@ namespace Routing.Tests
             Assert.AreEqual(-1, path.Source.Vertex.Id);
             Assert.AreEqual(-2, path.Target.Vertex.Id);
 
-            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, path.Edges.Select(p => p.EdgeId).ToArray());
         }
         [TestMethod]
         public void SourceOverloading_NegativeFactorThrows()
         {
-            var overloader = new GraphOverloader();
+            var overloader = new GraphOverloader<GraphDataItem>();
             try
             {
                 overloader.AddSourceOverload(-1, 0, 1, -0.3);
@@ -75,7 +76,7 @@ namespace Routing.Tests
         [TestMethod]
         public void TargetOverloading_TooLargeFactorThrows()
         {
-            var overloader = new GraphOverloader();
+            var overloader = new GraphOverloader<GraphDataItem>();
             try
             {
                 overloader.AddTargetOverload(-1, 0, 1, 1.3);

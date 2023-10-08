@@ -20,6 +20,7 @@ using EnergyModule.Exceptions;
 using Extensions.Utilities;
 using Extensions.Utilities.Caching;
 using NLog.Targets;
+using RoadNetworkRouting;
 using RoadNetworkRouting.GeoJson;
 using RoadNetworkRouting.Service;
 
@@ -31,7 +32,7 @@ namespace RoadNetworkRouting
 
         public static string Version = "2023-05-29";
 
-        private Graph _graph;
+        private Graph<RoadLink> _graph;
         private Dictionary<string, RoadLink> _linkReferenceLookup;
         private readonly object _locker = new();
         public Dictionary<int, RoadLink> Links { get; set; } = null;
@@ -46,7 +47,7 @@ namespace RoadNetworkRouting
         /// <summary>
         /// Network graph that is created the first time this property is accessed, then cached. If changing Links or Vertices, it should be reset.
         /// </summary>
-        public Graph Graph
+        public Graph<RoadLink> Graph
         {
             get => _graph ??= CreateGraph();
             set => _graph = value;
@@ -58,16 +59,15 @@ namespace RoadNetworkRouting
         /// </summary>
         public int FixedMissingNodeIdCount { get; set; }
 
-        public Graph CreateGraph()
+        public Graph<RoadLink> CreateGraph()
         {
-            return Graph.Create(Links.Values.Select(p => new GraphDataItem()
+            var graph = new Graph<RoadLink>();
+            foreach (var link in Links.Values)
             {
-                Cost = (float)p.Cost,
-                EdgeId = p.LinkId,
-                ReverseCost = (float)p.ReverseCost,
-                SourceVertexId = p.FromNodeId,
-                TargetVertexId = p.ToNodeId
-            }));
+                graph.CreateEdge(link, link.LinkId, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
+            }
+
+            return graph;
         }
 
         public static RoadNetworkRouter Build(IEnumerable<RoadLink> links)
@@ -112,7 +112,6 @@ namespace RoadNetworkRouting
 
         private RoadNetworkRouter()
         {
-            Links = new Dictionary<int, RoadLink>();
         }
 
         public RoadNetworkRouter(Dictionary<int, RoadLink> links)
@@ -274,12 +273,15 @@ namespace RoadNetworkRouting
             router.Links = new Dictionary<int, RoadLink>(linkCount);
 
             var buffer = new byte[RoadLink.CalculateItemSize(maxPointCount)];
+
+            router._graph = new Graph<RoadLink>();
             for (var i = 0; i < linkCount; i++)
             {
                 var link = new RoadLink();
                 link.ReadFrom(reader, _binaryStrings, buffer: buffer);
                 router.Links.Add(link.LinkId, link);
                 progress?.Invoke(i, linkCount);
+                router._graph.CreateEdge(link, link.LinkId, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
             }
 
             return router;
@@ -307,7 +309,8 @@ namespace RoadNetworkRouting
         /// Writes the network to a fast binary file.
         /// </summary>
         /// <param name="file"></param>
-        public void SaveTo(string file)
+        /// <param name="writePoints">If set to false, the geometry will not be written. This results in a smaller file, but geometries must be loaded during searches.</param>
+        public void SaveTo(string file, bool writePoints = true)
         {
             SetNetworkGroups();
 
@@ -512,7 +515,7 @@ namespace RoadNetworkRouting
             // which could cause too much of the road link to be included in the results.
             // With the overloader and the fake nodes, we can search from the exact point where the route
             // enters and exits the road network.
-            var overloader = new GraphOverloader();
+            var overloader = new GraphOverloader<RoadLink>();
 
             // Create two fake IDs for the two fake nodes. We use the two absolute lowest values that
             // are possible, since we know these are not used (existing IDs are positive integers).
@@ -544,7 +547,7 @@ namespace RoadNetworkRouting
             timer.Time("routing.routing");
 
             // Extract the road links (if there are any)
-            var links = route.Edges?.Select(p => EnsureLinkDataLoaded(Links[p], timer)).ToArray() ?? Array.Empty<RoadLink>();
+            var links = route.Edges?.Select(p => EnsureLinkDataLoaded(p, timer)).ToArray() ?? Array.Empty<RoadLink>();
 
             // In cases where the routing result is a single link, it will be listed twice because of the
             // GraphOverloader's fake edges. Use only one of them in those cases.
@@ -718,10 +721,5 @@ namespace RoadNetworkRouting
                 else
                     throw new Exception("A link with the reference code '" + lr + "' was not found in the current road network.");
         }
-    }
-
-    public interface ILinkDataLoader
-    {
-        public RoadLink Load(RoadNetworkRouter router, RoadLink id);
     }
 }

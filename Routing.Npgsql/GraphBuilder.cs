@@ -7,10 +7,10 @@ namespace Routing.Npgsql
 {
     public class GraphBuilder
     {
-        public static Graph Create(NpgsqlConnection conn, string query)
+        public static Graph<GraphDataItem> Create(NpgsqlConnection conn, string query)
         {
             var cmd = new NpgsqlCommand(query, conn);
-            return Graph.Create(cmd.ExecuteReaderAndSelect(dr => new GraphDataItem()
+            return Graph<GraphDataItem>.Create(cmd.ExecuteReaderAndSelect(dr => new GraphDataItem()
             {
                 EdgeId = dr.GetInt32(0),
                 SourceVertexId = dr.GetInt32(1),

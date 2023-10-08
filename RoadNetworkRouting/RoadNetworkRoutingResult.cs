@@ -11,7 +11,7 @@ public class RoadNetworkRoutingResult
 {
     private double? _routeDistance;
 
-    public QuickGraphSearchResult Route { get; set; }
+    public QuickGraphSearchResult<RoadLink> Route { get; set; }
     public RoadLink[] Links { get; set; }
 
     public bool Success => Route.Target != null;
@@ -25,7 +25,7 @@ public class RoadNetworkRoutingResult
     public double RouteDistance => _routeDistance ??= Links.Sum(p => p.Length);
     public double TotalDistance => DistanceToSourceVertex + RouteDistance + DistanceToTargetVertex;
 
-    public RoadNetworkRoutingResult(QuickGraphSearchResult route, RoadLink[] links, RoutingPoint source, RoutingPoint target, TaskTimer timer)
+    public RoadNetworkRoutingResult(QuickGraphSearchResult<RoadLink> route, RoadLink[] links, RoutingPoint source, RoutingPoint target, TaskTimer timer)
     {
         Route = route;
         Links = links;

@@ -5,15 +5,15 @@ namespace Routing
 {
     public class Dijkstra
     {
-        public static DijkstraResult GetShortestPath(Graph graph, int sourceVertexId, int targetVertexId, GraphOverloader overloader = null)
+        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null)
         {
-            var result = new DijkstraResult(graph, overloader);
+            var result = new DijkstraResult<T>(graph, overloader);
 
             var current = result.GetVertexData(sourceVertexId);
             current.Cost = 0;
             result.Source = current;
 
-            var queue = new SortedSet<VertexData>(new VertexDataComparer()) {current};
+            var queue = new SortedSet<VertexData<T>>(new VertexDataComparer<T>()) {current};
 
             while (queue.Count > 0)
             {

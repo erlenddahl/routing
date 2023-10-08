@@ -3,22 +3,22 @@ using System.Diagnostics;
 
 namespace Routing
 {
-    public class QuickGraphSearchResult
+    public class QuickGraphSearchResult<T>
     {
-        public VertexData Source { get; }
-        public VertexData Target { get; }
-        public int[] Edges { get; set; }
+        public VertexData<T> Source { get; }
+        public VertexData<T> Target { get; }
+        public T[] Edges { get; set; }
         public int[] Vertices { get; set; }
 
-        public DijkstraResult InternalData { get; set; }
+        public DijkstraResult<T> InternalData { get; set; }
 
-        public QuickGraphSearchResult(VertexData source, VertexData target)
+        public QuickGraphSearchResult(VertexData<T> source, VertexData<T> target)
         {
             Source = source;
             Target = target;
         }
 
-        public QuickGraphSearchResult(DijkstraResult dr)
+        public QuickGraphSearchResult(DijkstraResult<T> dr)
         {
             Source = dr.Source;
             Target = dr.Target;
@@ -28,11 +28,11 @@ namespace Routing
             if (Target == null) return;
 
             var vertex = dr.Target;
-            Edges = new int[vertex.VertexCount];
+            Edges = new T[vertex.VertexCount];
             var ix = Edges.Length - 1;
             while (vertex?.PreviousEdge != null)
             {
-                Edges[ix--] = vertex.PreviousEdge.DataItem.EdgeId;
+                Edges[ix--] = vertex.PreviousEdge.DataItem;
                 vertex = vertex.PreviousVertex;
             }
 

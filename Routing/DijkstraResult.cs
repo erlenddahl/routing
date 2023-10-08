@@ -4,38 +4,38 @@ using System.Diagnostics;
 
 namespace Routing
 {
-    public class DijkstraResult
+    public class DijkstraResult<T>
     {
-        private readonly Graph _graph;
-        private readonly GraphOverloader _overloader;
-        private readonly Dictionary<int, VertexData> _dynamicData;
+        private readonly Graph<T> _graph;
+        private readonly GraphOverloader<T> _overloader;
+        private readonly Dictionary<int, VertexData<T>> _dynamicData;
         private readonly Stopwatch _stopwatch;
 
-        public VertexData Source { get; set; }
-        public VertexData Target { get; private set; }
+        public VertexData<T> Source { get; set; }
+        public VertexData<T> Target { get; private set; }
         public TimeSpan ElapsedTime { get; set; }
 
         public int Tries { get; set; }
 
-        public DijkstraResult(Graph graph, GraphOverloader overloader = null)
+        public DijkstraResult(Graph<T> graph, GraphOverloader<T> overloader = null)
         {
             _graph = graph;
             _overloader = overloader;
             overloader?.Build(graph);
-            _dynamicData = new Dictionary<int, VertexData>();
+            _dynamicData = new Dictionary<int, VertexData<T>>();
             _stopwatch = new Stopwatch();
             _stopwatch.Start();
         }
 
-        public VertexData GetVertexData(int id)
+        public VertexData<T> GetVertexData(int id)
         {
             if (_dynamicData.TryGetValue(id, out var vd)) return vd;
-            vd = new VertexData(GetVertex(id));
+            vd = new VertexData<T>(GetVertex(id));
             _dynamicData.Add(id, vd);
             return vd;
         }
 
-        public DijkstraResult Finish(VertexData target = null)
+        public DijkstraResult<T> Finish(VertexData<T> target = null)
         {
             _stopwatch.Stop();
             ElapsedTime = _stopwatch.Elapsed;
@@ -48,7 +48,7 @@ namespace Routing
             return _dynamicData.ContainsKey(id);
         }
 
-        public IEnumerable<VertexData> GetInternalData()
+        public IEnumerable<VertexData<T>> GetInternalData()
         {
             return _dynamicData.Values;
         }
@@ -59,7 +59,7 @@ namespace Routing
             return _graph.Vertices[id];
         }
 
-        public Edge GetEdge(int startVertexId, int endVertexId)
+        public Edge<T> GetEdge(int startVertexId, int endVertexId)
         {
             if (_overloader != null && _overloader.TryGetEdge(startVertexId, endVertexId, out var e)) return e;
             return _graph.GetEdge(startVertexId, endVertexId);

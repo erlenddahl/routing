@@ -163,8 +163,8 @@ namespace RoadNetworkRouting
                     LinkId = properties.Value<int>("OBJECT_ID"),
                     FromNodeId = fromNodeId,
                     ToNodeId = toNodeId,
-                    SpeedLimit = properties.Value<byte>("FT_Fart"),
-                    SpeedLimitReversed = properties.Value<byte>("TF_Fart"),
+                    SpeedLimit = (byte)Math.Max(0, properties.Value<int>("FT_Fart")),
+                    SpeedLimitReversed = (byte)Math.Max(0, properties.Value<int>("TF_Fart")),
                     FromRelativeLength = properties.Value<double>("FROM_M"),
                     ToRelativeLength = properties.Value<double>("TO_M"),
                     Geometry = coordinates.Select(p => new Point3D(p[0], p[1], p[2])).ToArray()

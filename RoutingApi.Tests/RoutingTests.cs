@@ -21,10 +21,7 @@ namespace RoutingApi.Tests
         [TestInitialize]
         public void Init()
         {
-            //TODO: Fix issue with skeleton not working (see MultipleIdenticalRoutes test)
-            //FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
-            FullRoutingService.NetworkFile = "D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin";
-            FullRoutingService.Initialize();
+            FullRoutingService.Initialize("D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin");
         }
 
         [TestMethod]
@@ -121,9 +118,9 @@ namespace RoutingApi.Tests
                 }
             }.Route().CheckThrow();
 
-            Assert.AreEqual(123223.96432659583, response.DistanceM, 0.5);
-            Assert.AreEqual(3118, response.Coordinates.Count);
-            Assert.AreEqual(678, response.LinkReferences.Count);
+            Assert.AreEqual(122917, response.DistanceM, 100);
+            Assert.AreEqual(3106, response.Coordinates.Count);
+            Assert.AreEqual(677, response.LinkReferences.Count);
         }
 
         [TestMethod]

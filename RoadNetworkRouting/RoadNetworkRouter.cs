@@ -64,7 +64,7 @@ namespace RoadNetworkRouting
             var graph = new Graph<RoadLink>();
             foreach (var link in Links.Values)
             {
-                graph.CreateEdge(link, link.LinkId, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
+                graph.CreateEdge(link, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
             }
 
             return graph;
@@ -163,11 +163,10 @@ namespace RoadNetworkRouting
                     LinkId = properties.Value<int>("OBJECT_ID"),
                     FromNodeId = fromNodeId,
                     ToNodeId = toNodeId,
-                    RoadType = properties.Value<string>("VEGTYPE"),
-                    SpeedLimit = properties.Value<short>("FT_Fart"),
-                    SpeedLimitReversed = properties.Value<short>("TF_Fart"),
-                    FromRelativeLength = properties.Value<float>("FROM_M"),
-                    ToRelativeLength = properties.Value<float>("TO_M"),
+                    SpeedLimit = properties.Value<byte>("FT_Fart"),
+                    SpeedLimitReversed = properties.Value<byte>("TF_Fart"),
+                    FromRelativeLength = properties.Value<double>("FROM_M"),
+                    ToRelativeLength = properties.Value<double>("TO_M"),
                     Geometry = coordinates.Select(p => new Point3D(p[0], p[1], p[2])).ToArray()
                 };
 
@@ -215,14 +214,14 @@ namespace RoadNetworkRouting
                     FromNodeId = fromNodeId,
                     ToNodeId = toNodeId,
                     //RoadType = properties.Value<string>("VEGTYPE"),
-                    SpeedLimit = properties.Value<short>("speedfw"),
-                    SpeedLimitReversed = properties.Value<short>("speedbw"),
+                    SpeedLimit = properties.Value<byte>("speedfw"),
+                    SpeedLimitReversed = properties.Value<byte>("speedbw"),
                     Cost = properties.Value<float>("drivetime_fw"),
                     ReverseCost = properties.Value<float>("drivetime_bw"),
                     FromRelativeLength = properties.Value<float>("from_measure"),
                     ToRelativeLength = properties.Value<float>("to_measure"),
                     Geometry = coordinates.Select(p => new{Utm=wgs84ToUtm33(p[0], p[1]), Z=p[2]}).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)).ToArray(),
-                    RoadClass = properties.Value<int>("roadclass")
+                    RoadClass = properties.Value<byte>("roadclass")
                 };
                 
                 data.Direction = RoadLink.DirectionFromString(properties.Value<string>("oneway"));
@@ -281,7 +280,7 @@ namespace RoadNetworkRouting
                 link.ReadFrom(reader, _binaryStrings, buffer: buffer);
                 router.Links.Add(link.LinkId, link);
                 progress?.Invoke(i, linkCount);
-                router._graph.CreateEdge(link, link.LinkId, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
+                router._graph.CreateEdge(link, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
             }
 
             return router;
@@ -325,7 +324,7 @@ namespace RoadNetworkRouting
             writer.Write(Links.Count);
             foreach (var link in Links.Values)
             {
-                link.WriteTo(writer, strings);
+                link.WriteTo(writer, strings, writePoints);
             }
         }
 
@@ -342,7 +341,6 @@ namespace RoadNetworkRouting
             var strings = new HashSet<string>();
             foreach (var link in Links.Values)
             {
-                strings.Add(link.RoadType ?? "");
                 strings.Add(link.LaneCode ?? "");
             }
 

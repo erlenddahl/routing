@@ -25,7 +25,7 @@ public class RoadLink : ILinkPartGenerator
     private int _linkId;
 
     public LinkReference Reference => _reference ??= new LinkReference(LinkId.ToString(), FromRelativeLength, ToRelativeLength, Direction);
-    public int RoadClass { get; set; }
+    public byte RoadClass { get; set; }
 
     public int LinkId
     {
@@ -59,14 +59,12 @@ public class RoadLink : ILinkPartGenerator
 
     public int FromNodeId { get; set; }
     public int ToNodeId { get; set; }
-    public short RoadNumber { get; set; }
-    public short SpeedLimit { get; set; }
-    public short SpeedLimitReversed { get; set; }
-    public string RoadType { get; set; } = "";
+    public byte SpeedLimit { get; set; }
+    public byte SpeedLimitReversed { get; set; }
     public Point3D[] Geometry { get; set; }
     public string LaneCode { get; set; } = "";
-    public double Cost { get; set; }
-    public double ReverseCost { get; set; }
+    public float Cost { get; set; }
+    public float ReverseCost { get; set; }
 
     public RoadLinkDirection Direction
 
@@ -101,11 +99,9 @@ public class RoadLink : ILinkPartGenerator
             ToRelativeLength = ToRelativeLength,
             FromNodeId = FromNodeId,
             ToNodeId = ToNodeId,
-            RoadNumber = RoadNumber,
             Direction = Direction,
             SpeedLimit = SpeedLimit,
             SpeedLimitReversed = SpeedLimitReversed,
-            RoadType = RoadType,
             Geometry = newGeometry ?? Geometry,
             LaneCode = LaneCode,
             Cost = Cost,
@@ -154,7 +150,6 @@ public class RoadLink : ILinkPartGenerator
                 SpeedLimitKmH = SpeedLimit, //TODO: Fix!
                 VehiclesPerHour = 0,
                 RoadType = 'r', //TODO: Fix!
-                RoadNumber = RoadNumber,
                 PartIndex = partIndex++
             };
 
@@ -204,11 +199,11 @@ public class RoadLink : ILinkPartGenerator
         throw new Exception("Unknown road link direction: '" + direction + "' (must be B, FT, TF, or N).");
     }
 
-    public void WriteTo(BinaryWriter writer, Dictionary<string, int> strings)
+    public void WriteTo(BinaryWriter writer, Dictionary<string, int> strings, bool writePoints)
     {
         writer.Write(LinkId);
 
-        writer.Write(Geometry.Length);
+        writer.Write(writePoints ? Geometry.Length : 0);
 
         writer.Write((byte)Direction);
         writer.Write(RoadClass);
@@ -221,9 +216,9 @@ public class RoadLink : ILinkPartGenerator
         writer.Write(SpeedLimitReversed);
         writer.Write(Cost);
         writer.Write(ReverseCost);
-        writer.Write(strings[RoadType ?? ""]);
         writer.Write(strings[LaneCode ?? ""]);
 
+        if (!writePoints) return;
         foreach (var p in Geometry)
         {
             writer.Write(p.X);
@@ -232,42 +227,32 @@ public class RoadLink : ILinkPartGenerator
         }
     }
 
-    public void ReadFrom(BinaryReader reader, Dictionary<int, string> strings, bool skipLinkId = false, byte[] buffer = null)
+    public void ReadFrom(BinaryReader reader, Dictionary<int, string> strings, byte[] buffer)
     {
-        if (!skipLinkId) LinkId = reader.ReadInt32();
+        LinkId = reader.ReadInt32();
 
         // Fetch the point count, and calculate the length of the rest of this link object, and read it all in at the same time
         var pointCount = reader.ReadInt32();
 
         var itemSize = CalculateItemSize(pointCount);
 
-        if (buffer == null)
-        {
-            buffer = new byte[itemSize];
-        }
-
         reader.Read(buffer, 0, itemSize);
 
-        // Read all the normal properties from the already read byte array
-
         Direction = (RoadLinkDirection)buffer[0];
-        RoadClass = BitConverter.ToInt32(buffer, 1);
-        FromRelativeLength = BitConverter.ToDouble(buffer, 5);
-        ToRelativeLength = BitConverter.ToDouble(buffer, 13);
-        FromNodeId = BitConverter.ToInt32(buffer, 21);
-        ToNodeId = BitConverter.ToInt32(buffer, 25);
-        NetworkGroup = BitConverter.ToInt32(buffer, 29);
-        SpeedLimit = BitConverter.ToInt16(buffer, 33);
-        SpeedLimitReversed = BitConverter.ToInt16(buffer, 35);
-        Cost = BitConverter.ToDouble(buffer, 37);
-        ReverseCost = BitConverter.ToDouble(buffer, 45);
-
-        // Then read the dynamic strings.
-        RoadType = strings[BitConverter.ToInt32(buffer, 53)];
-        LaneCode = strings[BitConverter.ToInt32(buffer, 57)];
+        RoadClass = buffer[1];
+        FromRelativeLength = BitConverter.ToDouble(buffer, 2);
+        ToRelativeLength = BitConverter.ToDouble(buffer, 10);
+        FromNodeId = BitConverter.ToInt32(buffer, 18);
+        ToNodeId = BitConverter.ToInt32(buffer, 22);
+        NetworkGroup = BitConverter.ToInt32(buffer, 26);
+        SpeedLimit = buffer[30];
+        SpeedLimitReversed = buffer[31];
+        Cost = BitConverter.ToSingle(buffer, 32);
+        ReverseCost = BitConverter.ToSingle(buffer, 36);
+        LaneCode = strings[BitConverter.ToInt32(buffer, 40)];
 
         // Update the position to the end of the normal properties, and read all points
-        var pos = 61;
+        var pos = 44;
         Geometry = new Point3D[pointCount];
         Bounds = BoundingBox2D.Empty();
         for (var j = 0; j < pointCount; j++)
@@ -281,7 +266,7 @@ public class RoadLink : ILinkPartGenerator
 
     public static int CalculateItemSize(int pointCount)
     {
-        return 1 + 4 + 8 + 8 + 4 + 4 + 4 + 2 + 2 + 8 + 8 + 4 + 4 + pointCount * (8 + 8 + 8);
+        return 1 + 1 + 8 + 8 + 4 + 4 + 4 + 1 + 1 + 4 + 4 + 4 + pointCount * (8 + 8 + 8);
     }
 
     public RoadLink ConvertCoordinates(CoordinateConverter converter)
@@ -301,11 +286,9 @@ public class RoadLink : ILinkPartGenerator
             ToRelativeLength = " + ToRelativeLength.ToString(CultureInfo.InvariantCulture) + @",
             FromNodeId = " + FromNodeId + @",
             ToNodeId = " + ToNodeId + @",
-            RoadNumber = " + RoadNumber + @",
             Direction = RoadLinkDirection." + Direction.ToString() + @",
             SpeedLimit = " + SpeedLimit + @",
             SpeedLimitReversed = " + SpeedLimitReversed + @",
-            RoadType = """ + RoadType + @""",
             Geometry = new[]{" + string.Join(", ", Geometry.Select(ToCsharp)) + @"},
             LaneCode = """ + LaneCode + @""",
             Cost = " + Cost.ToString(CultureInfo.InvariantCulture) + @",

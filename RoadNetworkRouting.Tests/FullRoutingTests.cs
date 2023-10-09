@@ -413,15 +413,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 1,
                 FromNodeId = 475955,
                 ToNodeId = 490272,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 30,
                 SpeedLimitReversed = 30,
-                RoadType = "",
                 Geometry = new[] { new Point3D(264296.9, 7040621.6, 357.345), new Point3D(264294.3, 7040626.6, 357.345), new Point3D(264294.1, 7040632.3, 357.545), new Point3D(264304, 7040653.8, 357.445), new Point3D(264306.1, 7040673.2, 358.145), new Point3D(264310.4, 7040705.3, 362.045) },
                 LaneCode = "",
-                Cost = 0.25551238656044006,
-                ReverseCost = 0.25551238656044006
+                Cost = 0.25551238656044006f,
+                ReverseCost = 0.25551238656044006f
             },
             new()
             {
@@ -431,15 +429,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 1,
                 FromNodeId = 475955,
                 ToNodeId = 475956,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 30,
                 SpeedLimitReversed = 30,
-                RoadType = "",
                 Geometry = new[] { new Point3D(264296.9, 7040621.6, 357.345), new Point3D(264291.6, 7040602.8, 357.345), new Point3D(264285.5, 7040589.2, 357.045), new Point3D(264259.9, 7040564.7, 355.045), new Point3D(264253.4, 7040554.3, 354.945), new Point3D(264244, 7040535.1, 355.545), new Point3D(264236.5, 7040512, 357.645), new Point3D(264236, 7040505.2, 357.945) },
                 LaneCode = "",
-                Cost = 0.3957824409008026,
-                ReverseCost = 0.3957824409008026
+                Cost = 0.3957824409008026f,
+                ReverseCost = 0.3957824409008026f
             },
             new()
             {
@@ -449,15 +445,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.8131144046783447,
                 FromNodeId = 475956,
                 ToNodeId = 487377,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 60,
                 SpeedLimitReversed = 60,
-                RoadType = "",
                 Geometry = new[] { new Point3D(264236, 7040505.2, 357.945), new Point3D(264201.7, 7040509.8, 360.745), new Point3D(264124.7, 7040534.2, 367.945) },
                 LaneCode = "",
-                Cost = 0.16845566034317017,
-                ReverseCost = 0.16845566034317017
+                Cost = 0.16845566034317017f,
+                ReverseCost = 0.16845566034317017f
             },
             new()
             {
@@ -467,15 +461,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.8622568845748901,
                 FromNodeId = 487377,
                 ToNodeId = 326254,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 60,
                 SpeedLimitReversed = 60,
-                RoadType = "",
                 Geometry = new[] { new Point3D(264124.7, 7040534.2, 367.945), new Point3D(264044.7, 7040560.8, 375.645), new Point3D(264008, 7040571.1, 379.245), new Point3D(263947.6, 7040594.3, 385.145), new Point3D(263920.9, 7040599.6, 387.546), new Point3D(263875.05, 7040604.05, 392.196) },
                 LaneCode = "",
-                Cost = 0.38020312786102295,
-                ReverseCost = 0.38020312786102295
+                Cost = 0.38020312786102295f,
+                ReverseCost = 0.38020312786102295f
             },
             new()
             {
@@ -485,15 +477,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.02185666374862194,
                 FromNodeId = 326254,
                 ToNodeId = 326255,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 50,
                 SpeedLimitReversed = 50,
-                RoadType = "",
                 Geometry = new[] { new Point3D(263875.05, 7040604.05, 392.196), new Point3D(263873.76, 7040599.37, 391.526), new Point3D(263870.15, 7040596.32, 391.286), new Point3D(263846.56, 7040594.42, 390.536), new Point3D(263817.2, 7040584.47, 390.226), new Point3D(263801.335, 7040584.454, 391.4079221) },
                 LaneCode = "",
-                Cost = 0.1413177102804184,
-                ReverseCost = 0.1413177102804184
+                Cost = 0.1413177102804184f,
+                ReverseCost = 0.1413177102804184f
             },
             new()
             {
@@ -689,15 +679,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.09881021827459335,
                 FromNodeId = 598238,
                 ToNodeId = 598244,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.AlongGeometry,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270161.498, 7042097.45, 7.2518926), new Point3D(270120.982, 7042073.75, 6.833) },
                 LaneCode = "",
-                Cost = 0.08589772135019302,
-                ReverseCost = 3.4028234663852886E+38
+                Cost = 0.08589772135019302f,
+                ReverseCost = 3.4028234663852886E+38f
             },
             new()
             {
@@ -707,15 +695,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.1726849526166916,
                 FromNodeId = 598244,
                 ToNodeId = 472915,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.AlongGeometry,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270120.982, 7042073.75, 6.833), new Point3D(270068.314, 7042043.948, 6.433) },
                 LaneCode = "",
-                Cost = 0.11074263602495193,
-                ReverseCost = 3.4028234663852886E+38
+                Cost = 0.11074263602495193f,
+                ReverseCost = 3.4028234663852886E+38f
             },
             new()
             {
@@ -725,15 +711,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 1,
                 FromNodeId = 472907,
                 ToNodeId = 472915,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270076.4, 7042017.5, 7.833), new Point3D(270068.314, 7042043.948, 6.433) },
                 LaneCode = "",
-                Cost = 0.06056765839457512,
-                ReverseCost = 0.06056765839457512
+                Cost = 0.06056765839457512f,
+                ReverseCost = 0.06056765839457512f
             },
             new()
             {
@@ -743,15 +727,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.8603624701499939,
                 FromNodeId = 472897,
                 ToNodeId = 472907,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270087.3, 7041989.1, 9.433), new Point3D(270076.4, 7042017.5, 7.833) },
                 LaneCode = "",
-                Cost = 0.06661956757307053,
-                ReverseCost = 0.06661956757307053
+                Cost = 0.06661956757307053f,
+                ReverseCost = 0.06661956757307053f
             },
             new()
             {
@@ -761,15 +743,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.6962451338768005,
                 FromNodeId = 1394248,
                 ToNodeId = 472897,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270134, 7041993.7, 9.533), new Point3D(270087.3, 7041989.1, 9.433) },
                 LaneCode = "",
-                Cost = 0.1027679517865181,
-                ReverseCost = 0.1027679517865181
+                Cost = 0.1027679517865181f,
+                ReverseCost = 0.1027679517865181f
             },
             new()
             {
@@ -779,15 +759,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.6455956101417542,
                 FromNodeId = 573210,
                 ToNodeId = 1394248,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270190.4, 7041991.5, 9.533), new Point3D(270134, 7041993.7, 9.533) },
                 LaneCode = "",
-                Cost = 0.12360993027687073,
-                ReverseCost = 0.12360993027687073
+                Cost = 0.12360993027687073f,
+                ReverseCost = 0.12360993027687073f
             },
             new()
             {
@@ -797,15 +775,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.8264882564544678,
                 FromNodeId = 573210,
                 ToNodeId = 573216,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270190.4, 7041991.5, 9.533), new Point3D(270186.9, 7042087.4, 7.833), new Point3D(270187.8, 7042096.4, 7.733), new Point3D(270192.6, 7042107.2, 7.633) },
                 LaneCode = "",
-                Cost = 0.23832783102989197,
-                ReverseCost = 0.23832783102989197
+                Cost = 0.23832783102989197f,
+                ReverseCost = 0.23832783102989197f
             },
             new()
             {
@@ -815,15 +791,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.011160610243678093,
                 FromNodeId = 573216,
                 ToNodeId = 598223,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.AlongGeometry,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270192.6, 7042107.2, 7.633), new Point3D(270183.353, 7042108.78, 7.533) },
                 LaneCode = "",
-                Cost = 0.01716725341975689,
-                ReverseCost = 3.4028234663852886E+38
+                Cost = 0.01716725341975689f,
+                ReverseCost = 3.4028234663852886E+38f
             },
             new()
             {
@@ -833,15 +807,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.03194738179445267,
                 FromNodeId = 598223,
                 ToNodeId = 598231,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.AlongGeometry,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270183.353, 7042108.78, 7.533), new Point3D(270168.405, 7042101.465, 7.333) },
                 LaneCode = "",
-                Cost = 0.03045462630689144,
-                ReverseCost = 3.4028234663852886E+38
+                Cost = 0.03045462630689144f,
+                ReverseCost = 3.4028234663852886E+38f
             },
             new()
             {
@@ -851,15 +823,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.041672881692647934,
                 FromNodeId = 598231,
                 ToNodeId = 598238,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.AlongGeometry,
                 SpeedLimit = 40,
                 SpeedLimitReversed = 40,
-                RoadType = "",
                 Geometry = new[] { new Point3D(270168.405, 7042101.465, 7.333), new Point3D(270161.498, 7042097.45, 7.2518926) },
                 LaneCode = "",
-                Cost = 0.014620184898376465,
-                ReverseCost = 3.4028234663852886E+38
+                Cost = 0.014620184898376465f,
+                ReverseCost = 3.4028234663852886E+38f
             },
             new()
             {
@@ -869,15 +839,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.5212352871894836,
                 FromNodeId = 607134,
                 ToNodeId = 608003,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.AgainstGeometry,
                 SpeedLimit = 30,
                 SpeedLimitReversed = 30,
-                RoadType = "",
                 Geometry = new[] { new Point3D(271204.6, 7040349, 78.236), new Point3D(271212, 7040344.2, 78.336), new Point3D(271259.7, 7040286.4, 79.136) },
                 LaneCode = "",
-                Cost = 3.4028234663852886E+38,
-                ReverseCost = 0.2445829212665558
+                Cost = 3.4028234663852886E+38f,
+                ReverseCost = 0.2445829212665558f
             },
             new()
             {
@@ -887,15 +855,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 0.5034497976303101,
                 FromNodeId = 492807,
                 ToNodeId = 607134,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 30,
                 SpeedLimitReversed = 30,
-                RoadType = "",
                 Geometry = new[] { new Point3D(271190.8, 7040365.2, 78.036), new Point3D(271204.6, 7040349, 78.236) },
                 LaneCode = "",
-                Cost = 0.06214045360684395,
-                ReverseCost = 0.06214045360684395
+                Cost = 0.06214045360684395f,
+                ReverseCost = 0.06214045360684395f
             },
             new()
             {
@@ -905,15 +871,13 @@ public class RoutingTests_TinyNetwork : RoutingTests
                 ToRelativeLength = 1,
                 FromNodeId = 492807,
                 ToNodeId = 492808,
-                RoadNumber = 0,
                 Direction = RoadLinkDirection.BothWays,
                 SpeedLimit = 30,
                 SpeedLimitReversed = 30,
-                RoadType = "",
                 Geometry = new[] { new Point3D(271190.8, 7040365.2, 78.036), new Point3D(271157.2, 7040327.5, 72.936) },
                 LaneCode = "",
-                Cost = 0.14846999943256378,
-                ReverseCost = 0.14846999943256378
+                Cost = 0.14846999943256378f,
+                ReverseCost = 0.14846999943256378f
             }
         });
     }

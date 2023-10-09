@@ -19,7 +19,7 @@ namespace Routing
             var graph = new Graph<GraphDataItem>();
             foreach (var item in items)
             {
-                graph.CreateEdge(item, item.EdgeId, item.SourceVertexId, item.TargetVertexId, item.Cost, item.ReverseCost);
+                graph.CreateEdge(item, item.SourceVertexId, item.TargetVertexId, item.Cost, item.ReverseCost);
             }
             return graph;
         }
@@ -74,16 +74,15 @@ namespace Routing
             }
         }
 
-        public void CreateEdge(T item, int edgeId, int fromNodeId, int toNodeId, double cost, double reverseCost)
+        public void CreateEdge(T item, int fromNodeId, int toNodeId, double cost, double reverseCost)
         {
             if (cost < 1_000_000)
             {
                 var edge = new Edge<T>
                 {
-                    Id = edgeId,
                     SourceVertex = EnsureVertex(fromNodeId),
                     TargetVertex = EnsureVertex(toNodeId),
-                    Cost = cost,
+                    Cost = (float)cost,
                     IsReverse = false,
                     DataItem = item,
                 };
@@ -95,10 +94,9 @@ namespace Routing
             {
                 var edge = new Edge<T>
                 {
-                    Id = edgeId,
                     SourceVertex = EnsureVertex(toNodeId),
                     TargetVertex = EnsureVertex(fromNodeId),
-                    Cost = reverseCost,
+                    Cost = (float)reverseCost,
                     IsReverse = true,
                     DataItem = item,
                 };

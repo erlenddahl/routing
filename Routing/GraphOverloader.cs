@@ -79,7 +79,7 @@ namespace Routing
                 // the original cost (depending on the cost factor, which in practice
                 // tells us how large part of the edge we are representing).
                 edge = edge.Clone();
-                edge.Cost *= costFactor;
+                edge.Cost *= (float)costFactor;
                 edge.IsOverload = true;
                 Edges.Add(targetVertex, edge);
 

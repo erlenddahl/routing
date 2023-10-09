@@ -2,10 +2,9 @@
 {
     public class Edge<T>
     {
-        public int Id { get; set; }
         public Vertex SourceVertex { get; set; }
         public Vertex TargetVertex { get; set; }
-        public double Cost { get; set; }
+        public float Cost { get; set; }
         public bool IsReverse { get; set; }
         public T DataItem { get; set; }
 
@@ -18,7 +17,6 @@
         {
             return new Edge<T>()
             {
-                Id = Id,
                 SourceVertex = SourceVertex,
                 TargetVertex = TargetVertex,
                 Cost = Cost,
@@ -29,7 +27,7 @@
 
         public override string ToString()
         {
-            return Id.ToString();
+            return DataItem.ToString();
         }
     }
 }

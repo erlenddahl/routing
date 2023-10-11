@@ -19,7 +19,6 @@ using System.Drawing;
 using EnergyModule.Exceptions;
 using Extensions.Utilities;
 using Extensions.Utilities.Caching;
-using NLog.Targets;
 using RoadNetworkRouting;
 using RoadNetworkRouting.GeoJson;
 using RoadNetworkRouting.Service;
@@ -28,8 +27,6 @@ namespace RoadNetworkRouting
 {
     public class RoadNetworkRouter
     {
-        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
         public static string Version = "2023-05-29";
 
         private Graph<RoadLink> _graph;
@@ -398,10 +395,14 @@ namespace RoadNetworkRouting
 
         private static Dictionary<int, string> _binaryStrings;
 
+        private readonly object _nearbyLock = new();
         public void CreateNearbyLinkLookup()
         {
-            if (_nearbyLinksLookup != null) return;
-            _nearbyLinksLookup = NearbyBoundsCache<RoadLink>.FromBounds(Links.Values, p => p.Bounds, _nearbyLinksRadius);
+            lock (_nearbyLock)
+            {
+                if (_nearbyLinksLookup != null) return;
+                _nearbyLinksLookup = NearbyBoundsCache<RoadLink>.FromBounds(Links.Values, p => p.Bounds, _nearbyLinksRadius);
+            }
         }
 
         public RoutingPoint GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null)

@@ -18,8 +18,6 @@ namespace RoutingApi.Controllers
     [EnableCors]
     public class RoutingController : Controller
     {
-        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
         [HttpGet]
         public object Get()
         {
@@ -42,7 +40,6 @@ namespace RoutingApi.Controllers
             }
             catch (Exception ex)
             {
-                logger.Error(ex);
                 return BadRequest(ex.Message);
             }
         }
@@ -60,7 +57,6 @@ namespace RoutingApi.Controllers
             }
             catch (Exception ex)
             {
-                logger.Error(ex);
                 return BadRequest(ex.Message);
             }
         }
@@ -78,7 +74,6 @@ namespace RoutingApi.Controllers
             }
             catch (Exception ex)
             {
-                logger.Error(ex);
                 return BadRequest(ex.Message);
             }
         }

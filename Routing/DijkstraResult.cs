@@ -38,6 +38,7 @@ namespace Routing
         public DijkstraResult<T> Finish(VertexData<T> target = null)
         {
             _stopwatch.Stop();
+            _dynamicData.Clear();
             ElapsedTime = _stopwatch.Elapsed;
             Target = target;
             return this;

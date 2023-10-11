@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using EnergyModule.Exceptions;
 using EnergyModule.Geometry.SimpleStructures;
+using Extensions.IEnumerableExtensions;
 using Extensions.Utilities;
 using Extensions.Utilities.Caching;
 using RoadNetworkRouting.Config;
@@ -15,8 +17,6 @@ namespace RoadNetworkRouting.Service
 {
     public class FullRoutingService
     {
-        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
         private FullRoutingService()
         {
         }
@@ -36,9 +36,6 @@ namespace RoadNetworkRouting.Service
             lock (_lockObject)
             {
                 if (Router != null) return;
-
-                logger.Info("Reading road network");
-                logger.Info("NetworkFile: " + NetworkFile);
 
                 StartedAt = DateTime.Now;
                 Timings = new TaskTimer();
@@ -82,8 +79,6 @@ namespace RoadNetworkRouting.Service
                 Coordinates = includeCoordinates ? new List<Point3D>() : null
             };
 
-            logger.Debug($"Initiating search with {coordinates.Length:n0} waypoints");
-
             rs.Timings.Time("routing.init");
             for (var i = 1; i < coordinates.Length; i++)
             {
@@ -107,8 +102,6 @@ namespace RoadNetworkRouting.Service
                 coordinates[i - 1].Update(path.Source);
                 coordinates[i].Update(path.Target);
                 
-                logger.Debug($"Found {path.Links.Length} links.");
-
                 foreach (var link in path.Links)
                 {
                     if (includeLinkReferences)
@@ -134,8 +127,6 @@ namespace RoadNetworkRouting.Service
                 TotalRequests += 1;
                 TotalWaypoints += coordinates.Length;
             }
-
-            logger.Debug("Finished all");
 
             return rs;
         }

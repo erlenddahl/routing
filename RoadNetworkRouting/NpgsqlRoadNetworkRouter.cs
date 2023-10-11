@@ -19,7 +19,6 @@ using System.Drawing;
 using EnergyModule.Exceptions;
 using Extensions.Utilities;
 using Extensions.Utilities.Caching;
-using NLog.Targets;
 using RoadNetworkRouting.GeoJson;
 using RoadNetworkRouting.Service;
 
@@ -27,8 +26,6 @@ namespace RoadNetworkRouting
 {
     public class NpgsqlRoadNetworkRouter
     {
-        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
         public static string Version = "2023-05-29";
 
         private Graph<GraphDataItem> _graph;

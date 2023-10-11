@@ -31,6 +31,12 @@ namespace RoadNetworkRouting.Service
         public static int TotalRequests { get; set; }
         public static int TotalWaypoints { get; set; }
 
+        /// <summary>
+        /// If set, routing will fail if the sum of the straight line distances between the requested waypoints
+        /// is larger than this value.
+        /// </summary>
+        public static double? MaxRouteLengthKm { get; set; } = 1000;
+
         public static void Initialize()
         {
             lock (_lockObject)
@@ -69,6 +75,13 @@ namespace RoadNetworkRouting.Service
         {
             if (Router == null)
                 Initialize();
+
+            if (MaxRouteLengthKm.HasValue)
+            {
+                var dist = coordinates.Pairwise().Sum(p => p.A.Point.DistanceTo(p.B.Point)) / 1000d;
+                if (dist > MaxRouteLengthKm)
+                    throw new InvalidRouteException($"The requested route is too long (straight line distance is {dist:n2}, which is higher than the configured maximum of {MaxRouteLengthKm.Value:n2}).");
+            }
 
             var rs = new InternalRoutingResponse()
             {

@@ -19,11 +19,11 @@ namespace RoutingApi.Controllers
             {
                 Api = "Routing",
                 Version = "3",
-                FullRoutingService.StartedAt,
-                LoadTimings = FullRoutingService.Timings.GetTimingsInMs(),
-                FullRoutingService.GlobalTimings,
-                FullRoutingService.TotalRequests,
-                FullRoutingService.TotalWaypoints
+                RoutingController.Service.StartedAt,
+                LoadTimings = RoutingController.Service.Timings.GetTimingsInMs(),
+                RoutingController.Service.GlobalTimings,
+                RoutingController.Service.TotalRequests,
+                RoutingController.Service.TotalWaypoints
             };
         }
     }

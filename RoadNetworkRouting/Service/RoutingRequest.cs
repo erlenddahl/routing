@@ -29,14 +29,14 @@ public class SingleRoutingRequest : RoutingRequest
         };
     }
 
-    public RoutingResponse Route()
+    public RoutingResponse Route(RoutingService service)
     {
         try
         {
             if (Waypoints == null || Waypoints.Length < 2) throw new Exception("Each route must have at least two coordinates.");
 
             var converter = CoordinateConverter.ToUtm33(SourceSrid);
-            var result = FullRoutingService.FromRequest(Waypoints, RoutingConfig, converter, Response.Coordinates || Response.CompressedCoordinates, Response.LinkReferences);
+            var result = service.FromRequest(Waypoints, RoutingConfig, converter, Response.Coordinates || Response.CompressedCoordinates, Response.LinkReferences);
 
             return new RoutingResponse(this, result);
         }
@@ -56,7 +56,7 @@ public class MultiRoutingRequest : RoutingRequest
     /// </summary>
     public Point3D[][] Waypoints { get; set; }
 
-    public IEnumerable<RoutingResponse> Route()
+    public IEnumerable<RoutingResponse> Route(RoutingService service)
     {
         var ix = 0;
         return Waypoints.Select(p => new
@@ -67,7 +67,7 @@ public class MultiRoutingRequest : RoutingRequest
             .AsParallel()
             .Select(p => new
             {
-                p.sequence, result = SingleRoutingRequest.From(this, p.request).Route()
+                p.sequence, result = SingleRoutingRequest.From(this, p.request).Route(service)
             })
             .OrderBy(p => p.sequence)
             .Select(p => p.result);
@@ -80,7 +80,7 @@ public class MatrixRoutingRequest : RoutingRequest
     /// </summary>
     public Point3D[] Waypoints { get; set; }
 
-    public IEnumerable<RoutingResponse[]> Route()
+    public IEnumerable<RoutingResponse[]> Route(RoutingService service)
     {
         var ix = 0;
         return Waypoints.Select(p => new
@@ -89,17 +89,17 @@ public class MatrixRoutingRequest : RoutingRequest
                 source = p
             })
             .AsParallel()
-            .Select(p => new { p.sequence, results = RouteOneToAll(p.source, Waypoints).ToArray() })
+            .Select(p => new { p.sequence, results = RouteOneToAll(service, p.source, Waypoints).ToArray() })
             .OrderBy(p => p.sequence)
             .Select(p => p.results);
     }
 
-    public IEnumerable<RoutingResponse> RouteOneToAll(Point3D source, Point3D[] targets)
+    public IEnumerable<RoutingResponse> RouteOneToAll(RoutingService service, Point3D source, Point3D[] targets)
     {
         //TODO: Optimized by running OneToAll routing instead of looping.
         foreach (var target in targets)
         {
-            yield return SingleRoutingRequest.From(this, new[] { source, target }).Route();
+            yield return SingleRoutingRequest.From(this, new[] { source, target }).Route(service);
         }
     }
 }

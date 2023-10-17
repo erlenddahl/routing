@@ -18,6 +18,8 @@ namespace RoutingApi.Controllers
     [EnableCors]
     public class RoutingController : Controller
     {
+        public static RoutingService Service;
+
         [HttpGet]
         public object Get()
         {
@@ -36,7 +38,7 @@ namespace RoutingApi.Controllers
             try
             {
                 this.CheckModelState();
-                return Ok(request.Route());
+                return Ok(request.Route(Service));
             }
             catch (Exception ex)
             {
@@ -53,7 +55,7 @@ namespace RoutingApi.Controllers
             try
             {
                 this.CheckModelState();
-                return Ok(request.Route());
+                return Ok(request.Route(Service));
             }
             catch (Exception ex)
             {
@@ -70,7 +72,7 @@ namespace RoutingApi.Controllers
             try
             {
                 this.CheckModelState();
-                return Ok(request.Route());
+                return Ok(request.Route(Service));
             }
             catch (Exception ex)
             {

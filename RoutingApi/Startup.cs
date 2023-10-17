@@ -11,6 +11,7 @@ using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Service;
 using System.IO;
 using System.Text.Json.Serialization;
+using RoutingApi.Controllers;
 
 namespace RoutingApi
 {
@@ -33,7 +34,7 @@ namespace RoutingApi
                 networkFile = configuration.GetValue<string>("RoadNetworkLocation");
             }
 
-            FullRoutingService.Initialize(networkFile);
+            RoutingController.Service = RoutingService.Create(networkFile);
         }
 
         public IConfiguration Configuration { get; }

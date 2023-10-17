@@ -21,7 +21,7 @@ namespace RoutingApi.Tests
         [TestInitialize]
         public void Init()
         {
-            FullRoutingService.Initialize("D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin");
+            RoutingController.Service = RoutingService.Create("D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin");
         }
 
         [TestMethod]
@@ -44,7 +44,7 @@ namespace RoutingApi.Tests
                     new Point3D(10.415004587765168, 63.41784215066588),
                     new Point3D(10.414155474818585, 63.4179078153318),
                 }
-            }.Route().CheckThrow();
+            }.Route(RoutingController.Service).CheckThrow();
 
             Assert.AreEqual(62, response.DistanceM, 0.5);
             Assert.AreEqual(7, response.Coordinates.Count);
@@ -85,7 +85,7 @@ namespace RoutingApi.Tests
                     new Point3D(10.339970694099293, 63.63778918654236),
                     new Point3D(10.973513560882651, 63.670846973692676),
                 }
-            }.Route().CheckThrow();
+            }.Route(RoutingController.Service).CheckThrow();
 
             Assert.AreEqual(2, response.LinkReferences.Count);
             Assert.AreEqual(457, response.DistanceM, 1);
@@ -116,7 +116,7 @@ namespace RoutingApi.Tests
                     new Point3D(10.324528, 63.653061),
                     new Point3D(10.969157,63.698317),
                 }
-            }.Route().CheckThrow();
+            }.Route(RoutingController.Service).CheckThrow();
 
             Assert.AreEqual(122917, response.DistanceM, 100);
             Assert.AreEqual(3106, response.Coordinates.Count);
@@ -140,7 +140,7 @@ namespace RoutingApi.Tests
                     new Point3D(10.412028, 63.413602),
                     new Point3D(10.350386, 63.399147),
                 }
-            }.Route().CheckThrow();
+            }.Route(RoutingController.Service).CheckThrow();
 
             Assert.AreEqual(8051, response.DistanceM, 0.5);
             Assert.AreEqual(436, response.Coordinates.Count);
@@ -173,7 +173,7 @@ namespace RoutingApi.Tests
                         new Point3D(10.350386, 63.399147),
                     })
                     .ToArray()
-            }.Route().ToArray();
+            }.Route(RoutingController.Service).ToArray();
             
             Assert.AreEqual(20, responses.Length);
 
@@ -229,7 +229,7 @@ namespace RoutingApi.Tests
                         new Point3D(10.350386, 63.399147)
                     }
                 }
-            }.Route().ToArray();
+            }.Route(RoutingController.Service).ToArray();
 
             for (var i = 0; i < responses.Count(); i++)
             {

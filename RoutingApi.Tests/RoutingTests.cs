@@ -21,7 +21,7 @@ namespace RoutingApi.Tests
         [TestInitialize]
         public void Init()
         {
-            RoutingController.Service = RoutingService.Create("D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\network.bin");
+            RoutingController.Service = RoutingService.Create("D:\\Lager\\RouteNetworkUpdater\\2023-01-09\\roadNetwork.bin");
         }
 
         [TestMethod]

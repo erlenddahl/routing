@@ -147,7 +147,7 @@ public class RoadLink : ILinkPartGenerator
                 NodeB = ToNodeId,
                 IsFerry = false, //TODO: Fix!
                 IsRoundabout = false, //TODO: Fix!
-                SpeedLimitKmH = SpeedLimit, //TODO: Fix!
+                SpeedLimitKmH = SpeedLimit,
                 VehiclesPerHour = 0,
                 RoadType = 'r', //TODO: Fix!
                 PartIndex = partIndex++

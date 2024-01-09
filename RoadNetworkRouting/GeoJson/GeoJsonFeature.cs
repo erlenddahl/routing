@@ -46,6 +46,33 @@ namespace RoadNetworkRouting.GeoJson
             };
         }
 
+        public static GeoJsonFeature Polygon(IEnumerable<Point3D> coordinates, int sourceSrid, object properties = null)
+        {
+            return Polygon(coordinates, CoordinateConverter.ToWgs84(sourceSrid), properties);
+        }
+
+        public static GeoJsonFeature Polygon(IEnumerable<Point3D> coordinates, CoordinateConverter converter, object properties = null)
+        {
+            return Polygon(coordinates.Select(converter.Forward), properties);
+        }
+
+        public static GeoJsonFeature Polygon(IEnumerable<Point3D> coordinates, object properties = null)
+        {
+            return Polygon(coordinates.Select(p => new[] { p.X, p.Y }), properties);
+        }
+
+        public static GeoJsonFeature Polygon(IEnumerable<double[]> coordinates, object properties = null)
+        {
+            return new GeoJsonFeature()
+            {
+                Geometry = new GeoJsonPolygon()
+                {
+                    Coordinates = new[] { coordinates.ToArray() }
+                },
+                Properties = properties
+            };
+        }
+
         public static GeoJsonFeature Point(Point3D point, int sourceSrid, object properties = null)
         {
             return Point(point, CoordinateConverter.ToWgs84(sourceSrid), properties);

@@ -21,6 +21,7 @@ using Extensions.Utilities;
 using Extensions.Utilities.Caching;
 using RoadNetworkRouting;
 using RoadNetworkRouting.GeoJson;
+using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Service;
 
 namespace RoadNetworkRouting
@@ -67,11 +68,11 @@ namespace RoadNetworkRouting
             return graph;
         }
 
-        public static RoadNetworkRouter Build(IEnumerable<RoadLink> links)
+        public static RoadNetworkRouter Build(IEnumerable<RoadLink> links, double maxDistance = 1)
         {
             var router = new RoadNetworkRouter(links);
 
-            router.FixedMissingNodeIdCount = RoadNetworkUtilities.FixMissingNodeIds(router);
+            router.FixedMissingNodeIdCount = RoadNetworkUtilities.FixMissingNodeIds(router, maxDistance);
 
             return router;
         }
@@ -297,7 +298,11 @@ namespace RoadNetworkRouting
             foreach (var link in Links.Values)
             {
                 EnsureLinkDataLoaded(link);
-                link.NetworkGroup = analysis.VertexIdGroup[link.FromNodeId];
+
+                if (!analysis.VertexIdGroup.TryGetValue(link.FromNodeId, out var g))
+                    throw new Exception("Failed to locate group number for node Id " + link.FromNodeId);
+
+                link.NetworkGroup = g;
             }
         }
 
@@ -405,15 +410,19 @@ namespace RoadNetworkRouting
             }
         }
 
-        public RoutingPoint GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null)
+        public RoutingPoint GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null, int? overrideMaxSearchRadius = null)
         {
             RoutingPoint nearest = null;
             var d = (long)config.InitialSearchRadius;
+            var maxRadius = overrideMaxSearchRadius ?? config.MaxSearchRadius;
             CreateNearbyLinkLookup();
 
             while (nearest == null)
             {
-                if (d > config.MaxSearchRadius) throw new NoLinksFoundException($"Found no links near the search point [{point.To2DString()}], using search radius from {config.InitialSearchRadius} to {config.MaxSearchRadius}. Is there something wrong with the coordinates, coordinate system specifications, or radiuses?");
+                if (d > maxRadius)
+                {
+                    throw new NoLinksFoundException($"Found no links{(networkGroup.HasValue?" in the network group " + networkGroup.Value : "")} near the search point [{point.To2DString()}], using search radius from {config.InitialSearchRadius} to {maxRadius}. Is there something wrong with the coordinates, coordinate system specifications, or radiuses?");
+                }
 
                 nearest = _nearbyLinksLookup.GetNearbyItems(point, (int)d)
                     .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup))
@@ -433,6 +442,42 @@ namespace RoadNetworkRouting
             return !SearchBounds.Contains(point.X, point.Y, config.MaxSearchRadius);
         }
 
+        /// <summary>
+        /// Saves debug information as GeoJSON files.
+        /// 1. Saves relevant links, nodes and the search points themselves.
+        /// 2. Performs a network lookup to find entry and exit points.
+        ///     - If this fails, throws the usual exception.
+        /// 3. Saves found route.
+        /// </summary>
+        /// <param name="fromPoint"></param>
+        /// <param name="toPoint"></param>
+        /// <param name="basePath"></param>
+        /// <param name="config"></param>
+        public void SaveSearchDebugAsGeoJson(Point3D fromPoint, Point3D toPoint, string basePath, RoutingConfig config)
+        {
+            var bounds = BoundingBox2D.FromPoints(new[] { fromPoint, toPoint }).Extend(5000);
+            var relevantLinks = Links.Values.Where(p => bounds.Overlaps(p.Bounds)).ToArray();
+            var relevantNodes = GenerateVertices(relevantLinks, p => EnsureLinkDataLoaded(p)).Select(p => p.Value).ToArray();
+           
+            GeoJsonCollection.From(relevantLinks.Select(p => p.ToGeoJsonFeature())).WriteTo(basePath + "_relevant-links.geojson");
+            GeoJsonCollection.From(relevantNodes.Select(p => p.ToGeoJsonFeature())).WriteTo(basePath + "_relevant-nodes.geojson");
+            GeoJsonCollection.From(new []{ fromPoint, toPoint }, 32633).WriteTo(basePath + "_search-points.geojson");
+
+            var source = GetNearestLink(fromPoint, config);
+            var target = GetNearestLink(toPoint, config);
+
+            (source, target) = EnsureEntryPointsAreInTheSameGroup(source, target, config);
+
+            GeoJsonCollection.From(new[] { source.Nearest.ToPoint(), target.Nearest.ToPoint()}, 32633).WriteTo(basePath + "_entry-points.geojson");
+
+            var route = Search(source, target, config);
+
+            GeoJsonCollection
+                .From(route.Links
+                    .Select(p => p.ToGeoJsonFeature()))
+                .WriteTo(basePath + "_found-route.geojson");
+        }
+
         public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)
         {
             if (Equals(fromPoint, toPoint)) throw new InvalidRouteException("The from and to points sent into the routing function are identical (" + fromPoint + "). Is something wrong with the search coordinates?");
@@ -447,14 +492,15 @@ namespace RoadNetworkRouting
             var source = GetNearestLink(fromPoint, config);
             var target = GetNearestLink(toPoint, config);
 
-            //var bounds = BoundingBox2D.FromPoints(new[] { fromPoint, toPoint }).Extend(5000);
-            //var relevantLinks = Links.Values.Where(p => bounds.Overlaps(p.Bounds)).ToArray();
-            //var relevantNodes = GenerateVertices(relevantLinks, p => EnsureLinkDataLoaded(p)).Select(p => p.Value).ToArray();
-            //GeoJsonCollection.From(relevantLinks.Select(p => p.ToGeoJsonFeature())).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\links.geojson");
-            //GeoJsonCollection.From(relevantNodes.Select(p => p.ToGeoJsonFeature())).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\nodes.geojson");
-            //GeoJsonCollection.From(new []{ fromPoint, toPoint }, 32633).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\search-points.geojson");
-            //GeoJsonCollection.From(new[] { source.Nearest.ToPoint(), target.Nearest.ToPoint()}, 32633).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\entry-points.geojson");
+            (source, target) = EnsureEntryPointsAreInTheSameGroup(source, target, config);
+            
+            timer.Time("routing.entry");
 
+            return Search(source, target, timer);
+        }
+
+        private (RoutingPoint source, RoutingPoint target) EnsureEntryPointsAreInTheSameGroup(RoutingPoint source, RoutingPoint target, RoutingConfig config)
+        {
             // If the source and target entry points are in different disconnected parts of the road network (for example if one of them is on an island),
             // we can't directly find a route between them.
             if (source.Link.NetworkGroup != target.Link.NetworkGroup)
@@ -469,8 +515,8 @@ namespace RoadNetworkRouting
                 if (config.DifferentGroupHandling == GroupHandling.BestGroup)
                 {
                     // Find the alternative entry/exit points in each of the two network groups.
-                    var alternativeSource = GetNearestLink(source.Point, config, target.Link.NetworkGroup);
-                    var alternativeTarget = GetNearestLink(target.Point, config, source.Link.NetworkGroup);
+                    var alternativeSource = GetNearestLink(source.Point, config, target.Link.NetworkGroup, int.MaxValue);
+                    var alternativeTarget = GetNearestLink(target.Point, config, source.Link.NetworkGroup, int.MaxValue);
 
                     // Update either the source or the target, depending on which gives the smallest distance from the entry/exit points to the source/target coordinates.
                     if (source.Nearest.DistanceFromLine + alternativeTarget.Nearest.DistanceFromLine < alternativeSource.Nearest.DistanceFromLine + target.Nearest.DistanceFromLine)
@@ -488,11 +534,7 @@ namespace RoadNetworkRouting
                 }
             }
 
-            //GeoJsonCollection.From(new[] { source.Nearest.ToPoint(), target.Nearest.ToPoint() }, 32633).WriteTo(@"C:\Users\erlendd\Desktop\Søppel\2023-09-28 - Routing-testing\entry-points-adjusted.geojson");
-
-            timer.Time("routing.entry");
-
-            return Search(source, target, timer);
+            return (source, target);
         }
 
         public RoadNetworkRoutingResult Search(RoutingPoint fromPoint, RoutingPoint toPoint, RoutingConfig config = null, TaskTimer timer = null)
@@ -507,6 +549,7 @@ namespace RoadNetworkRouting
             // Build a network graph for searching
             var graph = Graph;
 
+            timer ??= new TaskTimer();
             timer.Time("routing.graph");
 
             // Create a graph overloader so that we can insert fake nodes at the from and to points.
@@ -719,6 +762,43 @@ namespace RoadNetworkRouting
                     yield return link;
                 else
                     throw new Exception("A link with the reference code '" + lr + "' was not found in the current road network.");
+        }
+
+        /// <summary>
+        /// Saves a GeoJSON representation of this routing network, including network analysis data.
+        /// The data is saved as GeoJSON lines (.geojsonl), where each line in the file is one complete GeoJSON feature.
+        /// Coordinates are saved in WGS84 / EPSG:4326 unless otherwise specified.
+        /// </summary>
+        /// <param name="edgeFile"></param>
+        /// <param name="vertexFile"></param>
+        /// <param name="srid"></param>
+        public void SaveGeoJsonTo(string edgeFile, string vertexFile, int srid = 4326)
+        {
+            var graph = Graph;
+            SetNetworkGroups();
+
+            var vertexLocations = Links.Values
+                .SelectMany(p => new[] { (id:p.FromNodeId, location:p.Geometry[0], group:p.NetworkGroup), (id:p.ToNodeId, location:p.Geometry[^1], group:p.NetworkGroup) })
+                .GroupBy(p => p.Item1)
+                .ToDictionary(k => k.Key, v => v.First());
+
+            var converter = CoordinateConverter.FromUtm33(srid);
+
+            GeoJsonCollection
+                .From(graph.Vertices
+                    .Select(p => vertexLocations[p.Key])
+                    .Select(p =>
+                        GeoJsonFeature.Point(p.location, converter, new
+                        {
+                            p.id,
+                            p.group
+                        })))
+                .WriteTo(vertexFile);
+
+            GeoJsonCollection
+                .From(Links.Values
+                    .Select(p =>p.ToGeoJsonFeature()))
+                .WriteTo(edgeFile);
         }
     }
 }

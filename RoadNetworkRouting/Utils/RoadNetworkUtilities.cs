@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using EnergyModule.Geometry.SimpleStructures;
+using Extensions.IEnumerableExtensions;
 
 namespace RoadNetworkRouting.Utils
 {
@@ -19,8 +20,10 @@ namespace RoadNetworkRouting.Utils
             }
         }
 
-        public static int FixMissingNodeIds(RoadNetworkRouter router)
+        public static int FixMissingNodeIds(RoadNetworkRouter router, double maxDistance = 1)
         {
+            var manhattanMaxDistance = 2 * maxDistance;
+
             // Create a list containing all nodes with their IDs and locations, then store it as a
             // Y-separated dictionary of lists.
             var nodesByY = router.Links
@@ -34,7 +37,7 @@ namespace RoadNetworkRouting.Utils
                 .ToDictionary(k => k.Key, v => v.ToList());
 
             // Locate the max node ID, so that we can continue creating nodes with IDs higher than this.
-            var id = nodesByY.SelectMany(p => p.Value).Max(p => p.Id) + 1;
+            var id = (int)nodesByY.SelectMany(p => p.Value).SafeMax(p => p.Id, -1) + 1;
 
             List<Node> FindRelevant(Point3D loc)
             {
@@ -63,7 +66,7 @@ namespace RoadNetworkRouting.Utils
 
                 // Finally, find any nodes within 1 meter from this location.
                 // (Using ManhattanDistance as a filter first, as the Sqrt calculation in the actual calculation is expensive.)
-                var match = relevantNodes.FirstOrDefault(p => p.Location.ManhattanDistanceTo2D(location) < 2 && p.Location.DistanceTo2D(location) <= 1);
+                var match = relevantNodes.FirstOrDefault(p => p.Location.ManhattanDistanceTo2D(location) < manhattanMaxDistance && p.Location.DistanceTo2D(location) <= maxDistance);
                 //Debug.WriteLine($"{source}: Found matching node at {match.Location}");
 
                 // If there was no match (only the Location object will be null because it's a struct),

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EnergyModule.Geometry.SimpleStructures;
+using RoadNetworkRouting.GeoJson;
 
 namespace RoadNetworkRouting.Utils
 {
@@ -21,11 +22,15 @@ namespace RoadNetworkRouting.Utils
         /// a list of all items in this cell.
         /// </summary>
         private List<GridRow> _grid = new();
-        
+
+        private static BoundingBox2D _bounds;
+
         /// <summary>
         /// The size (width and height) of each cells in this boundary lookup.
         /// </summary>
         public int CellSize { get; }
+
+        public int ItemCount => _grid.Sum(p => p.Columns.Sum(c => c.Items.Count));
 
         private NearbyBoundsCache(int cellSize)
         {
@@ -36,6 +41,7 @@ namespace RoadNetworkRouting.Utils
         {
             var cache = new NearbyBoundsCache<T>(cellSize);
             var lookup = new Dictionary<(int X, int Y), List<GridCell>>();
+            _bounds = BoundingBox2D.Empty();
 
             foreach (var item in items)
             {
@@ -50,6 +56,8 @@ namespace RoadNetworkRouting.Utils
                 if (b.Ymin - minY == 0) minY -= cellSize;
                 if (b.Xmax - maxX == 0) maxX += cellSize;
                 if (b.Ymax - maxY == 0) maxY += cellSize;
+
+                _bounds.ExtendSelf(b);
 
                 for (var x = minX; x <= maxX; x += cellSize)
                 for (var y = minY; y <= maxY; y += cellSize)
@@ -168,6 +176,23 @@ namespace RoadNetworkRouting.Utils
             if (_lookup.TryGetValue(key, out var g))
                 foreach (var item in _grid[g.Y].Columns[g.X].Items)
                     yield return item.Item;
+        }
+
+        public void WriteGeoJson(string path)
+        {
+            var features = new List<GeoJsonFeature>();
+            for (var x = _bounds.Xmin + 1; x <= _bounds.Xmax; x += CellSize)
+            for (var y = _bounds.Ymin + 1; y <= _bounds.Ymax; y += CellSize)
+            {
+                var itemCount = GetItemsInCell(x, y).Count();
+                if (itemCount <= 0) continue;
+                features.Add(GeoJsonFeature.Polygon(new BoundingBox2D(x - 1, x - 1 + CellSize, y - 1, y - 1 + CellSize).Corners, new
+                {
+                    polygons = itemCount
+                }));
+            }
+
+            GeoJsonCollection.From(features).WriteTo(path);
         }
 
         private interface IsWithinnable

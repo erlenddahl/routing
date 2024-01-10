@@ -15,6 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="ConsoleUtilities">
+      <HintPath>..\Lib\ConsoleUtilities.dll</HintPath>
+    </Reference>
     <Reference Include="EnergyModule">
       <HintPath>..\Lib\EnergyModule.dll</HintPath>
     </Reference>

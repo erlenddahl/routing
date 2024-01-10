@@ -58,7 +58,7 @@ namespace RoadNetworkRouting.Tests.FullTests
                 new Point3D(124834.91, 6958659.40)
             };
 
-            rail.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2023-12-14 - Entur, validering av jernbanenett\search-debug", routingConfig);
+            //rail.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2023-12-14 - Entur, validering av jernbanenett\search-debug", routingConfig);
             var route = rail.FromUtm(inputCoordinates, routingConfig, true, false);
             Debug.WriteLine(route.Links.Sum(p => p.Length));
         }

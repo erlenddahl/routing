@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using EnergyModule.Fuel;
 using EnergyModule.Geometry.SimpleStructures;
 using ProjNet.CoordinateSystems;
@@ -14,6 +15,8 @@ namespace RoadNetworkRouting.Geometry
         private static readonly CoordinateTransformationFactory _ctfac = new CoordinateTransformationFactory();
         private readonly ICoordinateTransformation _sourceToTarget;
         private readonly ICoordinateTransformation _targetToSource;
+
+        private static Dictionary<(int from, int to), CoordinateConverter> _cachedConverters = new();
 
         public CoordinateConverter(int fromSrid, int toSrid)
         {
@@ -67,7 +70,7 @@ namespace RoadNetworkRouting.Geometry
         /// <returns></returns>
         public static CoordinateConverter ToUtm33(int sourceSrid)
         {
-            return new CoordinateConverter(sourceSrid, 32633);
+            return CreateOrGetCached(sourceSrid, 32633);
         }
 
         /// <summary>
@@ -78,7 +81,7 @@ namespace RoadNetworkRouting.Geometry
         /// <returns></returns>
         public static CoordinateConverter ToWgs84(int sourceSrid)
         {
-            return new CoordinateConverter(sourceSrid, 4326);
+            return CreateOrGetCached(sourceSrid, 4326);
         }
         /// <summary>
         /// Creates a converter that transforms from UTM33N/EPSG:32633 to
@@ -88,7 +91,18 @@ namespace RoadNetworkRouting.Geometry
         /// <returns></returns>
         public static CoordinateConverter FromUtm33(int targetSrid)
         {
-            return new CoordinateConverter(32633, targetSrid);
+            return CreateOrGetCached(32633, targetSrid);
+        }
+
+        public static CoordinateConverter CreateOrGetCached(int from, int to)
+        {
+            lock (_cachedConverters)
+            {
+                if (_cachedConverters.TryGetValue((from, to), out var c)) return c;
+                c = new CoordinateConverter(from, to);
+                _cachedConverters.Add((from, to), c);
+                return c;
+            }
         }
     }
 }

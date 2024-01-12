@@ -487,7 +487,7 @@ namespace RoadNetworkRouting
 
             if (OutsideBounds(fromPoint, config) || OutsideBounds(toPoint, config)) throw new InvalidRouteException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
 
-            if (config.SearchRadiusIncrement < 1) throw new InvalidDataException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
+            if (config.SearchRadiusIncrement < 1) throw new RoutingException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
 
             var source = GetNearestLink(fromPoint, config);
             var target = GetNearestLink(toPoint, config);
@@ -530,7 +530,7 @@ namespace RoadNetworkRouting
                 }
                 else
                 {
-                    throw new NotImplementedException("Different group handling for " + config.DifferentGroupHandling + " is not implemented.");
+                    throw new RoutingException("Different group handling for " + config.DifferentGroupHandling + " is not implemented.");
                 }
             }
 
@@ -539,7 +539,7 @@ namespace RoadNetworkRouting
 
         public RoadNetworkRoutingResult Search(RoutingPoint fromPoint, RoutingPoint toPoint, RoutingConfig config = null, TaskTimer timer = null)
         {
-            if (fromPoint.Link == null || toPoint.Link == null)
+            if (fromPoint.Link == null || toPoint.Link == null || fromPoint.Link.NetworkGroup != toPoint.Link.NetworkGroup)
                 return Search(fromPoint.Point, toPoint.Point, config, timer);
             return Search(fromPoint, toPoint, timer);
         }
@@ -579,12 +579,12 @@ namespace RoadNetworkRouting
 
             targetId = overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
 
-            if (sourceId == targetId) throw new InvalidRouteException("Source and target ids are identical. Is something wrong with the search coordinates?");
+            if (sourceId == targetId) throw new RoutingException("Source and target ids are identical. Is something wrong with the search coordinates?");
 
             // Find the best route between the source and target vertices using the road link costs we have built.
             var route = graph.GetShortestPath(sourceId, targetId, overloader);
 
-            if (route.Edges == null) throw new Exception("Unable to find a route between these coordinates.");
+            if (route.Edges == null) throw new RoutingException("Unable to find a route between these coordinates.");
 
             timer.Time("routing.routing");
 

@@ -1,8 +1,6 @@
-﻿using System;
+﻿namespace RoadNetworkRouting.Exceptions;
 
-namespace RoadNetworkRouting.Exceptions;
-
-public class DifferentGroupsException : Exception
+public class DifferentGroupsException : RoutingException
 {
     public DifferentGroupsException(string msg) : base(msg)
     {

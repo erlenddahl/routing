@@ -2,7 +2,7 @@
 
 namespace RoadNetworkRouting.Exceptions;
 
-public class NoLinksFoundException : Exception
+public class NoLinksFoundException : RoutingException
 {
     public NoLinksFoundException(string msg) : base(msg)
     {

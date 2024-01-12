@@ -2,7 +2,7 @@
 
 namespace RoadNetworkRouting.Exceptions;
 
-public class MissingConfigException : Exception
+public class MissingConfigException : RoutingException
 {
     public MissingConfigException(string msg) : base(msg)
     {

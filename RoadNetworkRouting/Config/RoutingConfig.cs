@@ -25,5 +25,5 @@ public class RoutingConfig
     /// <summary>
     /// If the link search reaches this radius without finding a link, a <see cref="NoLinksFoundException"/> will be thrown./>
     /// </summary>
-    public int MaxSearchRadius { get; set; } = 10_000;
+    public int MaxSearchRadius { get; set; } = 1000;
 }

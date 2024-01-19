@@ -36,7 +36,7 @@ public class SingleRoutingRequest : RoutingRequest
             if (Waypoints == null || Waypoints.Length < 2) throw new Exception("Each route must have at least two coordinates.");
 
             var converter = CoordinateConverter.ToUtm33(SourceSrid);
-            var result = service.FromRequest(Waypoints, RoutingConfig, converter, Response.Coordinates || Response.CompressedCoordinates, Response.LinkReferences);
+            var result = service.FromRequest(Waypoints, RoutingConfig, converter, Response.Coordinates || Response.CompressedCoordinates, Response.LinkReferences, null);
 
             return new RoutingResponse(this, result);
         }

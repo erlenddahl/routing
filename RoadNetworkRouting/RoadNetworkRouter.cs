@@ -463,10 +463,10 @@ namespace RoadNetworkRouting
             GeoJsonCollection.From(relevantNodes.Select(p => p.ToGeoJsonFeature())).WriteTo(basePath + "_relevant-nodes.geojson");
             GeoJsonCollection.From(new []{ fromPoint, toPoint }, 32633).WriteTo(basePath + "_search-points.geojson");
 
-            var source = GetNearestLink(fromPoint, config);
-            var target = GetNearestLink(toPoint, config);
+            var source = GetNearestLink(fromPoint, config, timer: timer);
+            var target = GetNearestLink(toPoint, config, timer: timer);
 
-            (source, target) = EnsureEntryPointsAreInTheSameGroup(source, target, config);
+            (source, target) = EnsureEntryPointsAreInTheSameGroup(source, target, config, timer);
 
             GeoJsonCollection.From(new[] { source.Nearest.ToPoint(), target.Nearest.ToPoint()}, 32633).WriteTo(basePath + "_entry-points.geojson");
 
@@ -476,30 +476,32 @@ namespace RoadNetworkRouting
                 .From(route.Links
                     .Select(p => p.ToGeoJsonFeature()))
                 .WriteTo(basePath + "_found-route.geojson");
+
+            return route;
         }
 
         public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)
         {
-            if (Equals(fromPoint, toPoint)) throw new InvalidRouteException("The from and to points sent into the routing function are identical (" + fromPoint + "). Is something wrong with the search coordinates?");
+            if (Equals(fromPoint, toPoint)) throw new RoutingException("The from and to points sent into the routing function are identical (" + fromPoint + "). Is something wrong with the search coordinates?");
             
             config ??= new RoutingConfig();
             timer ??= new TaskTimer();
 
-            if (OutsideBounds(fromPoint, config) || OutsideBounds(toPoint, config)) throw new InvalidRouteException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
+            if (OutsideBounds(fromPoint, config) || OutsideBounds(toPoint, config)) throw new RoutingException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
 
             if (config.SearchRadiusIncrement < 1) throw new RoutingException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
 
-            var source = GetNearestLink(fromPoint, config);
-            var target = GetNearestLink(toPoint, config);
+            var source = GetNearestLink(fromPoint, config, timer: timer);
+            var target = GetNearestLink(toPoint, config, timer: timer);
 
-            (source, target) = EnsureEntryPointsAreInTheSameGroup(source, target, config);
+            (source, target) = EnsureEntryPointsAreInTheSameGroup(source, target, config, timer);
             
             timer.Time("routing.entry");
 
             return Search(source, target, timer);
         }
 
-        private (RoutingPoint source, RoutingPoint target) EnsureEntryPointsAreInTheSameGroup(RoutingPoint source, RoutingPoint target, RoutingConfig config)
+        private (RoutingPoint source, RoutingPoint target) EnsureEntryPointsAreInTheSameGroup(RoutingPoint source, RoutingPoint target, RoutingConfig config, TaskTimer timer)
         {
             // If the source and target entry points are in different disconnected parts of the road network (for example if one of them is on an island),
             // we can't directly find a route between them.
@@ -515,8 +517,8 @@ namespace RoadNetworkRouting
                 if (config.DifferentGroupHandling == GroupHandling.BestGroup)
                 {
                     // Find the alternative entry/exit points in each of the two network groups.
-                    var alternativeSource = GetNearestLink(source.Point, config, target.Link.NetworkGroup, int.MaxValue);
-                    var alternativeTarget = GetNearestLink(target.Point, config, source.Link.NetworkGroup, int.MaxValue);
+                    var alternativeSource = GetNearestLink(source.Point, config, target.Link.NetworkGroup, int.MaxValue, timer);
+                    var alternativeTarget = GetNearestLink(target.Point, config, source.Link.NetworkGroup, int.MaxValue, timer);
 
                     // Update either the source or the target, depending on which gives the smallest distance from the entry/exit points to the source/target coordinates.
                     if (source.Nearest.DistanceFromLine + alternativeTarget.Nearest.DistanceFromLine < alternativeSource.Nearest.DistanceFromLine + target.Nearest.DistanceFromLine)

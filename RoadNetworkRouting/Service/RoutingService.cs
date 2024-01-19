@@ -33,17 +33,17 @@ public class RoutingService
     /// </summary>
     public double? MaxRouteLengthKm { get; set; } = 1000;
 
-    public InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences)
+    public InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null)
     {
-        return FromUtm(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config, includeCoordinates, includeLinkReferences);
+        return FromUtm(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config, includeCoordinates, includeLinkReferences, timer);
     }
 
-    public InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences)
+    public InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null)
     {
-        return FromUtm(coordinates.Select(p => new RoutingPoint(p)).ToArray(), config, includeCoordinates, includeLinkReferences);
+        return FromUtm(coordinates.Select(p => new RoutingPoint(p)).ToArray(), config, includeCoordinates, includeLinkReferences, timer);
     }
 
-    public InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences)
+    public InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null)
     {
         if (MaxRouteLengthKm.HasValue)
         {
@@ -56,7 +56,7 @@ public class RoutingService
         {
             RequestedWaypoints = new(),
             LinkReferences = includeLinkReferences ? new List<string>() : null,
-            Timings = new(),
+            Timings = timer ?? new(),
             Links = new(),
             Coordinates = includeCoordinates ? new List<Point3D>() : null
         };

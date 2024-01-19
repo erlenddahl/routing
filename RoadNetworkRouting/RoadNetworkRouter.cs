@@ -644,6 +644,27 @@ namespace RoadNetworkRouting
             return new RoadNetworkRoutingResult(route, links, source, target, timer);
         }
 
+        private void SaveDijkstraSearch(QuickGraphSearchResult<RoadLink> route, Point3D fromPoint, Point3D toPoint)
+        {
+            var bounds = BoundingBox2D.FromPoints(new[] { fromPoint, toPoint }).Extend(5000);
+            var relevantLinks = Links.Values.Where(p => bounds.Overlaps(p.Bounds)).ToArray();
+            var relevantNodes = GenerateVertices(relevantLinks, p => EnsureLinkDataLoaded(p));
+
+            //var nodeLookup = GenerateVertices();
+            GeoJsonCollection.From(route.InternalData.GetInternalData().Select(p =>
+            {
+                if (!relevantNodes.TryGetValue(p.Vertex.Id, out var node)) return null;
+                return GeoJsonFeature.Point(node.X, node.Y, new
+                {
+                    p.Cost,
+                    p.Vertex.Id,
+                    p.Visited,
+                    node.Edges,
+                    node.VertexGroup
+                });
+            }).Where(p => p != null)).WriteTo(@"G:\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\failed_search_" + "_dijkstra-searched-nodes.geojson");
+        }
+
         /// <summary>
         /// Makes sure all links are rotated correctly (so that they fit together in one coherent group, regardless of
         /// original geometry orientation), and cuts the first and last link to fit the from- and to points if necessary.

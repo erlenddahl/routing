@@ -50,7 +50,7 @@ namespace RoadNetworkRouting.Tests
 
             try
             {
-                router.Search(new Point3D(-41025, 6868128), new Point3D(-32489, 6859998));
+                router.Search(new Point3D(-41025, 6868128), new Point3D(-32489, 6859998), new RoutingConfig() { DifferentGroupHandling = GroupHandling.OnlySame });
             }
             catch (DifferentGroupsException ex)
             {
@@ -67,7 +67,7 @@ namespace RoadNetworkRouting.Tests
 
             try
             {
-                router.Search(new Point3D(-41025, 6868128), new Point3D(-23826, 6857736));
+                router.Search(new Point3D(-41025, 6868128), new Point3D(-23826, 6857736), new RoutingConfig() { DifferentGroupHandling = GroupHandling.OnlySame });
             }
             catch (DifferentGroupsException ex)
             {

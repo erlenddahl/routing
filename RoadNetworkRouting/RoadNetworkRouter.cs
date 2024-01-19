@@ -16,6 +16,7 @@ using RoadNetworkRouting.Utils;
 using System.Diagnostics.Metrics;
 using EnergyModule.Network;
 using System.Drawing;
+using System.Globalization;
 using EnergyModule.Exceptions;
 using Extensions.Utilities;
 using Extensions.Utilities.Caching;
@@ -23,6 +24,7 @@ using RoadNetworkRouting;
 using RoadNetworkRouting.GeoJson;
 using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Service;
+using System.Security.Cryptography;
 
 namespace RoadNetworkRouting
 {
@@ -403,6 +405,7 @@ namespace RoadNetworkRouting
         private readonly object _nearbyLock = new();
         public void CreateNearbyLinkLookup()
         {
+            if (_nearbyLinksLookup != null) return;
             lock (_nearbyLock)
             {
                 if (_nearbyLinksLookup != null) return;
@@ -410,7 +413,7 @@ namespace RoadNetworkRouting
             }
         }
 
-        public RoutingPoint GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null, int? overrideMaxSearchRadius = null)
+        public RoutingPoint GetNearestLink(Point3D point, RoutingConfig config, int? networkGroup = null, int? overrideMaxSearchRadius = null, TaskTimer timer = null)
         {
             RoutingPoint nearest = null;
             var d = (long)config.InitialSearchRadius;
@@ -421,6 +424,7 @@ namespace RoadNetworkRouting
             {
                 if (d > maxRadius)
                 {
+                    timer?.Time("routing.entry.failed");
                     throw new NoLinksFoundException($"Found no links{(networkGroup.HasValue?" in the network group " + networkGroup.Value : "")} near the search point [{point.To2DString()}], using search radius from {config.InitialSearchRadius} to {maxRadius}. Is there something wrong with the coordinates, coordinate system specifications, or radiuses?");
                 }
 
@@ -432,6 +436,8 @@ namespace RoadNetworkRouting
 
                 d *= config.SearchRadiusIncrement;
             }
+
+            timer?.Time("routing.entry");
 
             return nearest;
         }

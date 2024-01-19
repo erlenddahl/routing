@@ -5,7 +5,7 @@ namespace Routing
 {
     public class Dijkstra
     {
-        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null)
+        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
         {
             var result = new DijkstraResult<T>(graph, overloader);
 
@@ -33,6 +33,9 @@ namespace Routing
                     var edge = result.GetEdge(current.Vertex.Id, n.Vertex.Id);
 
                     var totalCost = current.Cost + edge.Cost;
+
+                    if (totalCost > maxCost) continue;
+
                     if (totalCost < n.Cost)
                     {
                         queue.Remove(n); // Must remove before changing to avoid upsetting the sorting by changing the sort value

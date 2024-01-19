@@ -31,9 +31,9 @@ namespace Routing
             return new GraphAnalysis<T>(this);
         }
 
-        public QuickGraphSearchResult<T> GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null)
+        public QuickGraphSearchResult<T> GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
         {
-            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId, overloader);
+            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId, overloader, maxCost);
             var result = new QuickGraphSearchResult<T>(dr);
 
             return result;

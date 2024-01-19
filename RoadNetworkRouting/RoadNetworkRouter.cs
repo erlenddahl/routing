@@ -453,7 +453,7 @@ namespace RoadNetworkRouting
         /// <param name="toPoint"></param>
         /// <param name="basePath"></param>
         /// <param name="config"></param>
-        public void SaveSearchDebugAsGeoJson(Point3D fromPoint, Point3D toPoint, string basePath, RoutingConfig config)
+        public RoadNetworkRoutingResult SaveSearchDebugAsGeoJson(Point3D fromPoint, Point3D toPoint, string basePath, RoutingConfig config, TaskTimer timer)
         {
             var bounds = BoundingBox2D.FromPoints(new[] { fromPoint, toPoint }).Extend(5000);
             var relevantLinks = Links.Values.Where(p => bounds.Overlaps(p.Bounds)).ToArray();
@@ -578,17 +578,29 @@ namespace RoadNetworkRouting
 
             // Configure the overloader
             sourceId = overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
-
             targetId = overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
 
             if (sourceId == targetId) throw new RoutingException("Source and target ids are identical. Is something wrong with the search coordinates?");
 
+            // The cost is travel time measured in minutes. Calculate a reasonable maximum amount of time using
+            // the Manhattan distance between the search points, and use this as a maximum cost to make Dijkstra avoid
+            // unnecessary searching if the target point is unreachable.
+            var distanceEstimate = source.Point.ManhattanDistanceTo2D(target.Point);
+
+            // Make the conservative assumption that the manhattan distance could be a third of the actual distance
+            distanceEstimate *= 3;
+
+            // ... and that the average speed is 36 km/h => 10 m/s.
+            var maxCost = (distanceEstimate / 10) / 60d;
+
             // Find the best route between the source and target vertices using the road link costs we have built.
-            var route = graph.GetShortestPath(sourceId, targetId, overloader);
-
-            if (route.Edges == null) throw new RoutingException("Unable to find a route between these coordinates.");
-
+            var route = graph.GetShortestPath(sourceId, targetId, overloader, maxCost);
             timer.Time("routing.routing");
+
+            //SaveDijkstraSearch(route, source.Point, target.Point);
+
+            if (route.Edges == null)
+                throw new RoutingException("Unable to find a route between these coordinates (different networks? errors in the network?).");
 
             // Extract the road links (if there are any)
             var links = route.Edges?.Select(p => EnsureLinkDataLoaded(p, timer)).ToArray() ?? Array.Empty<RoadLink>();
@@ -624,7 +636,7 @@ namespace RoadNetworkRouting
             if (links[0].Geometry.Length == 0 || links[^1].Geometry.Length == 0)
             {
                 links = links.Where(p => p.Geometry.Length > 0).ToArray();
-                if (!links.Any()) throw new Exception("Unable to find a route between these coordinates.");
+                if (!links.Any()) throw new RoutingException("Unable to find a route between these coordinates (too near?).");
             }
 
             timer.Time("routing.cut");

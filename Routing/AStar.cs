@@ -41,6 +41,7 @@ namespace Routing
 
                     if (cost > maxCost)
                     {
+                        result.AboveMaxCost++;
                         continue;
                     }
 

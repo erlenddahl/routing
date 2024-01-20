@@ -16,6 +16,7 @@ namespace Routing
         public TimeSpan ElapsedTime { get; set; }
 
         public int Tries { get; set; }
+        public int AboveMaxCost { get; set; }
 
         public DijkstraResult(Graph<T> graph, GraphOverloader<T> overloader = null)
         {

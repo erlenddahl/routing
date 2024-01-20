@@ -35,7 +35,11 @@ namespace Routing
 
                     var totalCost = current.Cost + edge.Cost;
 
-                    if (totalCost > maxCost) continue;
+                    if (totalCost > maxCost)
+                    {
+                        result.AboveMaxCost++;
+                        continue;
+                    }
 
                     if (totalCost < n.Cost)
                     {

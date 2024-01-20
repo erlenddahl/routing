@@ -25,6 +25,7 @@ using RoadNetworkRouting.GeoJson;
 using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Service;
 using System.Security.Cryptography;
+using Extensions.DoubleExtensions;
 
 namespace RoadNetworkRouting
 {
@@ -603,25 +604,26 @@ namespace RoadNetworkRouting
             // Make the conservative assumption that the manhattan distance could be a third of the actual distance
             distanceEstimate *= 3;
 
-            // ... and that the average speed is 36 km/h => 10 m/s.
-            var maxCost = (distanceEstimate / 10) / 60d;
+            var maxSearchDuration = (distanceEstimate / 100d).Restrict(100, config.MaxSearchDurationMs);
 
             // Find the best route between the source and target vertices using the road link costs we have built.
             QuickGraphSearchResult<RoadLink> route;
             if (config.Algorithm == RoutingAlgorithm.AStar)
             {
-                maxCost *= 10; // A* doesn't really need this, since it uses the heuristic to avoid weird searches, but let's keep it (a bit higher) just in case.
                 var b = (target.Nearest.X, target.Nearest.Y);
                 route = graph.GetShortestPathAstar(sourceId, targetId, (curr, _) =>
                 {
                     if (curr.Id == targetId) return 0;
                     var a = _vertices.TryGetValue(curr.Id, out var va) ? (va.X, va.Y) : (source.Nearest.X, source.Nearest.Y);
                     return Heuristic(a, b);
-                }, overloader, maxCost);
+                }, overloader, maxSearchDurationMs: maxSearchDuration);
             }
             else
             {
-                route = graph.GetShortestPath(sourceId, targetId, overloader, Math.Max(maxCost, 25));
+                // Assume that the average speed is 36 km/h => 10 m/s.
+                var maxCost = (distanceEstimate / 10) / 60d;
+
+                route = graph.GetShortestPath(sourceId, targetId, overloader, Math.Max(maxCost, 25), maxSearchDuration);
             }
             timer.Time("routing.routing");
 

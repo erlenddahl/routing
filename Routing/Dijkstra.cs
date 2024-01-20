@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Routing
@@ -6,7 +7,7 @@ namespace Routing
     public class Dijkstra
     {
 
-        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
+        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue)
         {
             var result = new DijkstraResult<T>(graph, overloader);
 
@@ -16,15 +17,23 @@ namespace Routing
 
             var queue = new PriorityQueue<VertexData<T>>(new VertexDataComparer<T>());
             queue.Add(current);
+            
+            var sw = new Stopwatch();
+            sw.Start();
 
             while (queue.Count > 0)
             {
+                if (sw.ElapsedMilliseconds > maxSearchDurationMs)
+                {
+                    return result.Finish(null, TerminationType.TimedOut);
+                }
+
                 current = queue.Remove();
 
                 result.Tries++;
                 if (current.Vertex.Id == targetVertexId)
                 {
-                    return result.Finish(current);
+                    return result.Finish(current, TerminationType.ReachedTarget);
                 }
 
                 foreach (var n in current.Vertex.NeighbourIds.Select(p => result.GetVertexData(p)))

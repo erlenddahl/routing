@@ -13,7 +13,8 @@ namespace Routing
 
         public VertexData<T> Source { get; set; }
         public VertexData<T> Target { get; private set; }
-        public TimeSpan ElapsedTime { get; set; }
+        public double ElapsedTimeMs { get; set; }
+        public TerminationType Termination { get; set; }
 
         public int Tries { get; set; }
         public int AboveMaxCost { get; set; }
@@ -36,11 +37,12 @@ namespace Routing
             return vd;
         }
 
-        public DijkstraResult<T> Finish(VertexData<T> target = null)
+        public DijkstraResult<T> Finish(VertexData<T> target = null, TerminationType termination = TerminationType.Error)
         {
             _stopwatch.Stop();
             _dynamicData.Clear();
-            ElapsedTime = _stopwatch.Elapsed;
+            ElapsedTimeMs = _stopwatch.ElapsedMilliseconds;
+            Termination = termination;
             Target = target;
             return this;
         }
@@ -66,5 +68,12 @@ namespace Routing
             if (_overloader != null && _overloader.TryGetEdge(startVertexId, endVertexId, out var e)) return e;
             return _graph.GetEdge(startVertexId, endVertexId);
         }
+    }
+
+    public enum TerminationType
+    {
+        Error,
+        ReachedTarget,
+        TimedOut
     }
 }

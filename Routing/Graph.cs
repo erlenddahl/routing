@@ -31,17 +31,17 @@ namespace Routing
             return new GraphAnalysis<T>(this);
         }
 
-        public QuickGraphSearchResult<T> GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
+        public QuickGraphSearchResult<T> GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue)
         {
-            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId, overloader, maxCost);
+            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId, overloader, maxCost, maxSearchDurationMs);
             var result = new QuickGraphSearchResult<T>(dr);
 
             return result;
         }
 
-        public QuickGraphSearchResult<T> GetShortestPathAstar(int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
+        public QuickGraphSearchResult<T> GetShortestPathAstar(int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue)
         {
-            var dr = AStar.GetShortestPath(this, sourceVertexId, targetVertexId, heuristic, overloader, maxCost);
+            var dr = AStar.GetShortestPath(this, sourceVertexId, targetVertexId, heuristic, overloader, maxCost, maxSearchDurationMs);
             var result = new QuickGraphSearchResult<T>(dr);
 
             return result;

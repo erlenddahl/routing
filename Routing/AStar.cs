@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +9,7 @@ namespace Routing
 {
     public class AStar
     {
-        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
+        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue)
         {
             var result = new DijkstraResult<T>(graph, overloader);
 
@@ -21,14 +22,23 @@ namespace Routing
             var queue = new PriorityQueue<VertexData<T>>(new HVertexDataComparer<T>());
             queue.Add(current);
 
+            VertexData<T> minHeuristic = null;
+            var sw = new Stopwatch();
+            sw.Start();
+
             while (queue.Count > 0)
             {
+                if (sw.ElapsedMilliseconds > maxSearchDurationMs)
+                {
+                    return result.Finish(minHeuristic, TerminationType.TimedOut);
+                }
+
                 current = queue.Remove();
 
                 result.Tries++;
                 if (current.Vertex.Id == targetVertexId)
                 {
-                    return result.Finish(current);
+                    return result.Finish(current, TerminationType.ReachedTarget);
                 }
 
                 foreach (var n in current.Vertex.NeighbourIds.Select(p => result.GetVertexData(p)))
@@ -56,6 +66,9 @@ namespace Routing
                         n.PreviousVertex = current;
                         n.PreviousEdge = edge;
                         queue.Add(n); // Add to queue with updated fScore
+
+                        if (minHeuristic == null || hScore < minHeuristic.Heuristic)
+                            minHeuristic = n;
                     }
                 }
 

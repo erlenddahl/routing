@@ -31,4 +31,11 @@ public class RoutingConfig
     /// Which routing algorithm to use. AStar is faster and probably optimal, while Dijkstra is guaranteed to be optimal.
     /// </summary>
     public RoutingAlgorithm Algorithm { get; set; } = RoutingAlgorithm.AStar;
+
+    /// <summary>
+    /// If the routing takes longer time than this, it will be cancelled.
+    /// When using A*, the currently best route will be returned.
+    /// When using Dijkstra, an error will be thrown.
+    /// </summary>
+    public double MaxSearchDurationMs { get; set; } = 15_000;
 }

@@ -16,7 +16,7 @@ namespace Routing
         public double ElapsedTimeMs { get; set; }
         public TerminationType Termination { get; set; }
 
-        public int Tries { get; set; }
+        public int Iterations { get; set; }
         public int AboveMaxCost { get; set; }
 
         public DijkstraResult(Graph<T> graph, GraphOverloader<T> overloader = null)
@@ -74,6 +74,7 @@ namespace Routing
     {
         Error,
         ReachedTarget,
-        TimedOut
+        TimedOut,
+        TooManyIterations
     }
 }

@@ -7,7 +7,7 @@ namespace Routing
     public class Dijkstra
     {
 
-        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue)
+        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue, long maxIterations = long.MaxValue)
         {
             var result = new DijkstraResult<T>(graph, overloader);
 
@@ -27,10 +27,14 @@ namespace Routing
                 {
                     return result.Finish(null, TerminationType.TimedOut);
                 }
+                if (result.Iterations > maxIterations)
+                {
+                    return result.Finish(null, TerminationType.TooManyIterations);
+                }
 
                 current = queue.Remove();
 
-                result.Tries++;
+                result.Iterations++;
                 if (current.Vertex.Id == targetVertexId)
                 {
                     return result.Finish(current, TerminationType.ReachedTarget);

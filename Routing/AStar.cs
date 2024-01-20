@@ -9,7 +9,7 @@ namespace Routing
 {
     public class AStar
     {
-        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue)
+        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue, long maxIterations = long.MaxValue)
         {
             var result = new DijkstraResult<T>(graph, overloader);
 
@@ -32,10 +32,14 @@ namespace Routing
                 {
                     return result.Finish(minHeuristic, TerminationType.TimedOut);
                 }
+                if (result.Iterations > maxIterations)
+                {
+                    return result.Finish(minHeuristic, TerminationType.TooManyIterations);
+                }
 
                 current = queue.Remove();
 
-                result.Tries++;
+                result.Iterations++;
                 if (current.Vertex.Id == targetVertexId)
                 {
                     return result.Finish(current, TerminationType.ReachedTarget);

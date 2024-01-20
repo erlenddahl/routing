@@ -604,7 +604,7 @@ namespace RoadNetworkRouting
             // Make the conservative assumption that the manhattan distance could be a third of the actual distance
             distanceEstimate *= 3;
 
-            var maxSearchDuration = (distanceEstimate / 100d).Restrict(100, config.MaxSearchDurationMs);
+            var maxIterations = (long)distanceEstimate;
 
             // Find the best route between the source and target vertices using the road link costs we have built.
             QuickGraphSearchResult<RoadLink> route;
@@ -616,14 +616,14 @@ namespace RoadNetworkRouting
                     if (curr.Id == targetId) return 0;
                     var a = _vertices.TryGetValue(curr.Id, out var va) ? (va.X, va.Y) : (source.Nearest.X, source.Nearest.Y);
                     return Heuristic(a, b);
-                }, overloader, maxSearchDurationMs: maxSearchDuration);
+                }, overloader, maxSearchDurationMs: config.MaxSearchDurationMs, maxIterations: maxIterations);
             }
             else
             {
                 // Assume that the average speed is 36 km/h => 10 m/s.
                 var maxCost = (distanceEstimate / 10) / 60d;
 
-                route = graph.GetShortestPath(sourceId, targetId, overloader, Math.Max(maxCost, 25), maxSearchDuration);
+                route = graph.GetShortestPath(sourceId, targetId, overloader, Math.Max(maxCost, 25), config.MaxSearchDurationMs, maxIterations);
             }
             timer.Time("routing.routing");
 

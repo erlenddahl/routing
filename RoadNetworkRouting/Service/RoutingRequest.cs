@@ -31,22 +31,14 @@ public class SingleRoutingRequest : RoutingRequest
 
     public RoutingResponse Route(RoutingService service)
     {
-        try
-        {
-            if (Waypoints == null || Waypoints.Length < 2) throw new Exception("Each route must have at least two coordinates.");
+        if (Waypoints == null || Waypoints.Length < 2) throw new Exception("Each route must have at least two coordinates.");
 
-            var converter = CoordinateConverter.ToUtm33(SourceSrid);
-            var result = service.FromRequest(Waypoints, RoutingConfig, converter, Response.Coordinates || Response.CompressedCoordinates, Response.LinkReferences, null);
+        Response ??= new RoutingResponseDefinition();
 
-            return new RoutingResponse(this, result);
-        }
-        catch (Exception ex)
-        {
-#if DEBUG
-            throw;
-#endif
-            return new RoutingResponse(ex);
-        }
+        var converter = CoordinateConverter.ToUtm33(SourceSrid);
+        var result = service.FromRequest(Waypoints, RoutingConfig, converter, Response.Coordinates || Response.CompressedCoordinates, Response.LinkReferences, null);
+
+        return new RoutingResponse(this, result);
     }
 }
 public class MultiRoutingRequest : RoutingRequest
@@ -67,9 +59,24 @@ public class MultiRoutingRequest : RoutingRequest
                 request = p
             })
             .AsParallel()
-            .Select(p => new
+            .Select(p =>
             {
-                p.sequence, result = SingleRoutingRequest.From(this, p.request).Route(service)
+                try
+                {
+                    return new
+                    {
+                        p.sequence,
+                        result = SingleRoutingRequest.From(this, p.request).Route(service)
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new
+                    {
+                        p.sequence,
+                        result = new RoutingResponse(ex)
+                    };
+                }
             })
             .OrderBy(p => p.sequence)
             .Select(p => p.result);

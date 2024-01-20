@@ -248,5 +248,22 @@ namespace RoutingApi.Tests
                 Assert.AreEqual(63d + (i + 1d) / 10d, responses[i].RequestedWaypoints[0].FromWaypoint.Y, 0.0005);
             }
         }
+
+        [TestMethod]
+        public void MinimumRequest()
+        {
+            var response = new SingleRoutingRequest()
+            {
+                Waypoints = new[]
+                {
+                    new Point3D(271047.81, 7039885.66),
+                    new Point3D(269319.20, 7039903.40),
+                }
+            }.Route(RoutingController.Service).CheckThrow();
+
+            Assert.AreEqual(6459, response.DistanceM, 50);
+            Assert.IsNull(response.Coordinates);
+            Assert.IsNull(response.LinkReferences);
+        }
     }
 }

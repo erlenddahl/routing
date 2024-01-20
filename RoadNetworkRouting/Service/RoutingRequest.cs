@@ -58,6 +58,8 @@ public class MultiRoutingRequest : RoutingRequest
 
     public IEnumerable<RoutingResponse> Route(RoutingService service)
     {
+        Response ??= new RoutingResponseDefinition();
+
         var ix = 0;
         return Waypoints.Select(p => new
             {

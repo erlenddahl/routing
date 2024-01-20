@@ -67,6 +67,8 @@ namespace RoadNetworkRouting
                 graph.CreateEdge(link, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
             }
 
+            _vertices ??= GenerateVertices();
+
             return graph;
         }
 
@@ -274,6 +276,7 @@ namespace RoadNetworkRouting
             var buffer = new byte[RoadLink.CalculateItemSize(maxPointCount)];
 
             router._graph = new Graph<RoadLink>();
+            router._vertices = new Dictionary<int, Node>();
             for (var i = 0; i < linkCount; i++)
             {
                 var link = new RoadLink();
@@ -281,6 +284,11 @@ namespace RoadNetworkRouting
                 router.Links.Add(link.LinkId, link);
                 progress?.Invoke(i, linkCount);
                 router._graph.CreateEdge(link, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
+
+                if (!router._vertices.ContainsKey(link.FromNodeId))
+                    router._vertices.Add(link.FromNodeId, new Node(link.Geometry[0].X, link.Geometry[0].Y, link.FromNodeId));
+                if (!router._vertices.ContainsKey(link.ToNodeId))
+                    router._vertices.Add(link.ToNodeId, new Node(link.Geometry[^1].X, link.Geometry[^1].Y, link.ToNodeId));
             }
 
             return router;
@@ -403,6 +411,8 @@ namespace RoadNetworkRouting
         private static Dictionary<int, string> _binaryStrings;
 
         private readonly object _nearbyLock = new();
+        private Dictionary<int, Node> _vertices;
+
         public void CreateNearbyLinkLookup()
         {
             if (_nearbyLinksLookup != null) return;

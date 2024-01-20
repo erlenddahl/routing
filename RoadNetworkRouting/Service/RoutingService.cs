@@ -83,6 +83,8 @@ public class RoutingService
             if (!path.Success) throw new Exception("Couldn't find a route between these points.");
             coordinates[i - 1].Update(path.Source);
             coordinates[i].Update(path.Target);
+
+            rs.RequestedWaypoints[^1].RoutingInfo = new RoutingInfo(path);
                 
             foreach (var link in path.Links)
             {

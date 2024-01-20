@@ -30,6 +30,11 @@ namespace RoadNetworkRouting.Service
         /// </summary>
         public int LinkReferenceIndex { get; set; }
 
+        /// <summary>
+        /// Detailed information about the routing operation.
+        /// </summary>
+        public RoutingInfo RoutingInfo { get; set; }
+
         public WayPointData ConvertCoordinates(CoordinateConverter converter)
         {
             return new WayPointData()

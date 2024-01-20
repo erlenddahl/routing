@@ -39,7 +39,10 @@ namespace Routing
 
                     var cost = current.Cost + edge.Cost;
 
-                    if (cost > maxCost) continue;
+                    if (cost > maxCost)
+                    {
+                        continue;
+                    }
 
                     var hScore = heuristic(n.Vertex, targetVertex);
                     var fScore = cost + hScore;

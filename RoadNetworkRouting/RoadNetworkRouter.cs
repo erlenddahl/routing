@@ -600,18 +600,18 @@ namespace RoadNetworkRouting
             QuickGraphSearchResult<RoadLink> route;
             if (config.Algorithm == RoutingAlgorithm.AStar)
             {
-                maxCost *= 5; // A* doesn't really need this, since it uses the heuristic to avoid weird searches, but let's keep it (a bit higher) just in case.
+                maxCost *= 10; // A* doesn't really need this, since it uses the heuristic to avoid weird searches, but let's keep it (a bit higher) just in case.
                 var b = (target.Nearest.X, target.Nearest.Y);
-                route = graph.GetShortestPathAstar(sourceId, targetId, (curr, targ) =>
+                route = graph.GetShortestPathAstar(sourceId, targetId, (curr, _) =>
                 {
-                    if (curr == targ) return 0;
+                    if (curr.Id == targetId) return 0;
                     var a = _vertices.TryGetValue(curr.Id, out var va) ? (va.X, va.Y) : (source.Nearest.X, source.Nearest.Y);
                     return Heuristic(a, b);
                 }, overloader, maxCost);
             }
             else
             {
-                route = graph.GetShortestPath(sourceId, targetId, overloader, maxCost);
+                route = graph.GetShortestPath(sourceId, targetId, overloader, Math.Max(maxCost, 25));
             }
             timer.Time("routing.routing");
 
@@ -689,8 +689,7 @@ namespace RoadNetworkRouting
                     node.Edges,
                     node.VertexGroup,
                     Heuristic = h,
-                    SumCostHeu = c + h,
-                    p.Sequence
+                    SumCostHeu = c + h
                 });
             }).Where(p => p != null)).WriteTo(@"G:\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\failed_search_" + "_dijkstra-searched-nodes.geojson");
         }

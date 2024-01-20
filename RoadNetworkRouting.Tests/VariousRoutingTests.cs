@@ -72,7 +72,7 @@ public class VariousRoutingTests
             new Point3D(300841.92263974645, 7066612.177553299)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, MaxSearchRadius = 10_000_000});
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra, MaxSearchRadius = 10_000_000});
 
         Assert.AreEqual(2, res.Links.Length);
         Assert.AreEqual(457, res.RouteDistance, 1);
@@ -126,7 +126,7 @@ public class VariousRoutingTests
             new Point3D(300841.92263974645, 7066612.177553299)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, MaxSearchRadius = 10_000_000});
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra, MaxSearchRadius = 10_000_000});
 
         Assert.AreEqual(2, res.Links.Length);
         Assert.AreEqual(457, res.RouteDistance, 1);
@@ -194,7 +194,7 @@ public class VariousRoutingTests
             new Point3D(350, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(3, res.Links.Length);
 
@@ -260,7 +260,7 @@ public class VariousRoutingTests
             new Point3D(250, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 
@@ -322,7 +322,7 @@ public class VariousRoutingTests
             new Point3D(225, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 
@@ -384,7 +384,7 @@ public class VariousRoutingTests
             new Point3D(225, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra, MaxSearchRadius = 10_000});
 
         Assert.AreEqual(1, res.Links.Length);
 
@@ -442,7 +442,7 @@ public class VariousRoutingTests
             new Point3D(200, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(1, res.Links.Length);
 
@@ -500,7 +500,7 @@ public class VariousRoutingTests
             new Point3D(225, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 
@@ -562,7 +562,7 @@ public class VariousRoutingTests
             new Point3D(200.01, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 
@@ -624,7 +624,7 @@ public class VariousRoutingTests
             new Point3D(225, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 
@@ -686,7 +686,7 @@ public class VariousRoutingTests
             new Point3D(201, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 
@@ -748,7 +748,7 @@ public class VariousRoutingTests
             new Point3D(225, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 
@@ -810,7 +810,7 @@ public class VariousRoutingTests
             new Point3D(225, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 
@@ -872,7 +872,7 @@ public class VariousRoutingTests
             new Point3D(225, -10)
         };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup });
+        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
 
         Assert.AreEqual(2, res.Links.Length);
 

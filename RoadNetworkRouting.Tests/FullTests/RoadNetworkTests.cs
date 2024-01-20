@@ -16,7 +16,7 @@ public class RoadNetworkTests
         var road = RoutingService.Create(roadNetworkFile);
         var routingConfig = new RoutingConfig()
         {
-            DifferentGroupHandling = GroupHandling.OnlySame,
+            DifferentGroupHandling = GroupHandling.BestGroup,
             MaxSearchRadius = 5_000
         };
 

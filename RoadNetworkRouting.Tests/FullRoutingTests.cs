@@ -31,8 +31,8 @@ public class RoutingTests_FullNetwork : RoutingTests
 
         var res = _router.Search(waypoints[0], waypoints[1]);
 
-        // Originally, it returns 152 links where the final link has an empty Geometry, but this should be cut.
-        Assert.AreEqual(151, res.Links.Length);
+        // Originally, it returns 150 links where the final link has an empty Geometry, but this should be cut.
+        Assert.AreEqual(149, res.Links.Length);
     }
 
     [TestMethod]

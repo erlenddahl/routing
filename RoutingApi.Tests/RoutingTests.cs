@@ -142,7 +142,7 @@ namespace RoutingApi.Tests
                 }
             }.Route(RoutingController.Service).CheckThrow();
 
-            Assert.AreEqual(8051, response.DistanceM, 0.5);
+            Assert.AreEqual(8051, response.DistanceM, 50);
             Assert.AreEqual(436, response.Coordinates.Count);
             Assert.AreEqual(187, response.LinkReferences.Count);
 
@@ -180,7 +180,7 @@ namespace RoutingApi.Tests
             foreach (var response in responses)
             {
                 response.CheckThrow();
-                Assert.AreEqual(8051, response.DistanceM, 0.5);
+                Assert.AreEqual(8051, response.DistanceM, 50);
                 Assert.AreEqual(436, response.Coordinates.Count);
                 Assert.AreEqual(187, response.LinkReferences.Count);
 

@@ -26,4 +26,9 @@ public class RoutingConfig
     /// If the link search reaches this radius without finding a link, a <see cref="NoLinksFoundException"/> will be thrown./>
     /// </summary>
     public int MaxSearchRadius { get; set; } = 1000;
+
+    /// <summary>
+    /// Which routing algorithm to use. AStar is faster and probably optimal, while Dijkstra is guaranteed to be optimal.
+    /// </summary>
+    public RoutingAlgorithm Algorithm { get; set; } = RoutingAlgorithm.AStar;
 }

@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Routing
 {
-    public class Dijkstra
+    public class AStar
     {
-
-        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
+        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
         {
             var result = new DijkstraResult<T>(graph, overloader);
 
@@ -14,7 +16,9 @@ namespace Routing
             current.Cost = 0;
             result.Source = current;
 
-            var queue = new PriorityQueue<VertexData<T>>(new VertexDataComparer<T>());
+            var targetVertex = result.GetVertexData(targetVertexId).Vertex;
+
+            var queue = new PriorityQueue<VertexData<T>>(new HVertexDataComparer<T>());
             queue.Add(current);
 
             while (queue.Count > 0)
@@ -33,18 +37,21 @@ namespace Routing
 
                     var edge = result.GetEdge(current.Vertex.Id, n.Vertex.Id);
 
-                    var totalCost = current.Cost + edge.Cost;
+                    var cost = current.Cost + edge.Cost;
 
-                    if (totalCost > maxCost) continue;
+                    if (cost > maxCost) continue;
 
-                    if (totalCost < n.Cost)
+                    var hScore = heuristic(n.Vertex, targetVertex);
+                    var fScore = cost + hScore;
+
+                    if (fScore < n.Cost)
                     {
-                        //queue.Remove(n); // Must remove before changing to avoid upsetting the sorting by changing the sort value
-                        n.Cost = totalCost;
+                        n.Cost = cost;
+                        n.Heuristic = hScore;
                         n.VertexCount = current.VertexCount + 1;
                         n.PreviousVertex = current;
                         n.PreviousEdge = edge;
-                        queue.Add(n);
+                        queue.Add(n); // Add to queue with updated fScore
                     }
                 }
 

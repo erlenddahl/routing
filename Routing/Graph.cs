@@ -39,6 +39,14 @@ namespace Routing
             return result;
         }
 
+        public QuickGraphSearchResult<T> GetShortestPathAstar(int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue)
+        {
+            var dr = AStar.GetShortestPath(this, sourceVertexId, targetVertexId, heuristic, overloader, maxCost);
+            var result = new QuickGraphSearchResult<T>(dr);
+
+            return result;
+        }
+
         public IEnumerable<QuickGraphSearchResult<T>> GetShortestPathToAll(int sourceVertexId, HashSet<int> relevantVertices = null)
         {
             var dr = Dijkstra.GetShortestPath(this, sourceVertexId, -1);

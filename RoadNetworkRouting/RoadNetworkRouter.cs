@@ -504,7 +504,7 @@ namespace RoadNetworkRouting
             
             timer.Time("routing.entry");
 
-            return Search(source, target, timer);
+            return Search(source, target, config, timer);
         }
 
         private (RoutingPoint source, RoutingPoint target) EnsureEntryPointsAreInTheSameGroup(RoutingPoint source, RoutingPoint target, RoutingConfig config, TaskTimer timer)
@@ -545,18 +545,15 @@ namespace RoadNetworkRouting
             return (source, target);
         }
 
-        public RoadNetworkRoutingResult Search(RoutingPoint fromPoint, RoutingPoint toPoint, RoutingConfig config = null, TaskTimer timer = null)
+        public RoadNetworkRoutingResult Search(RoutingPoint source, RoutingPoint target, RoutingConfig config = null, TaskTimer timer = null)
         {
-            if (fromPoint.Link == null || toPoint.Link == null || fromPoint.Link.NetworkGroup != toPoint.Link.NetworkGroup)
-                return Search(fromPoint.Point, toPoint.Point, config, timer);
-            return Search(fromPoint, toPoint, timer);
-        }
+            if (source.Link == null || target.Link == null || source.Link.NetworkGroup != target.Link.NetworkGroup)
+                return Search(source.Point, target.Point, config, timer);
 
-        public RoadNetworkRoutingResult Search(RoutingPoint source, RoutingPoint target, TaskTimer timer = null)
-        {
             // Build a network graph for searching
             var graph = Graph;
 
+            config ??= new RoutingConfig();
             timer ??= new TaskTimer();
             timer.Time("routing.graph");
 
@@ -600,7 +597,22 @@ namespace RoadNetworkRouting
             var maxCost = (distanceEstimate / 10) / 60d;
 
             // Find the best route between the source and target vertices using the road link costs we have built.
-            var route = graph.GetShortestPath(sourceId, targetId, overloader, maxCost);
+            QuickGraphSearchResult<RoadLink> route;
+            if (config.Algorithm == RoutingAlgorithm.AStar)
+            {
+                maxCost *= 5; // A* doesn't really need this, since it uses the heuristic to avoid weird searches, but let's keep it (a bit higher) just in case.
+                var b = (target.Nearest.X, target.Nearest.Y);
+                route = graph.GetShortestPathAstar(sourceId, targetId, (curr, targ) =>
+                {
+                    if (curr == targ) return 0;
+                    var a = _vertices.TryGetValue(curr.Id, out var va) ? (va.X, va.Y) : (source.Nearest.X, source.Nearest.Y);
+                    return Heuristic(a, b);
+                }, overloader, maxCost);
+            }
+            else
+            {
+                route = graph.GetShortestPath(sourceId, targetId, overloader, maxCost);
+            }
             timer.Time("routing.routing");
 
             //SaveDijkstraSearch(route, source.Point, target.Point);
@@ -650,9 +662,16 @@ namespace RoadNetworkRouting
             return new RoadNetworkRoutingResult(route, links, source, target, timer);
         }
 
+        private double Heuristic((double X, double Y) a, (double X, double Y) b)
+        {
+            var dx = a.X - b.X;
+            var dy = a.Y - b.Y;
+            return ((Math.Abs(dx) + Math.Abs(dy)) / 15d) / 60d;
+        }
+
         private void SaveDijkstraSearch(QuickGraphSearchResult<RoadLink> route, Point3D fromPoint, Point3D toPoint)
         {
-            var bounds = BoundingBox2D.FromPoints(new[] { fromPoint, toPoint }).Extend(5000);
+            var bounds = BoundingBox2D.FromPoints(new[] { fromPoint, toPoint }).Extend(250000);
             var relevantLinks = Links.Values.Where(p => bounds.Overlaps(p.Bounds)).ToArray();
             var relevantNodes = GenerateVertices(relevantLinks, p => EnsureLinkDataLoaded(p));
 
@@ -660,13 +679,18 @@ namespace RoadNetworkRouting
             GeoJsonCollection.From(route.InternalData.GetInternalData().Select(p =>
             {
                 if (!relevantNodes.TryGetValue(p.Vertex.Id, out var node)) return null;
+                var h = Heuristic((node.X, node.Y), (toPoint.X, toPoint.Y));
+                var c = double.IsInfinity(p.Cost) ? 999999 : p.Cost;
                 return GeoJsonFeature.Point(node.X, node.Y, new
                 {
-                    p.Cost,
+                    Cost = c,
                     p.Vertex.Id,
                     p.Visited,
                     node.Edges,
-                    node.VertexGroup
+                    node.VertexGroup,
+                    Heuristic = h,
+                    SumCostHeu = c + h,
+                    p.Sequence
                 });
             }).Where(p => p != null)).WriteTo(@"G:\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\failed_search_" + "_dijkstra-searched-nodes.geojson");
         }

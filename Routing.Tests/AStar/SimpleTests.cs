@@ -1,42 +1,18 @@
+using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Routing.Tests
+namespace Routing.Tests.AStar
 {
     [TestClass]
-    public class GraphDataItemTests
-    {
-        [TestMethod]
-        public void ToBytesAndBack()
-        {
-            var originalItem = new GraphDataItem
-            {
-                EdgeId = 1,
-                SourceVertexId = 2,
-                TargetVertexId = 3,
-                Cost = 4.0,
-                ReverseCost = 5.0
-            };
-
-            var bytes = originalItem.ToBytes();
-            var restoredItem = GraphDataItem.FromBytes(bytes);
-
-            Assert.AreEqual(originalItem.EdgeId, restoredItem.EdgeId);
-            Assert.AreEqual(originalItem.SourceVertexId, restoredItem.SourceVertexId);
-            Assert.AreEqual(originalItem.TargetVertexId, restoredItem.TargetVertexId);
-            Assert.AreEqual(originalItem.Cost, restoredItem.Cost);
-            Assert.AreEqual(originalItem.ReverseCost, restoredItem.ReverseCost);
-        }
-    }
-    [TestClass]
-    public class SimpleTests
+    public class BasicTests
     {
         [TestMethod]
         public void StraightLine()
         {
             var graph = TestGraphGenerator.StraightLine();
-            var path = graph.GetShortestPath(0, 3);
+            var path = graph.GetShortestPathAstar(0, 3, (a, b) => Math.Abs(a.Id - b.Id));
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(3, path.Target.Vertex.Id);
@@ -114,7 +90,11 @@ namespace Routing.Tests
             };
 
             var graph = Graph<GraphDataItem>.Create(links);
-            var path = graph.GetShortestPath(0, 7);
+            var path = graph.GetShortestPathAstar(0, 7, (a, b) =>
+            {
+                if (a.Id == 5 || a.Id == 6 || b.Id == 5 || b.Id == 6) return 20;
+                return Math.Abs(a.Id - b.Id);
+            });
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
@@ -195,7 +175,11 @@ namespace Routing.Tests
             };
 
             var graph = Graph<GraphDataItem>.Create(links);
-            var path = graph.GetShortestPath(0, 7);
+            var path = graph.GetShortestPathAstar(0, 7, (a, b) =>
+            {
+                if (a.Id == 1 || a.Id == 2 || b.Id == 1 || b.Id == 2) return 20;
+                return Math.Abs(a.Id - b.Id);
+            });
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
@@ -260,7 +244,7 @@ namespace Routing.Tests
             };
 
             var graph = Graph<GraphDataItem>.Create(links);
-            var path = graph.GetShortestPath(0, 7);
+            var path = graph.GetShortestPathAstar(0, 7, (a, b) => Math.Abs(a.Id - b.Id));
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
@@ -312,6 +296,14 @@ namespace Routing.Tests
                 {
                     EdgeId = 1002,
                     SourceVertexId = 1,
+                    TargetVertexId = 40,
+                    Cost = 4
+                },
+
+                new GraphDataItem()
+                {
+                    EdgeId = 1042,
+                    SourceVertexId = 40,
                     TargetVertexId = 4,
                     Cost = 4
                 },
@@ -326,7 +318,10 @@ namespace Routing.Tests
             };
 
             var graph = Graph<GraphDataItem>.Create(links);
-            var path = graph.GetShortestPath(0, 7);
+            var path = graph.GetShortestPathAstar(0, 7, (a, b) =>
+            {
+                return Math.Abs(a.Id - b.Id);
+            });
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
@@ -393,7 +388,11 @@ namespace Routing.Tests
             };
 
             var graph = Graph<GraphDataItem>.Create(links);
-            var path = graph.GetShortestPath(0, 7);
+            var path = graph.GetShortestPathAstar(0, 7, (a, b) =>
+            {
+                if (a.Id == 1 || a.Id == 2 || b.Id == 1 || b.Id == 2) return -50;
+                return Math.Abs(a.Id - b.Id);
+            });
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
@@ -458,7 +457,7 @@ namespace Routing.Tests
             };
 
             var graph = Graph<GraphDataItem>.Create(links);
-            var path = graph.GetShortestPath(0, 7);
+            var path = graph.GetShortestPathAstar(0, 7, (a, b) => Math.Abs(a.Id - b.Id));
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
@@ -526,7 +525,7 @@ namespace Routing.Tests
             };
 
             var graph = Graph<GraphDataItem>.Create(links);
-            var path = graph.GetShortestPath(0, 7);
+            var path = graph.GetShortestPathAstar(0, 7, (a, b) => Math.Abs(a.Id - b.Id));
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(7, path.Target.Vertex.Id);
@@ -567,7 +566,7 @@ namespace Routing.Tests
             };
 
             var graph = Graph<GraphDataItem>.Create(links);
-            var path = graph.GetShortestPath(0, 3);
+            var path = graph.GetShortestPathAstar(0, 3, (a, b) => Math.Abs(a.Id - b.Id));
 
             Assert.AreEqual(0, path.Source.Vertex.Id);
             Assert.AreEqual(3, path.Target.Vertex.Id);

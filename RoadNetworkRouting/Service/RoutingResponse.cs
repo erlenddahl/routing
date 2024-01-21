@@ -42,6 +42,8 @@ public class RoutingResponse : InternalRoutingResponse
     /// </summary>
     public string ErrorMessage { get; set; }
 
+    public RoutingResponse(){}
+
     public RoutingResponse(RoutingRequest request, InternalRoutingResponse result)
     {
         var r = request.Response ?? new RoutingResponseDefinition() { Coordinates = true };

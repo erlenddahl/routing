@@ -49,4 +49,12 @@ public class RoutingResponseDefinition
     /// Include timing data for the routing.
     /// </summary>
     public bool Timings { get; set; }
+
+    public static RoutingResponseDefinition CreateDefault()
+    {
+        return new RoutingResponseDefinition
+        {
+            Coordinates = true
+        };
+    }
 }

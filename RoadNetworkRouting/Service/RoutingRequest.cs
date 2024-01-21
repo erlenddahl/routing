@@ -33,7 +33,7 @@ public class SingleRoutingRequest : RoutingRequest
     {
         if (Waypoints == null || Waypoints.Length < 2) throw new Exception("Each route must have at least two coordinates.");
 
-        Response ??= new RoutingResponseDefinition();
+        Response ??= RoutingResponseDefinition.CreateDefault();
 
         var converter = CoordinateConverter.ToUtm33(SourceSrid);
         var result = service.FromRequest(Waypoints, RoutingConfig, converter, Response.Coordinates || Response.CompressedCoordinates, Response.LinkReferences, null);
@@ -50,7 +50,7 @@ public class MultiRoutingRequest : RoutingRequest
 
     public IEnumerable<RoutingResponse> Route(RoutingService service)
     {
-        Response ??= new RoutingResponseDefinition();
+        Response ??= RoutingResponseDefinition.CreateDefault();
 
         var ix = 0;
         return Waypoints.Select(p => new
@@ -91,6 +91,8 @@ public class MatrixRoutingRequest : RoutingRequest
 
     public IEnumerable<RoutingResponse[]> Route(RoutingService service)
     {
+        Response ??= RoutingResponseDefinition.CreateDefault();
+
         var ix = 0;
         return Waypoints.Select(p => new
             {

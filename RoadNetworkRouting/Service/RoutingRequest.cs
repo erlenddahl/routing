@@ -107,10 +107,19 @@ public class MatrixRoutingRequest : RoutingRequest
 
     public IEnumerable<RoutingResponse> RouteOneToAll(RoutingService service, Point3D source, Point3D[] targets)
     {
-        //TODO: Optimized by running OneToAll routing instead of looping.
         foreach (var target in targets)
         {
-            yield return SingleRoutingRequest.From(this, new[] { source, target }).Route(service);
+            if (source.Equals(target)) continue;
+            RoutingResponse response = null;
+            try
+            {
+                response = SingleRoutingRequest.From(this, new[] { source, target }).Route(service);
+            }
+            catch (Exception ex)
+            {
+                response = new RoutingResponse(ex);
+            }
+            yield return response;
         }
     }
 }

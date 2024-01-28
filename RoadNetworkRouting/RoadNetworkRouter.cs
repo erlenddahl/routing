@@ -439,11 +439,21 @@ namespace RoadNetworkRouting
                     throw new NoLinksFoundException($"Found no links{(networkGroup.HasValue?" in the network group " + networkGroup.Value : "")} near the search point [{point.To2DString()}], using search radius from {config.InitialSearchRadius} to {maxRadius}. Is there something wrong with the coordinates, coordinate system specifications, or radiuses?");
                 }
 
-                nearest = _nearbyLinksLookup.GetNearbyItems(point, (int)d)
+                var nearbyLinks = _nearbyLinksLookup.GetNearbyItems(point, (int)d)
                     .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup))
-                    .Select(p => EnsureLinkDataLoaded(p))
-                    .Select(p => new RoutingPoint(point, p, LineTools.FindNearestPoint(p.Geometry, point.X, point.Y)))
-                    .MinBy(p => p.Nearest.DistanceFromLine);
+                    .Select(p => EnsureLinkDataLoaded(p)).ToArray();
+
+                //nearbyLinks = Links.Values.Where(p => p.Bounds.Extend(d).Contains(point));
+
+                var minDistance = double.MaxValue;
+                foreach (var link in nearbyLinks)
+                {
+                    var nearestPoint = LineTools.FindNearestPoint(link.Geometry, point.X, point.Y);
+                    if (nearestPoint.DistanceFromLine > minDistance) continue;
+
+                    minDistance = nearestPoint.DistanceFromLine;
+                    nearest = new RoutingPoint(point, link, nearestPoint);
+                }
 
                 d *= config.SearchRadiusIncrement;
             }

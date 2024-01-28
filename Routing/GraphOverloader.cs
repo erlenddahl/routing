@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Routing.Exceptions;
 
 namespace Routing
 {
@@ -106,8 +107,8 @@ namespace Routing
         /// <exception cref="Exception"></exception>
         public int AddSourceOverload(int id, int toVertexA, int toVertexB, double costFactor)
         {
-            if (_built) throw new Exception("This graph overloader has already been built, and cannot be modified.");
-            if (costFactor < 0 || costFactor > 1) throw new Exception($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
+            if (_built) throw new MultipleBuildsException("This graph overloader has already been built, and cannot be modified.");
+            if (costFactor < 0 || costFactor > 1) throw new InvalidCostFactorException($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
 
             if (costFactor < 0.00001)
                 return toVertexA;
@@ -139,8 +140,8 @@ namespace Routing
         /// <exception cref="Exception"></exception>
         public int AddTargetOverload(int id, int fromVertexA, int fromVertexB, double costFactor)
         {
-            if (_built) throw new Exception("This graph overloader has already been built, and cannot be modified.");
-            if (costFactor < 0 || costFactor > 1) throw new Exception($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
+            if (_built) throw new MultipleBuildsException("This graph overloader has already been built, and cannot be modified.");
+            if (costFactor < 0 || costFactor > 1) throw new InvalidCostFactorException($"Cost factor must be between 0 and 1 (was {costFactor:n5})");
 
             if (costFactor < 0.00001)
                 return fromVertexA;

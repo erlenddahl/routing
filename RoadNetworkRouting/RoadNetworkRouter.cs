@@ -678,6 +678,7 @@ namespace RoadNetworkRouting
             if (source.Link.LinkId != links[0].LinkId) distanceAlongFirst = 0;
             var distanceAlongLast = target.Nearest.Distance;
             if (target.Link.LinkId != links[^1].LinkId) distanceAlongLast = 0;
+            if (distanceAlongLast < distanceAlongFirst && links.Length == 1 && target.Link.LinkId != links[^1].LinkId) distanceAlongLast = links[0].Length;
 
             RotateAndCut(links, nodeId, distanceAlongFirst, distanceAlongLast);
 

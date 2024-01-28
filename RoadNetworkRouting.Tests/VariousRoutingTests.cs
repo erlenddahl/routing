@@ -441,8 +441,21 @@ public class VariousRoutingTests
             new Point3D(170, 10),
             new Point3D(200, -10)
         };
+        var config = new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup };
 
-        var res = router.Search(waypoints[0], waypoints[1], new RoutingConfig() { DifferentGroupHandling = GroupHandling.BestGroup, Algorithm = RoutingAlgorithm.Dijkstra });
+        var source = router.GetNearestLink(waypoints[0], config);
+        var target = router.GetNearestLink(waypoints[1], config);
+
+        // Depending on how the source and target links are picked, it could either be the same link
+        // (with routing going from meter 70 to meter 100), or it could be two different links (with
+        // routing going from meter 70 on the first to meter 0 on the second). The Search function must 
+        // handle both. The two lines below are commented because the current version picks the second
+        // alternative -- should make two unit tests that sends RoutingPoints into Search() with both
+        // alternatives and make sure they both work.
+        //Assert.AreEqual(1, source.Link.LinkId);
+        //Assert.AreEqual(1, target.Link.LinkId);
+
+        var res = router.Search(waypoints[0], waypoints[1], config);
 
         Assert.AreEqual(1, res.Links.Length);
 

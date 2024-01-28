@@ -15,6 +15,28 @@ namespace RoadNetworkRouting.Tests.FullTests
     public class RailNetworkTests
     {
         [TestMethod]
+        public void Failure()
+        {
+            var railNetworkFile = @"C:\Users\erlendd\Desktop\Søppel\2023-12-14 - Entur, validering av jernbanenett\railNetwork.bin";
+            var rail = RoutingService.Create(railNetworkFile);
+            var routingConfig = new RoutingConfig()
+            {
+                DifferentGroupHandling = GroupHandling.BestGroup,
+                MaxSearchRadius = 50_000
+            };
+
+            var inputCoordinates = new[]
+            {
+                new Point3D(272168.951, 7037533.496),
+                new Point3D(271721.542, 7037269.011)
+            };
+
+            var route = rail.FromUtm(inputCoordinates, routingConfig,true, false);
+
+            Debug.WriteLine(route.Links.Sum(p => p.Length));
+        }
+
+        [TestMethod]
         public void ShouldNotFail()
         {
             var railNetworkFile = @"C:\Users\erlendd\Desktop\Søppel\2023-12-14 - Entur, validering av jernbanenett\railNetwork.bin";

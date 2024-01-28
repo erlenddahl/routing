@@ -136,7 +136,7 @@ namespace RoadNetworkRouting.Utils
         {
             var ix = items.Count / 2;
             var binaryWidth = ix / 2;
-            var maxSearches = (int)Math.Ceiling(Math.Log2(items.Count));
+            var maxSearches = (int)Math.Ceiling(Math.Log2(items.Count)) + 2;
             var searches = 0;
             while (true)
             {

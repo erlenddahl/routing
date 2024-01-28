@@ -614,7 +614,7 @@ namespace RoadNetworkRouting
             // Make the conservative assumption that the manhattan distance could be a third of the actual distance
             distanceEstimate *= 3;
 
-            var maxIterations = (long)distanceEstimate;
+            var maxIterations = Math.Max((long)distanceEstimate, 250);
 
             // For debugging
             var keepDynamicData = saveRouteDebugDataTo != null;
@@ -629,14 +629,17 @@ namespace RoadNetworkRouting
                     if (curr.Id == targetId) return 0;
                     var a = _vertices.TryGetValue(curr.Id, out var va) ? (va.X, va.Y) : (source.Nearest.X, source.Nearest.Y);
                     return Heuristic(a, b);
-                }, overloader, maxSearchDurationMs: config.MaxSearchDurationMs, maxIterations: maxIterations);
+                }, overloader, maxSearchDurationMs: config.MaxSearchDurationMs, maxIterations: maxIterations, keepDynamicData:keepDynamicData);
             }
             else
             {
                 // Assume that the average speed is 36 km/h => 10 m/s.
                 var maxCost = (distanceEstimate / 10) / 60d;
 
-                route = graph.GetShortestPath(sourceId, targetId, overloader, Math.Max(maxCost, 25), config.MaxSearchDurationMs, maxIterations);
+                // Dijkstra needs a lot more iterations than A* because it searches in all directions.
+                maxIterations *= 100;
+
+                route = graph.GetShortestPath(sourceId, targetId, overloader, Math.Max(maxCost, 25), config.MaxSearchDurationMs, maxIterations, keepDynamicData: keepDynamicData);
             }
             timer.Time("routing.routing");
 

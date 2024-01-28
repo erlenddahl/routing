@@ -566,7 +566,7 @@ namespace RoadNetworkRouting
             return (source, target);
         }
 
-        public RoadNetworkRoutingResult Search(RoutingPoint source, RoutingPoint target, RoutingConfig config = null, TaskTimer timer = null)
+        public RoadNetworkRoutingResult Search(RoutingPoint source, RoutingPoint target, RoutingConfig config = null, TaskTimer timer = null, string saveRouteDebugDataTo = null)
         {
             if (source.Link == null || target.Link == null || source.Link.NetworkGroup != target.Link.NetworkGroup)
                 return Search(source.Point, target.Point, config, timer);
@@ -604,7 +604,7 @@ namespace RoadNetworkRouting
             sourceId = overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
             targetId = overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
 
-            if (sourceId == targetId) throw new RoutingException("Source and target ids are identical. Is something wrong with the search coordinates?");
+            if (sourceId == targetId) throw new RoutingException("Source and target ids in the routing graph are identical. Is something wrong with the search coordinates?");
 
             // The cost is travel time measured in minutes. Calculate a reasonable maximum amount of time using
             // the Manhattan distance between the search points, and use this as a maximum cost to make Dijkstra avoid
@@ -697,7 +697,7 @@ namespace RoadNetworkRouting
             return ((Math.Abs(dx) + Math.Abs(dy)) / 15d) / 60d;
         }
 
-        private void SaveDijkstraSearch(QuickGraphSearchResult<RoadLink> route, Point3D fromPoint, Point3D toPoint)
+        private void SaveDijkstraSearch(string path, QuickGraphSearchResult<RoadLink> route, Point3D fromPoint, Point3D toPoint)
         {
             var bounds = BoundingBox2D.FromPoints(new[] { fromPoint, toPoint }).Extend(250000);
             var relevantLinks = Links.Values.Where(p => bounds.Overlaps(p.Bounds)).ToArray();
@@ -719,7 +719,7 @@ namespace RoadNetworkRouting
                     Heuristic = h,
                     SumCostHeu = c + h
                 });
-            }).Where(p => p != null)).WriteTo(@"G:\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\failed_search_" + "_dijkstra-searched-nodes.geojson");
+            }).Where(p => p != null)).WriteTo(path);
         }
 
         /// <summary>

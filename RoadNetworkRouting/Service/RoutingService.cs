@@ -6,6 +6,7 @@ using EnergyModule.Geometry.SimpleStructures;
 using Extensions.IEnumerableExtensions;
 using Extensions.Utilities;
 using RoadNetworkRouting.Config;
+using RoadNetworkRouting.Exceptions;
 using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Network;
 
@@ -33,17 +34,17 @@ public class RoutingService
     /// </summary>
     public double? MaxRouteLengthKm { get; set; } = 1000;
 
-    public InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null)
+    public InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
     {
-        return FromUtm(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config, includeCoordinates, includeLinkReferences, timer);
+        return FromUtm(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
     }
 
-    public InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null)
+    public InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
     {
-        return FromUtm(coordinates.Select(p => new RoutingPoint(p)).ToArray(), config, includeCoordinates, includeLinkReferences, timer);
+        return FromUtm(coordinates.Select(p => new RoutingPoint(p)).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
     }
 
-    public InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null)
+    public InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
     {
         if (MaxRouteLengthKm.HasValue)
         {
@@ -80,7 +81,7 @@ public class RoutingService
             rs.Timings.Time("routing.service");
 
             var path = Router.Search(fromCoord, toCoord, config, rs.Timings);
-            if (!path.Success) throw new Exception("Couldn't find a route between these points.");
+            //var path = Router.SaveSearchDebugAsGeoJson(fromCoord.Point, toCoord.Point, "G:\\Søppel\\2024-01-26 - Entur, routing-debugging\\route_" + id, config, rs.Timings);
             coordinates[i - 1].Update(path.Source);
             coordinates[i].Update(path.Target);
 

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,7 +34,7 @@ namespace RoadNetworkRouting.Utils
 
         public int ItemCount => _grid.Sum(p => p.Columns.Sum(c => c.Items.Count));
 
-        private NearbyBoundsCache(int cellSize)
+        protected NearbyBoundsCache(int cellSize)
         {
             CellSize = cellSize;
         }
@@ -119,7 +121,6 @@ namespace RoadNetworkRouting.Utils
         public IEnumerable<T> GetNearbyItems(double x, double y, int searchRadius = 0)
         {
             HashSet<BoundingBox2D> returned = new();
-            var r = (int)Math.Ceiling(searchRadius / (double)CellSize) * CellSize;
 
             foreach (var row in GetNearby(_grid, y, searchRadius))
             foreach (var col in GetNearby(row.Columns, x, searchRadius))
@@ -132,7 +133,7 @@ namespace RoadNetworkRouting.Utils
                     }
         }
 
-        private IEnumerable<T> GetNearby<T>(IList<T> items, double value, double radius) where T : IsWithinnable
+        protected static IEnumerable<T> GetNearby<T>(IList<T> items, double value, double radius) where T : IsWithinnable
         {
             var ix = items.Count / 2;
             var binaryWidth = ix / 2;
@@ -195,14 +196,14 @@ namespace RoadNetworkRouting.Utils
             GeoJsonCollection.From(features).WriteTo(path);
         }
 
-        private interface IsWithinnable
+        protected interface IsWithinnable
         {
             public bool IsWithin(double value, double radius);
             public bool IsBefore(double value, double radius);
             public bool IsAfter(double value, double radius);
         }
 
-        private class GridRow : IsWithinnable
+        protected class GridRow : IsWithinnable
         {
             private readonly BoundingBox2D _bounds;
             public int MinY { get; set; }
@@ -252,7 +253,7 @@ namespace RoadNetworkRouting.Utils
             }
         }
 
-        private class GridColumn : IsWithinnable
+        protected class GridColumn : IsWithinnable
         {
             private readonly BoundingBox2D _bounds;
             public int MinX { get; set; }
@@ -302,7 +303,7 @@ namespace RoadNetworkRouting.Utils
             }
         }
 
-        private class GridCell
+        protected class GridCell
         {
             public T Item { get; set; }
             public BoundingBox2D Bounds { get; set; }

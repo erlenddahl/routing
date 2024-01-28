@@ -49,6 +49,8 @@ public class RoutingInfo
     /// </summary>
     public double ElapsedTimeMs { get; set; }
 
+    public RoutingInfo(){}
+
     public RoutingInfo(RoadNetworkRoutingResult path)
     {
         RouteDistance = path.RouteDistance;

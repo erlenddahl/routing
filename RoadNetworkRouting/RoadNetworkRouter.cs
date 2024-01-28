@@ -630,7 +630,7 @@ namespace RoadNetworkRouting
             //SaveDijkstraSearch(route, source.Point, target.Point);
 
             if (route.Edges == null)
-                throw new RoutingException("Unable to find a route between these coordinates (different networks? errors in the network?).");
+                throw new RoutingException("Unable to find a route between these coordinates (different networks? errors in the network?).", route);
 
             // Extract the road links (if there are any)
             var links = route.Edges?.Select(p => EnsureLinkDataLoaded(p, timer)).ToArray() ?? Array.Empty<RoadLink>();
@@ -666,7 +666,7 @@ namespace RoadNetworkRouting
             if (links[0].Geometry.Length == 0 || links[^1].Geometry.Length == 0)
             {
                 links = links.Where(p => p.Geometry.Length > 0).ToArray();
-                if (!links.Any()) throw new RoutingException("Unable to find a route between these coordinates (too near?).");
+                if (!links.Any()) throw new RoutingException("Unable to find a route between these coordinates (too near?).", route);
             }
 
             timer.Time("routing.cut");

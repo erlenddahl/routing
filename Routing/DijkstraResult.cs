@@ -16,6 +16,8 @@ namespace Routing
         public double ElapsedTimeMs { get; set; }
         public TerminationType Termination { get; set; }
 
+        public bool KeepDynamicData { get; set; } = false;
+
         public int Iterations { get; set; }
         public int AboveMaxCost { get; set; }
 
@@ -40,7 +42,8 @@ namespace Routing
         public DijkstraResult<T> Finish(VertexData<T> target = null, TerminationType termination = TerminationType.Error)
         {
             _stopwatch.Stop();
-            _dynamicData.Clear();
+            if (!KeepDynamicData)
+                _dynamicData.Clear();
             ElapsedTimeMs = _stopwatch.ElapsedMilliseconds;
             Termination = termination;
             Target = target;

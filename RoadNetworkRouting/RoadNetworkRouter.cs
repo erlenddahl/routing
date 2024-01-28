@@ -497,7 +497,7 @@ namespace RoadNetworkRouting
 
             GeoJsonCollection.From(new[] { source.Nearest.ToPoint(), target.Nearest.ToPoint()}, 32633).WriteTo(basePath + "_entry-points.geojson");
 
-            var route = Search(source, target, config);
+            var route = Search(source, target, config, timer, basePath + "_routed_path.geojson");
 
             GeoJsonCollection
                 .From(route.Links
@@ -616,6 +616,9 @@ namespace RoadNetworkRouting
 
             var maxIterations = (long)distanceEstimate;
 
+            // For debugging
+            var keepDynamicData = saveRouteDebugDataTo != null;
+
             // Find the best route between the source and target vertices using the road link costs we have built.
             QuickGraphSearchResult<RoadLink> route;
             if (config.Algorithm == RoutingAlgorithm.AStar)
@@ -637,7 +640,10 @@ namespace RoadNetworkRouting
             }
             timer.Time("routing.routing");
 
-            //SaveDijkstraSearch(route, source.Point, target.Point);
+            if (saveRouteDebugDataTo != null)
+            {
+                SaveDijkstraSearch(saveRouteDebugDataTo, route, source.Point, target.Point);
+            }
 
             if (route.Edges == null)
                 throw new RoutingException("Unable to find a route between these coordinates (different networks? errors in the network?).", route);

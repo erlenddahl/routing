@@ -9,9 +9,12 @@ namespace Routing
 {
     public class AStar
     {
-        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue, long maxIterations = long.MaxValue)
+        public static DijkstraResult<T> GetShortestPath<T>(Graph<T> graph, int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue, long maxIterations = long.MaxValue, bool keepDynamicData = false)
         {
-            var result = new DijkstraResult<T>(graph, overloader);
+            var result = new DijkstraResult<T>(graph, overloader)
+            {
+                KeepDynamicData = keepDynamicData
+            };
 
             var current = result.GetVertexData(sourceVertexId);
             current.Cost = 0;

@@ -31,17 +31,17 @@ namespace Routing
             return new GraphAnalysis<T>(this);
         }
 
-        public QuickGraphSearchResult<T> GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue, long maxIterations = long.MaxValue)
+        public QuickGraphSearchResult<T> GetShortestPath(int sourceVertexId, int targetVertexId, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue, long maxIterations = long.MaxValue, bool keepDynamicData = false)
         {
-            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId, overloader, maxCost, maxSearchDurationMs, maxIterations);
+            var dr = Dijkstra.GetShortestPath(this, sourceVertexId, targetVertexId, overloader, maxCost, maxSearchDurationMs, maxIterations, keepDynamicData);
             var result = new QuickGraphSearchResult<T>(dr);
 
             return result;
         }
 
-        public QuickGraphSearchResult<T> GetShortestPathAstar(int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue, long maxIterations = long.MaxValue)
+        public QuickGraphSearchResult<T> GetShortestPathAstar(int sourceVertexId, int targetVertexId, Func<Vertex, Vertex, double> heuristic, GraphOverloader<T> overloader = null, double maxCost = double.MaxValue, double maxSearchDurationMs = double.MaxValue, long maxIterations = long.MaxValue, bool keepDynamicData = false)
         {
-            var dr = AStar.GetShortestPath(this, sourceVertexId, targetVertexId, heuristic, overloader, maxCost, maxSearchDurationMs, maxIterations);
+            var dr = AStar.GetShortestPath(this, sourceVertexId, targetVertexId, heuristic, overloader, maxCost, maxSearchDurationMs, maxIterations, keepDynamicData);
             var result = new QuickGraphSearchResult<T>(dr);
 
             return result;

@@ -657,8 +657,8 @@ namespace RoadNetworkRouting
             }
             else
             {
-                // Assume that the average speed is 36 km/h => 10 m/s.
-                var maxCost = (distanceEstimate / 10) / 60d;
+                // Assume that the average speed is 3.6 km/h => 1 m/s (very low, to avoid cutting searches too short).
+                var maxCost = (distanceEstimate / 1) / 60d;
 
                 // Dijkstra needs a lot more iterations than A* because it searches in all directions.
                 maxIterations *= 100;

@@ -698,33 +698,38 @@ namespace RoadNetworkRouting
             // Store which nodeId the next link should start with.
             var nodeId = FindFirstNodeId(links, route.Vertices, source.SearchPoint, target.SearchPoint);
 
-            var distanceAlongFirst = source.Nearest.Distance;
-            if (source.Link.LinkId != links[0].LinkId) distanceAlongFirst = 0;
-
-            var distanceAlongLast = target.Nearest.Distance;
-            if (target.Link.LinkId != links[^1].LinkId)
-            {
-                var tp = target.Nearest.ToPoint();
-                if (tp.DistanceTo2D(links[^1].Geometry[0]) < tp.DistanceTo2D(links[^1].Geometry[^1]))
-                    distanceAlongLast = 0;
-                else
-                    distanceAlongLast = links[^1].Length;
-            };
+            var distanceAlongFirst = GetDistanceAlong(source, links[0]);
+            var distanceAlongLast = GetDistanceAlong(target, links[^1]);
 
             var originalLinkCount = links.Length;
             var originalLinkLength = links.Sum(p => p.Length);
+
             RotateAndCut(links, nodeId, distanceAlongFirst, distanceAlongLast);
 
             // If the first or last links are entirely cut, remove them from the link lists.
             if (links[0].Geometry.Length == 0 || links[^1].Geometry.Length == 0)
             {
                 links = links.Where(p => p.Geometry.Length > 0).ToArray();
-                if (!links.Any()) throw new RoutingException($"The resulting route after post-processing contains zero road links (too short distance between search points?) [orig={originalLinkCount}, ol={originalLinkLength:n2}, daf={distanceAlongFirst:n2}, dal={distanceAlongLast:n2}].", route);
+                if (!links.Any()) throw new EmptyRouteException($"The resulting route after post-processing contains zero road links (too short distance between search points?) [orig={originalLinkCount}, ol={originalLinkLength:n2}, daf={distanceAlongFirst:n2}, dal={distanceAlongLast:n2}].", route);
             }
 
             timer.Time("routing.cut");
 
             return new RoadNetworkRoutingResult(route, links, source, target, timer);
+        }
+
+        private double GetDistanceAlong(RoutingPoint point, RoadLink link)
+        {
+            var distanceAlong = point.Nearest.Distance;
+            if (point.Link.LinkId != link.LinkId)
+            {
+                var p = point.Nearest.ToPoint();
+                if (p.DistanceTo2D(link.Geometry[0]) < p.DistanceTo2D(link.Geometry[^1]))
+                    distanceAlong = 0;
+                else
+                    distanceAlong = link.Length;
+            }
+            return distanceAlong;
         }
 
         private double Heuristic((double X, double Y) a, (double X, double Y) b)

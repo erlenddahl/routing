@@ -62,7 +62,7 @@ public class RoadNetworkTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(RoutingException))]
+    [ExpectedException(typeof(IdenticalSearchPointsException))]
     public void FailingRoute2()
     {
         var roadNetworkFile = @"C:\Code\EnergyModule\EnergyModuleGeneralRestApi\roadNetwork.bin";
@@ -112,6 +112,8 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig, timer);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "fails-in-17");
 
+        Assert.AreEqual(26, route.Links.Sum(p => p.Length), 5);
+
         Debug.WriteLine(route.Links.Sum(p => p.Length));
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
     }
@@ -135,6 +137,66 @@ public class RoadNetworkTests
         {
             new Point3D(244001.863, 6701709.284, 0.000),
             new Point3D(244087.737, 6701245.867, 0.000)
+        };
+
+        var timer = new TaskTimer();
+        //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig, timer);
+        var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "fails-in-17");
+        
+        Assert.AreEqual(483, route.Links.Sum(p => p.Length), 5);
+
+        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
+    }
+
+    [TestMethod]
+    public void RouteThatFailedBefore_NowFixed3()
+    {
+        // This route previously failed because it was along a single road link, which
+        // was completely cut away due to a bug in the cutting.
+
+        var roadNetworkFile = @"C:\Code\EnergyModule\EnergyModuleGeneralRestApi\roadNetwork.bin";
+        var road = RoutingService.Create(roadNetworkFile);
+        var routingConfig = new RoutingConfig()
+        {
+            DifferentGroupHandling = GroupHandling.BestGroup,
+            MaxSearchRadius = 5_000,
+            MaxSearchDurationMs = double.MaxValue
+        };
+
+        var inputCoordinates = new[]
+        {
+            new Point3D(-22247.982, 6740403.731, 0.000),
+            new Point3D(-21974.343, 6740247.850, 0.000)
+        };
+
+        var timer = new TaskTimer();
+        //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig, timer);
+        var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "fails-in-17");
+
+        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
+    }
+
+    [TestMethod]
+    public void RouteThatFailedBefore_NowFixed4()
+    {
+        // This route previously failed because it was along a single road link, which
+        // was completely cut away due to a bug in the cutting.
+
+        var roadNetworkFile = @"C:\Code\EnergyModule\EnergyModuleGeneralRestApi\roadNetwork.bin";
+        var road = RoutingService.Create(roadNetworkFile);
+        var routingConfig = new RoutingConfig()
+        {
+            DifferentGroupHandling = GroupHandling.BestGroup,
+            MaxSearchRadius = 5_000,
+            MaxSearchDurationMs = double.MaxValue
+        };
+
+        var inputCoordinates = new[]
+        {
+            new Point3D(31664.315, 6852129.068, 0.000),
+            new Point3D( 30550.050, 6851782.855, 0.000)
         };
 
         var timer = new TaskTimer();

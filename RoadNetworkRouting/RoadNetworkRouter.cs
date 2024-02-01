@@ -529,14 +529,17 @@ namespace RoadNetworkRouting
 
         public RoadNetworkRoutingResult Search(Point3D fromPoint, Point3D toPoint, RoutingConfig config = null, TaskTimer timer = null)
         {
-            if (Equals(fromPoint, toPoint)) throw new RoutingException("The from and to points sent into the routing function are identical (" + fromPoint + "). Is something wrong with the search coordinates?");
+            if (Equals(fromPoint, toPoint))
+            {
+                throw new IdenticalSearchPointsException("The from and to points sent into the routing function are identical (" + fromPoint + "). Is something wrong with the search coordinates?");
+            }
             
             config ??= new RoutingConfig();
             timer ??= new TaskTimer();
 
             if (OutsideBounds(fromPoint, config) || OutsideBounds(toPoint, config)) throw new RoutingException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
 
-            if (config.SearchRadiusIncrement < 1) throw new RoutingException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
+            if (config.SearchRadiusIncrement < 1) throw new NegativeSearchRadiusIncrementException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
 
             var source = GetNearestLink(fromPoint, config, timer: timer);
             var target = GetNearestLink(toPoint, config, timer: timer);
@@ -579,7 +582,7 @@ namespace RoadNetworkRouting
                 }
                 else
                 {
-                    throw new RoutingException("Different group handling for " + config.DifferentGroupHandling + " is not implemented.");
+                    throw new MissingGroupHandlingException("Different group handling for " + config.DifferentGroupHandling + " is not implemented.");
                 }
             }
 
@@ -624,7 +627,7 @@ namespace RoadNetworkRouting
             sourceId = overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
             targetId = overloader.AddTargetOverload(targetId, target.Link.FromNodeId, target.Link.ToNodeId, costFactorTarget);
 
-            if (sourceId == targetId) throw new RoutingException("Source and target ids in the routing graph are identical. Is something wrong with the search coordinates?");
+            if (sourceId == targetId) throw new IdenticalSourceAndTargetException("Source and target ids in the routing graph are identical. Is something wrong with the search coordinates?");
 
             // The cost is travel time measured in minutes. Calculate a reasonable maximum amount of time using
             // the Manhattan distance between the search points, and use this as a maximum cost to make Dijkstra avoid

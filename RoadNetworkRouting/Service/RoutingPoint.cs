@@ -9,18 +9,29 @@ namespace RoadNetworkRouting.Service
 {
     public class RoutingPoint
     {
-        public Point3D Point { get; }
+        /// <summary>
+        /// The original search point.
+        /// </summary>
+        public Point3D SearchPoint { get; }
+
+        /// <summary>
+        ///  The link that is the nearest link to the <see cref="SearchPoint"/>.
+        /// </summary>
         public RoadLink Link { get; set; }
+
+        /// <summary>
+        /// The point on the <see cref="Link"/> that is the nearest point ot the <see cref="SearchPoint"/>.
+        /// </summary>
         public NearestPointInfo Nearest { get; set; }
 
         public RoutingPoint(Point3D point)
         {
-            Point = point;
+            SearchPoint = point;
         }
 
         public RoutingPoint(Point3D point, RoadLink roadLink, NearestPointInfo nearest)
         {
-            Point = point;
+            SearchPoint = point;
             Link = roadLink;
             Nearest = nearest;
         }

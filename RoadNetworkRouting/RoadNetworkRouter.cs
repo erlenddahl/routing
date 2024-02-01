@@ -443,7 +443,7 @@ namespace RoadNetworkRouting
                     .Where(p => (!networkGroup.HasValue || networkGroup.Value == p.NetworkGroup))
                     .Select(p => EnsureLinkDataLoaded(p)).ToArray();
 
-                //nearbyLinks = Links.Values.Where(p => p.Bounds.Extend(d).Contains(point));
+                //nearbyLinks = Links.Values.Where(p => p.Bounds.Extend(d).Contains(point)).ToArray();
 
                 var minDistance = double.MaxValue;
                 foreach (var link in nearbyLinks)
@@ -564,8 +564,8 @@ namespace RoadNetworkRouting
                 if (config.DifferentGroupHandling == GroupHandling.BestGroup)
                 {
                     // Find the alternative entry/exit points in each of the two network groups.
-                    var alternativeSource = GetNearestLink(source.Point, config, target.Link.NetworkGroup, int.MaxValue, timer);
-                    var alternativeTarget = GetNearestLink(target.Point, config, source.Link.NetworkGroup, int.MaxValue, timer);
+                    var alternativeSource = GetNearestLink(source.SearchPoint, config, target.Link.NetworkGroup, int.MaxValue, timer);
+                    var alternativeTarget = GetNearestLink(target.SearchPoint, config, source.Link.NetworkGroup, int.MaxValue, timer);
 
                     // Update either the source or the target, depending on which gives the smallest distance from the entry/exit points to the source/target coordinates.
                     if (source.Nearest.DistanceFromLine + alternativeTarget.Nearest.DistanceFromLine < alternativeSource.Nearest.DistanceFromLine + target.Nearest.DistanceFromLine)
@@ -589,7 +589,7 @@ namespace RoadNetworkRouting
         public RoadNetworkRoutingResult Search(RoutingPoint source, RoutingPoint target, RoutingConfig config = null, TaskTimer timer = null, string saveRouteDebugDataTo = null)
         {
             if (source.Link == null || target.Link == null || source.Link.NetworkGroup != target.Link.NetworkGroup)
-                return Search(source.Point, target.Point, config, timer);
+                return Search(source.SearchPoint, target.SearchPoint, config, timer);
 
             // Build a network graph for searching
             var graph = Graph;
@@ -665,11 +665,11 @@ namespace RoadNetworkRouting
 
             if (saveRouteDebugDataTo != null)
             {
-                SaveDijkstraSearch(saveRouteDebugDataTo, route, source.Point, target.Point);
+                SaveDijkstraSearch(saveRouteDebugDataTo, route, source.SearchPoint, target.SearchPoint);
             }
 
             if (route.Edges == null)
-                throw new RoutingException("Unable to find a route between these coordinates (different networks? errors in the network?).", route);
+                throw new RoutingException("Unable to find a route between these coordinates (different networks? errors in the network?) [it=" + route.InternalData.Iterations + ", aboveMax=" + route.InternalData.AboveMaxCost + ", term=" + route.InternalData.Termination + "].", route);
 
             // Extract the road links (if there are any)
             var links = route.Edges?.Select(p => EnsureLinkDataLoaded(p, timer)).ToArray() ?? Array.Empty<RoadLink>();
@@ -692,7 +692,7 @@ namespace RoadNetworkRouting
             // Chop the first and last links so that they start and stop at the search points,
             // and reverse the geometry of any links that are FT/TF when they should be TF/FT.
             // Store which nodeId the next link should start with.
-            var nodeId = FindFirstNodeId(links, route.Vertices, source.Point, target.Point);
+            var nodeId = FindFirstNodeId(links, route.Vertices, source.SearchPoint, target.SearchPoint);
 
             var distanceAlongFirst = source.Nearest.Distance;
             if (source.Link.LinkId != links[0].LinkId) distanceAlongFirst = 0;
@@ -769,7 +769,7 @@ namespace RoadNetworkRouting
                     geometry = links[i].Geometry.Reverse().ToArray();
                     swapNodes = true;
                     modified = true;
-
+                    
                     if (i == 0) cutStart = links[i].Length - cutStart;
                     if (i == links.Length - 1) cutEnd = links[i].Length - cutEnd;
                 }

@@ -48,7 +48,7 @@ public class RoutingService
     {
         if (MaxRouteLengthKm.HasValue)
         {
-            var dist = coordinates.Pairwise().Sum(p => p.A.Point.DistanceTo(p.B.Point)) / 1000d;
+            var dist = coordinates.Pairwise().Sum(p => p.A.SearchPoint.DistanceTo(p.B.SearchPoint)) / 1000d;
             if (dist > MaxRouteLengthKm)
                 throw new InvalidRouteException($"The requested route is too long (straight line distance is {dist:n2}, which is higher than the configured maximum of {MaxRouteLengthKm.Value:n2}).");
         }
@@ -72,8 +72,8 @@ public class RoutingService
             var lri = includeLinkReferences ? rs.LinkReferences.Count : -1;
             rs.RequestedWaypoints.Add(new WayPointData()
             {
-                FromWaypoint = fromCoord.Point,
-                ToWaypoint = toCoord.Point,
+                FromWaypoint = fromCoord.SearchPoint,
+                ToWaypoint = toCoord.SearchPoint,
                 CoordinateIndex = ci,
                 LinkReferenceIndex = lri
             });

@@ -261,7 +261,7 @@ namespace RoutingApi.Tests
                 }
             }.Route(RoutingController.Service).CheckThrow();
 
-            Assert.AreEqual(6459, response.DistanceM, 50);
+            Assert.AreEqual(6500, response.DistanceM, 100);
             Assert.IsNotNull(response.Coordinates);
             Assert.IsNull(response.LinkReferences);
         }

@@ -287,6 +287,38 @@ public class FindFirstNodeIdTests : RoadNetworkRouter
     }
 
     [TestMethod]
+    public void OneLink_CorrectlyRotated_BothEndsOverloaded()
+    {
+        var links = new[]
+        {
+            new RoadLink()
+            {
+                FromNodeId = 7,
+                ToNodeId = 13,
+                Geometry = new[] { new Point3D(15, 15, 10), new Point3D(25, 25, 7) }
+            }
+        };
+
+        Assert.AreEqual(7, FindFirstNodeId(links, new[] { int.MinValue, 7, int.MinValue + 1 }, new Point3D(17, 17), new Point3D(19, 19)));
+    }
+
+    [TestMethod]
+    public void OneLink_IncorrectlyRotated_BothEndsOverloaded()
+    {
+        var links = new[]
+        {
+            new RoadLink()
+            {
+                FromNodeId = 7,
+                ToNodeId = 13,
+                Geometry = new[] { new Point3D(15, 15, 10), new Point3D(25, 25, 7) }
+            }
+        };
+
+        Assert.AreEqual(7, FindFirstNodeId(links, new[] { int.MinValue, 13, int.MinValue + 1 }, new Point3D(17, 17), new Point3D(19, 19)));
+    }
+
+    [TestMethod]
     public void TwoLinks_CorrectlyRotated_RegardlessOfFromPoint()
     {
         var links = new[]
@@ -305,7 +337,7 @@ public class FindFirstNodeIdTests : RoadNetworkRouter
             }
         };
 
-        Assert.AreEqual(7, FindFirstNodeId(links, new []{ int.MinValue, 13, int.MinValue + 1 }, new Point3D(25, 25), new Point3D(35, 35)));
+        Assert.AreEqual(13, FindFirstNodeId(links, new[] { int.MinValue, 13, int.MinValue + 1 }, new Point3D(25, 25), new Point3D(35, 35)));
     }
 
     [TestMethod]

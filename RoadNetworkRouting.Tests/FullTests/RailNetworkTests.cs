@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EnergyModule.Geometry.SimpleStructures;
+using Extensions.Utilities;
 
 namespace RoadNetworkRouting.Tests.FullTests
 {
@@ -15,7 +16,7 @@ namespace RoadNetworkRouting.Tests.FullTests
     public class RailNetworkTests
     {
         [TestMethod]
-        public void Failure()
+        public void SearchFailure_WorksWithIncreasedRadius()
         {
             var railNetworkFile = @"C:\Users\erlendd\Desktop\Søppel\2023-12-14 - Entur, validering av jernbanenett\railNetwork.bin";
             var rail = RoutingService.Create(railNetworkFile);
@@ -30,7 +31,9 @@ namespace RoadNetworkRouting.Tests.FullTests
                 new Point3D(272168.951, 7037533.496),
                 new Point3D(271721.542, 7037269.011)
             };
-
+            
+            var timer = new TaskTimer();
+            //rail.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\train", routingConfig, timer);
             var route = rail.FromUtm(inputCoordinates, routingConfig,true, false);
 
             Debug.WriteLine(route.Links.Sum(p => p.Length));

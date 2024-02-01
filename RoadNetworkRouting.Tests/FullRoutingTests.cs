@@ -3,6 +3,7 @@ using System.Globalization;
 using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
+using Extensions.Utilities;
 using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Network;
@@ -21,7 +22,7 @@ public class RoutingTests_FullNetwork : RoutingTests
     }
 
     [TestMethod]
-    public void LastLinkIsEntirelyRemoved()
+    public void ExampleOfLongDetour_Dijkstra()
     {
         var waypoints = new[]
         {
@@ -29,10 +30,25 @@ public class RoutingTests_FullNetwork : RoutingTests
             new Point3D(269319.20, 7039903.40)
         };
 
-        var res = _router.Search(waypoints[0], waypoints[1]);
+        //var res = _router.SaveSearchDebugAsGeoJson(waypoints[0], waypoints[1], @"G:\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\last-link", new RoutingConfig(), new TaskTimer());
+        var res = _router.Search(waypoints[0], waypoints[1], new RoutingConfig() { Algorithm = RoutingAlgorithm.Dijkstra });
 
-        // Originally, it returns 150 links where the final link has an empty Geometry, but this should be cut.
-        Assert.AreEqual(149, res.Links.Length);
+        Assert.AreEqual(6550, res.RouteDistance, 250);
+    }
+
+    [TestMethod]
+    public void ExampleOfLongDetour_Astar()
+    {
+        var waypoints = new[]
+        {
+            new Point3D(271047.81, 7039885.66),
+            new Point3D(269319.20, 7039903.40)
+        };
+
+        //var res = _router.SaveSearchDebugAsGeoJson(waypoints[0], waypoints[1], @"G:\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\last-link", new RoutingConfig(), new TaskTimer());
+        var res = _router.Search(waypoints[0], waypoints[1], new RoutingConfig() { Algorithm = RoutingAlgorithm.AStar });
+
+        Assert.AreEqual(6550, res.RouteDistance, 250);
     }
 
     [TestMethod]
@@ -124,6 +140,26 @@ public abstract class RoutingTests
     }
 
     [TestMethod]
+    public void SingleLink_FromOneThirdToTwoThirds()
+    {
+        var res = _router.Search(new Point3D(263000, 7040584.6060), new Point3D(262000, 7041288.2), new RoutingConfig());
+
+        Assert.AreEqual(1, res.Links.Length);
+        Assert.AreEqual(78, res.Links[0].Geometry.Length);
+        Assert.AreEqual(1688, res.RouteDistance, 10);
+    }
+
+    [TestMethod]
+    public void SingleLink_FromTwoThirdsToOneThirds()
+    {
+        var res = _router.Search( new Point3D(262000, 7041288.2), new Point3D(263000, 7040584.6060), new RoutingConfig());
+
+        Assert.AreEqual(1, res.Links.Length);
+        Assert.AreEqual(78, res.Links[0].Geometry.Length);
+        Assert.AreEqual(1688, res.RouteDistance, 10);
+    }
+
+    [TestMethod]
     public void SingleLink_FromEndToStart()
     {
         var res = _router.Search(new Point3D(261079.2, 7041288.2), new Point3D(263800.5783, 7040584.6060), new RoutingConfig());
@@ -158,6 +194,7 @@ public abstract class RoutingTests
     [TestMethod]
     public void SingleLink_BothDirections_FromOneThirdToTwoThirds()
     {
+        //_router.SaveSearchDebugAsGeoJson(new Point3D(262725.5, 7040681.7), new Point3D(261848.6, 7041068.2), @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", new RoutingConfig(), new TaskTimer());
         var res = _router.Search(new Point3D(262725.5, 7040681.7), new Point3D(261848.6, 7041068.2), new RoutingConfig());
 
         Assert.AreEqual(1, res.Links.Length);

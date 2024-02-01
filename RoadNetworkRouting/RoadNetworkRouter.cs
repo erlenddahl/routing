@@ -706,7 +706,7 @@ namespace RoadNetworkRouting
             if (links[0].Geometry.Length == 0 || links[^1].Geometry.Length == 0)
             {
                 links = links.Where(p => p.Geometry.Length > 0).ToArray();
-                if (!links.Any()) throw new RoutingException("Unable to find a route between these coordinates (too near?).", route);
+                if (!links.Any()) throw new RoutingException($"The resulting route after post-processing contains zero road links (too short distance between search points?) [orig={originalLinkCount}, ol={originalLinkLength:n2}, daf={distanceAlongFirst:n2}, dal={distanceAlongLast:n2}].", route);
             }
 
             timer.Time("routing.cut");

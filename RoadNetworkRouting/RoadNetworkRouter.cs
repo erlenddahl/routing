@@ -488,14 +488,34 @@ namespace RoadNetworkRouting
            
             GeoJsonCollection.From(relevantLinks.Select(p => p.ToGeoJsonFeature())).WriteTo(basePath + "_relevant-links.geojson");
             GeoJsonCollection.From(relevantNodes.Select(p => p.ToGeoJsonFeature())).WriteTo(basePath + "_relevant-nodes.geojson");
-            GeoJsonCollection.From(new []{ fromPoint, toPoint }, 32633).WriteTo(basePath + "_search-points.geojson");
+            GeoJsonCollection.From(new []
+            {
+                GeoJsonFeature.Point(fromPoint.X, fromPoint.Y, 32633, new
+                {
+                    type="source"
+                }),
+                GeoJsonFeature.Point(toPoint.X, toPoint.Y, 32633, new
+                {
+                    type="target"
+                })
+            }).WriteTo(basePath + "_search-points.geojson");
 
             var source = GetNearestLink(fromPoint, config, timer: timer);
             var target = GetNearestLink(toPoint, config, timer: timer);
 
             (source, target) = EnsureEntryPointsAreInTheSameGroup(source, target, config, timer);
 
-            GeoJsonCollection.From(new[] { source.Nearest.ToPoint(), target.Nearest.ToPoint()}, 32633).WriteTo(basePath + "_entry-points.geojson");
+            GeoJsonCollection.From(new[]
+            {
+                GeoJsonFeature.Point(source.Nearest.X, source.Nearest.Y, 32633, new
+                {
+                    type="source"
+                }),
+                GeoJsonFeature.Point(target.Nearest.X, target.Nearest.Y, 32633, new
+                {
+                    type="target"
+                })
+            }).WriteTo(basePath + "_entry-points.geojson");
 
             var route = Search(source, target, config, timer, basePath + "_routed_path.geojson");
 

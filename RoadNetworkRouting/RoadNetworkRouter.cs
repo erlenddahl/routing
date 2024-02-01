@@ -700,10 +700,19 @@ namespace RoadNetworkRouting
 
             var distanceAlongFirst = source.Nearest.Distance;
             if (source.Link.LinkId != links[0].LinkId) distanceAlongFirst = 0;
-            var distanceAlongLast = target.Nearest.Distance;
-            if (target.Link.LinkId != links[^1].LinkId) distanceAlongLast = 0;
-            if (distanceAlongLast < distanceAlongFirst && links.Length == 1 && target.Link.LinkId != links[^1].LinkId) distanceAlongLast = links[0].Length;
 
+            var distanceAlongLast = target.Nearest.Distance;
+            if (target.Link.LinkId != links[^1].LinkId)
+            {
+                var tp = target.Nearest.ToPoint();
+                if (tp.DistanceTo2D(links[^1].Geometry[0]) < tp.DistanceTo2D(links[^1].Geometry[^1]))
+                    distanceAlongLast = 0;
+                else
+                    distanceAlongLast = links[^1].Length;
+            };
+
+            var originalLinkCount = links.Length;
+            var originalLinkLength = links.Sum(p => p.Length);
             RotateAndCut(links, nodeId, distanceAlongFirst, distanceAlongLast);
 
             // If the first or last links are entirely cut, remove them from the link lists.
@@ -756,8 +765,8 @@ namespace RoadNetworkRouting
         /// </summary>
         /// <param name="links"></param>
         /// <param name="nodeId"></param>
-        /// <param name="distanceAlongFirst"></param>
-        /// <param name="distanceAlongLast"></param>
+        /// <param name="distanceAlongFirst">How far along the first link the start point is. Everything before this will be cut away. For example, if distanceAlongFirst is 5, meters 0-5 of the first link will be cut away.</param>
+        /// <param name="distanceAlongLast">How far along the last link the end point is. Everything after this will be cut away. For example, if distanceAlongLast is 5, meters 5-N of the last link will be cut away.</param>
         protected void RotateAndCut(RoadLink[] links, int nodeId, double distanceAlongFirst, double distanceAlongLast)
         {
             var (cutStart, cutEnd) = (distanceAlongFirst, links[^1].Length - distanceAlongLast);
@@ -844,7 +853,7 @@ namespace RoadNetworkRouting
             // If the second vertex is positive, like for example -999, 1, 2, 3, -999,
             // we need to make sure the first link is rotated correctly, then return its 
             // first node.
-            if (vertexIds.Length > 1 && vertexIds[1] >= 0)
+            if (vertexIds.Length > 1 && vertexIds[1] >= 0 && (vertexIds.Length < 3 || vertexIds[2] >= 0))
             {
                 // If the link's ToNode (end node) is the second vertex,
                 // the link is rotated correctly. Return its FromNode.
@@ -856,11 +865,11 @@ namespace RoadNetworkRouting
                 return links[0].ToNodeId;
             }
 
-            // If the second vertex is also negative, that means we have a search on a single link,
+            // If the second or third vertex is also negative, that means we have a search on a single link,
             // where both nodes are overloaded. In that case, return the node that minimizes the distances
             // between the nodes and the search points.
-            var distancesThisWay = fromPoint.ManhattanDistanceTo(links[0].Geometry[0]) + toPoint.ManhattanDistanceTo(links[0].Geometry[^1]);
-            var distancesRotated = fromPoint.ManhattanDistanceTo(links[0].Geometry[^1]) + toPoint.ManhattanDistanceTo(links[0].Geometry[0]);
+            var distancesThisWay = fromPoint.DistanceTo2D(links[0].Geometry[0]) + toPoint.DistanceTo2D(links[0].Geometry[^1]);
+            var distancesRotated = fromPoint.DistanceTo2D(links[0].Geometry[^1]) + toPoint.DistanceTo2D(links[0].Geometry[0]);
             if(distancesThisWay < distancesRotated) return links[0].FromNodeId;
             return links[0].ToNodeId;
         }

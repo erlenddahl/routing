@@ -629,7 +629,11 @@ namespace RoadNetworkRouting
             // The cost is travel time measured in minutes. Calculate a reasonable maximum amount of time using
             // the Manhattan distance between the search points, and use this as a maximum cost to make Dijkstra avoid
             // unnecessary searching if the target point is unreachable.
-            var distanceEstimate = source.Point.ManhattanDistanceTo2D(target.Point);
+            var distanceEstimate = Point3D.ManhattanDistanceTo2D(source.Nearest.X, source.Nearest.Y, target.Nearest.X, target.Nearest.Y);
+
+            // If the nearest points are somewhere within a road link, the search will have to take into account the length of this road link.
+            // Make sure the estimate is at least the sum of the two involved links.
+            distanceEstimate = Math.Max(distanceEstimate, source.Link.Length + target.Link.Length);
 
             // Make the conservative assumption that the manhattan distance could be a third of the actual distance
             distanceEstimate *= 3;

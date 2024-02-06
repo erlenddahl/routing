@@ -25,6 +25,16 @@ namespace RoadNetworkRouting.Tests.SimpleQuadTreeSearcherTests
             return Bounds.Contains(x, y);
         }
 
+        public bool ContainsEntireCell(BoundingBox2D bounds)
+        {
+            return Bounds.Contains(bounds);
+        }
+
+        public int GetEdgeCount()
+        {
+            return 4;
+        }
+
         public static SimplerQuadTreeSearcher Create(IEnumerable<BoundingBox2D> bounds)
         {
             return SimplerQuadTreeSearcher.FromBounds(bounds.Select(p => new BoundsQuadTreeItem() { Bounds = p }), 5, 5);
@@ -223,7 +233,7 @@ namespace RoadNetworkRouting.Tests.SimpleQuadTreeSearcherTests
             Assert.AreEqual(1, cache.FindNearby(67_000_006, 68, 10_000).Count());
         }
 
-        private static (BoundingBox2D[] boxes, Point3D[] coordinates) GenerateTestSet()
+        public static (BoundingBox2D[] boxes, Point3D[] coordinates) GenerateTestSet()
         {
             // Generate a large amount of boxes and search coordinates
             /*var rnd = new Random(828612);

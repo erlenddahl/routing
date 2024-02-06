@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 using RoadNetworkRouting.GeoJson;
@@ -15,6 +16,8 @@ namespace RoadNetworkRouting.Utils
 
         bool Overlaps(BoundingBox2D bounds);
         bool Contains(double x, double y);
+        bool ContainsEntireCell(BoundingBox2D bounds);
+        int GetEdgeCount();
     }
 
     public class SimplerQuadTreeSearcher
@@ -52,7 +55,7 @@ namespace RoadNetworkRouting.Utils
             cache._bounds.Xmax = cache._bounds.Xmin + dividableSize;
             cache._bounds.Ymax = cache._bounds.Ymin + dividableSize;
 
-            cache._root = new QuadCell((int)cache._bounds.Xmin, (int)cache._bounds.Ymin, (int)(dividableSize / cellCount), cellCount, 0, minSize, items);
+            cache._root = new QuadCell(null, (int)cache._bounds.Xmin, (int)cache._bounds.Ymin, (int)(dividableSize / cellCount), cellCount, 0, minSize, items);
 
             return cache;
         }
@@ -67,6 +70,17 @@ namespace RoadNetworkRouting.Utils
             if (!_root.Bounds.Contains(x, y)) yield break;
             foreach (var item in _root.Find(x, y))
                 yield return item;
+        }
+
+        public (QuadCell Cell, IEnumerable<IQuadTreeItem> Items) FindCell(QuadCell previous, double x, double y, TreeNavigationStatistics stats = null)
+        {
+            if (previous == null) return FindCell(x, y, stats);
+            return previous.FindCell(x, y, stats);
+        }
+
+        public (QuadCell Cell, IEnumerable<IQuadTreeItem> Items) FindCell(double x, double y, TreeNavigationStatistics stats = null)
+        {
+            return _root.FindCell(x, y, stats);
         }
 
         public IEnumerable<IQuadTreeItem> FindNearby(int x, int y, int searchRadius)
@@ -100,6 +114,64 @@ namespace RoadNetworkRouting.Utils
         }
     }
 
+    public class TreeNavigationStatistics
+    {
+        public int ZoomedIn { get; set; }
+        public int ZoomedOut { get; set; }
+        public int BoundaryChecks { get; set; }
+        public int LeavesReturned { get; set; }
+        public int SimpleLeaves { get; set; }
+        public int HardLeaves { get; set; }
+        public int CompletelyOutside { get; set; }
+        public int FillsCellChecks { get; set; }
+        public int PolygonsReturned { get; set; }
+        public int FullPolygonChecks { get; set; }
+        public int EdgesChecked { get; set; }
+
+        public void IncrementZoomIns()
+        {
+            ZoomedIn++;
+        }
+
+        public void IncrementZoomOuts()
+        {
+            ZoomedOut++;
+        }
+
+        public void IncrementBoundaryChecks()
+        {
+            BoundaryChecks++;
+        }
+
+        public void IncrementLeafReturns(int itemCount)
+        {
+            LeavesReturned++;
+            if (itemCount < 2) SimpleLeaves++;
+            else HardLeaves++;
+        }
+
+        public void IncrementOutside()
+        {
+            CompletelyOutside++;
+        }
+
+        public void IncreaseFillsCellCheck()
+        {
+            FillsCellChecks++;
+        }
+
+        public void IncreaseReturnedPolygon()
+        {
+            PolygonsReturned++;
+        }
+
+        public void IncreaseFullPolygonCheck(int edgeCount)
+        {
+            FullPolygonChecks++;
+            EdgesChecked += edgeCount;
+        }
+    }
+
     public class QuadCell
     {
         private readonly int _cellSize;
@@ -107,15 +179,17 @@ namespace RoadNetworkRouting.Utils
         private readonly int _totalChildren;
         public BoundingBox2D Bounds { get; set; }
         public QuadCell[,] Children { get; set; }
+        public QuadCell Parent { get; set; }
 
-        public IQuadTreeItem[] Items { get; set; }
+        public (bool FillsCell, IQuadTreeItem Item)[] Items { get; set; }
         public bool IsEmpty => Items != null && !Items.Any();
 
-        public QuadCell(int xMin, int yMin, int cellSize, int cellCount, int depth, int minSize, IEnumerable<IQuadTreeItem> items)
+        public QuadCell(QuadCell parent, int xMin, int yMin, int cellSize, int cellCount, int depth, int minSize, IEnumerable<IQuadTreeItem> items)
         {
             Bounds = new BoundingBox2D(xMin, xMin + cellSize * cellCount, yMin, yMin + cellSize * cellCount);
             _cellSize = cellSize;
             Depth = depth;
+            Parent = parent;
             _totalChildren = 0;
 
             // Calculate the size of the next recursion
@@ -125,7 +199,7 @@ namespace RoadNetworkRouting.Utils
             // we store all children directly, and exit here.
             if (!items.Any() || childSize < minSize)
             {
-                Items = items.ToArray();
+                Items = items.Select(p => (p.ContainsEntireCell(Bounds), p)).ToArray();
                 return;
             }
 
@@ -171,7 +245,7 @@ namespace RoadNetworkRouting.Utils
             // since all descendants of this cell will contain all the same items.
             if (Enumerate(children).All(p => p.Count == _totalChildren))
             {
-                Items = items.ToArray();
+                Items = items.Select(p => (p.ContainsEntireCell(Bounds), p)).ToArray();
                 return;
             }
 
@@ -180,15 +254,60 @@ namespace RoadNetworkRouting.Utils
             for (var x = 0; x < cellCount; x++)
             for (var y = 0; y < cellCount; y++)
             {
-                Children[x, y] = new QuadCell((int)bounds[x, y].Xmin, (int)bounds[x, y].Ymin, childSize, cellCount, depth + 1, minSize, children[x, y]);
+                Children[x, y] = new QuadCell(this, (int)bounds[x, y].Xmin, (int)bounds[x, y].Ymin, childSize, cellCount, depth + 1, minSize, children[x, y]);
             }
         }
 
         public IEnumerable<IQuadTreeItem> Find(double x, double y)
         {
             if (Items != null)
-                return Items.Where(p => p.Contains(x, y)).Select(p => p);
+                return Items.Where(p => p.FillsCell || p.Item.Contains(x, y)).Select(p => p.Item);
             return GetChild(x, y)?.Find(x, y) ?? Array.Empty<IQuadTreeItem>();
+        }
+
+        public (QuadCell Cell, IEnumerable<IQuadTreeItem> Items) FindCell(double x, double y, TreeNavigationStatistics stats = null)
+        {
+            stats?.IncrementBoundaryChecks();
+            if (!Bounds.Contains(x, y))
+            {
+                stats?.IncrementZoomOuts();
+                if (Parent == null)
+                {
+                    stats?.IncrementOutside();
+                    return (null, null);
+                }
+                return Parent.FindCell(x, y, stats);
+            }
+
+            if (Items != null)
+            {
+                stats?.IncrementLeafReturns(Items.Length);
+                return (this, FindItems(x, y, stats));
+            }
+
+            stats?.IncrementZoomIns();
+            return GetChild(x, y)?.FindCell(x, y, stats) ?? (null, null);
+        }
+
+        private IEnumerable<IQuadTreeItem> FindItems(double x, double y, TreeNavigationStatistics stats = null)
+        {
+            foreach (var item in Items)
+            {
+                stats?.IncreaseFillsCellCheck();
+                if (item.FillsCell)
+                {
+                    stats?.IncreaseReturnedPolygon();
+                    yield return item.Item;
+                    continue;
+                }
+
+                stats?.IncreaseFullPolygonCheck(item.Item.GetEdgeCount());
+                if (item.Item.Contains(x,y))
+                {
+                    stats?.IncreaseReturnedPolygon();
+                    yield return item.Item;
+                }
+            }
         }
 
         private QuadCell GetChild(double x, double y)
@@ -237,6 +356,7 @@ namespace RoadNetworkRouting.Utils
                 depth = Depth,
                 totalDescendants = _totalChildren,
                 directChildItems = Items?.Length ?? 0,
+                uncertainChildItems = Items?.Count(p => !p.FillsCell) ?? 0,
                 populatedChildCells = Cells().Count()
             };
 

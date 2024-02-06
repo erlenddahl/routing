@@ -142,7 +142,7 @@ public class RoadLink : ILinkPartGenerator
             {
                 LinkId = LinkId,
                 Width = 8, //TODO: Fix!
-                LaneInfo = LaneReader.Default(2), //TODO: Fix!
+                LaneInfo = LaneReader.Parse("1#2"), //TODO: Fix!
                 NodeA = FromNodeId,
                 NodeB = ToNodeId,
                 IsFerry = false, //TODO: Fix!

@@ -81,7 +81,7 @@ public class RoutingService
             rs.Timings.Time("routing.service");
 
             var path = Router.Search(fromCoord, toCoord, config, rs.Timings);
-            //var path = Router.SaveSearchDebugAsGeoJson(fromCoord.Point, toCoord.Point, "G:\\Søppel\\2024-01-26 - Entur, routing-debugging\\route_" + id, config, rs.Timings);
+            //var path = Router.SaveSearchDebugAsGeoJson(fromCoord.SearchPoint, toCoord.SearchPoint, "G:\\Søppel\\2024-01-26 - Entur, routing-debugging\\route_" + id, config, rs.Timings);
             rs.RequestedWaypoints[^1].RoutingInfo = new RoutingInfo(path);
 
             if (!path.Success) throw new RoutingException($"Couldn't find a route between these points [it={path.Route.InternalData.Iterations}, term={path.Route.InternalData.Termination}].");

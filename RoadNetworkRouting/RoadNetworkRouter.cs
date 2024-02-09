@@ -223,7 +223,7 @@ namespace RoadNetworkRouting
                     ReverseCost = properties.Value<float>("drivetime_bw"),
                     FromRelativeLength = properties.Value<float>("from_measure"),
                     ToRelativeLength = properties.Value<float>("to_measure"),
-                    Geometry = coordinates.Select(p => new{Utm=wgs84ToUtm33(p[0], p[1]), Z=p[2]}).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)).ToArray(),
+                    Geometry = new PolyLineZ(coordinates.Select(p => new { Utm = wgs84ToUtm33(p[0], p[1]), Z = p[2] }).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)), true).Points,
                     RoadClass = properties.Value<byte>("roadclass")
                 };
                 

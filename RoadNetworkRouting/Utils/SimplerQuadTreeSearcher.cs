@@ -119,6 +119,7 @@ namespace RoadNetworkRouting.Utils
         public int ZoomedIn { get; set; }
         public int ZoomedOut { get; set; }
         public int BoundaryChecks { get; set; }
+        public int BoundaryLowLevelChecks { get; set; }
         public int LeavesReturned { get; set; }
         public int SimpleLeaves { get; set; }
         public int HardLeaves { get; set; }
@@ -127,6 +128,8 @@ namespace RoadNetworkRouting.Utils
         public int PolygonsReturned { get; set; }
         public int FullPolygonChecks { get; set; }
         public int EdgesChecked { get; set; }
+
+        public int Operations => BoundaryLowLevelChecks + ZoomedIn * 4 + ZoomedOut + EdgesChecked * 8;
 
         public void IncrementZoomIns()
         {
@@ -138,15 +141,16 @@ namespace RoadNetworkRouting.Utils
             ZoomedOut++;
         }
 
-        public void IncrementBoundaryChecks()
+        public void IncrementBoundaryChecks(int lowLevelCount)
         {
             BoundaryChecks++;
+            BoundaryLowLevelChecks += lowLevelCount;
         }
 
         public void IncrementLeafReturns(int itemCount)
         {
             LeavesReturned++;
-            if (itemCount < 2) SimpleLeaves++;
+            if (itemCount < 1) SimpleLeaves++;
             else HardLeaves++;
         }
 
@@ -169,6 +173,44 @@ namespace RoadNetworkRouting.Utils
         {
             FullPolygonChecks++;
             EdgesChecked += edgeCount;
+        }
+
+        public TreeNavigationStatistics Diff(TreeNavigationStatistics other)
+        {
+            return new TreeNavigationStatistics()
+            {
+                ZoomedOut = ZoomedOut - other.ZoomedOut,
+                ZoomedIn = ZoomedIn - other.ZoomedIn,
+                SimpleLeaves = SimpleLeaves - other.SimpleLeaves,
+                EdgesChecked = EdgesChecked - other.EdgesChecked,
+                BoundaryChecks = BoundaryChecks - other.BoundaryChecks,
+                CompletelyOutside = CompletelyOutside - other.CompletelyOutside,
+                FillsCellChecks = FillsCellChecks - other.FillsCellChecks,
+                FullPolygonChecks = FullPolygonChecks - other.FullPolygonChecks,
+                HardLeaves = HardLeaves - other.HardLeaves,
+                LeavesReturned = LeavesReturned - other.LeavesReturned,
+                PolygonsReturned = PolygonsReturned - other.PolygonsReturned,
+                BoundaryLowLevelChecks = BoundaryLowLevelChecks - other.BoundaryLowLevelChecks
+            };
+        }
+
+        public TreeNavigationStatistics Clone()
+        {
+            return new TreeNavigationStatistics()
+            {
+                ZoomedOut = ZoomedOut,
+                ZoomedIn = ZoomedIn,
+                SimpleLeaves = SimpleLeaves,
+                EdgesChecked = EdgesChecked,
+                BoundaryChecks = BoundaryChecks,
+                CompletelyOutside = CompletelyOutside,
+                FillsCellChecks = FillsCellChecks,
+                FullPolygonChecks = FullPolygonChecks,
+                HardLeaves = HardLeaves,
+                LeavesReturned = LeavesReturned,
+                PolygonsReturned = PolygonsReturned,
+                BoundaryLowLevelChecks = BoundaryLowLevelChecks
+            };
         }
     }
 
@@ -267,8 +309,9 @@ namespace RoadNetworkRouting.Utils
 
         public (QuadCell Cell, IEnumerable<IQuadTreeItem> Items) FindCell(double x, double y, TreeNavigationStatistics stats = null)
         {
-            stats?.IncrementBoundaryChecks();
-            if (!Bounds.Contains(x, y))
+            var containsCheck = Contains(Bounds, x, y);
+            stats?.IncrementBoundaryChecks(containsCheck.operations);
+            if (!containsCheck.contains)
             {
                 stats?.IncrementZoomOuts();
                 if (Parent == null)
@@ -281,12 +324,21 @@ namespace RoadNetworkRouting.Utils
 
             if (Items != null)
             {
-                stats?.IncrementLeafReturns(Items.Length);
+                stats?.IncrementLeafReturns(Items?.Count(p => !p.FillsCell) ?? 0);
                 return (this, FindItems(x, y, stats));
             }
 
             stats?.IncrementZoomIns();
             return GetChild(x, y)?.FindCell(x, y, stats) ?? (null, null);
+        }
+
+        private (bool contains, int operations) Contains(BoundingBox2D bounds, double x, double y)
+        {
+            if (x < bounds.Xmin) return (false, 1);
+            if (x > bounds.Xmax) return (false, 2);
+            if (y < bounds.Ymin) return (false, 3);
+            if (y > bounds.Ymax) return (false, 4);
+            return (true, 4);
         }
 
         private IEnumerable<IQuadTreeItem> FindItems(double x, double y, TreeNavigationStatistics stats = null)

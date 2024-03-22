@@ -12,7 +12,22 @@ using RoadNetworkRouting.Network;
 
 namespace RoadNetworkRouting.Service;
 
-public class RoutingService
+public abstract class IRoutingService
+{
+    public InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
+    {
+        return FromUtm(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
+    }
+
+    public InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
+    {
+        return FromUtm(coordinates.Select(p => new RoutingPoint(p)).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
+    }
+
+    public abstract InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null);
+}
+
+public class RoutingService : IRoutingService
 {
     private RoutingService()
     {
@@ -34,17 +49,7 @@ public class RoutingService
     /// </summary>
     public double? MaxRouteLengthKm { get; set; } = 1000;
 
-    public InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
-    {
-        return FromUtm(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
-    }
-
-    public InternalRoutingResponse FromUtm(Point3D[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
-    {
-        return FromUtm(coordinates.Select(p => new RoutingPoint(p)).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
-    }
-
-    public InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
+    public override InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
     {
         if (MaxRouteLengthKm.HasValue)
         {

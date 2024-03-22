@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
+using EnergyModule.Network;
 using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Geometry;
 
@@ -29,7 +30,7 @@ public class SingleRoutingRequest : RoutingRequest
         };
     }
 
-    public RoutingResponse Route(RoutingService service)
+    public RoutingResponse Route(IRoutingService service)
     {
         if (Waypoints == null || Waypoints.Length < 2) throw new Exception("Each route must have at least two coordinates.");
 
@@ -48,7 +49,7 @@ public class MultiRoutingRequest : RoutingRequest
     /// </summary>
     public Point3D[][] Waypoints { get; set; }
 
-    public IEnumerable<RoutingResponse> Route(RoutingService service)
+    public IEnumerable<RoutingResponse> Route(IRoutingService service)
     {
         Response ??= RoutingResponseDefinition.CreateDefault();
 
@@ -89,7 +90,7 @@ public class MatrixRoutingRequest : RoutingRequest
     /// </summary>
     public Point3D[] Waypoints { get; set; }
 
-    public IEnumerable<RoutingResponse[]> Route(RoutingService service)
+    public IEnumerable<RoutingResponse[]> Route(IRoutingService service)
     {
         Response ??= RoutingResponseDefinition.CreateDefault();
 
@@ -105,7 +106,7 @@ public class MatrixRoutingRequest : RoutingRequest
             .Select(p => p.results);
     }
 
-    public IEnumerable<RoutingResponse> RouteOneToAll(RoutingService service, Point3D source, Point3D[] targets)
+    public IEnumerable<RoutingResponse> RouteOneToAll(IRoutingService service, Point3D source, Point3D[] targets)
     {
         foreach (var target in targets)
         {
@@ -135,6 +136,11 @@ public abstract class RoutingRequest
     /// A definition of what to include in the output.
     /// </summary>
     public RoutingResponseDefinition Response { get; set; }
+
+    /// <summary>
+    /// Which network type to route. Road and Rail have their own networks, while Air and Ocean are routed as geodesic and straight lines respectively.
+    /// </summary>
+    public NetworkType Network { get; set; } = NetworkType.Road;
 
     /// <summary>
     /// The SRID of the incoming coordinates.

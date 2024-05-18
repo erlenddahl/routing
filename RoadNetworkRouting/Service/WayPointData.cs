@@ -22,13 +22,13 @@ namespace RoadNetworkRouting.Service
         /// The coordinates between this waypoint and the next starts at this index in the
         /// Coordinates array.
         /// </summary>
-        public int CoordinateIndex { get; set; }
+        public int? CoordinateIndex { get; set; }
 
         /// <summary>
         /// The link references between this waypoint and the next starts at this index in the
         /// LinkReferences array.
         /// </summary>
-        public int LinkReferenceIndex { get; set; }
+        public int? LinkReferenceIndex { get; set; }
 
         /// <summary>
         /// Detailed information about the routing operation.

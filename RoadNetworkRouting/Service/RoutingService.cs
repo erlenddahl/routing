@@ -73,8 +73,8 @@ public class RoutingService : IRoutingService
             var fromCoord = coordinates[i - 1];
             var toCoord = coordinates[i];
 
-            var ci = includeCoordinates ? rs.Coordinates.Count : -1;
-            var lri = includeLinkReferences ? rs.LinkReferences.Count : -1;
+            int? ci = includeCoordinates ? rs.Coordinates.Count : null;
+            int? lri = includeLinkReferences ? rs.LinkReferences.Count : null;
             rs.RequestedWaypoints.Add(new WayPointData()
             {
                 FromWaypoint = fromCoord.SearchPoint,

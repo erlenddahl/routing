@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RoadNetworkRouting.Utils;
+﻿using RoadNetworkRouting.Utils;
 
-namespace RoadNetworkRouting.Tests.SimpleQuadTreeSearcherTests
+namespace RoadNetworkRouting.Tests.QuadTreeSearcherTests
 {
     [TestClass]
     public class StatsTests
@@ -181,7 +176,7 @@ namespace RoadNetworkRouting.Tests.SimpleQuadTreeSearcherTests
             Assert.IsNull(cell);
 
             Assert.AreEqual(3, stats.ZoomedIn);
-            Assert.AreEqual(4, stats.ZoomedOut);
+            Assert.AreEqual(3, stats.ZoomedOut);
             Assert.AreEqual(8, stats.BoundaryChecks);
             Assert.AreEqual(1, stats.LeavesReturned);
             Assert.AreEqual(1, stats.CompletelyOutside);

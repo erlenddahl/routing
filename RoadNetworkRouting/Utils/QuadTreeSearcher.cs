@@ -1,364 +1,116 @@
-﻿using System;
-using System.Collections;
+﻿using EnergyModule.Geometry.SimpleStructures;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
-using EnergyModule.Geometry.SimpleStructures;
 using RoadNetworkRouting.GeoJson;
+using RoadNetworkRouting.Geometry;
 
 namespace RoadNetworkRouting.Utils
 {
-    public class QuadTreeSearcher<T>
+    public class QuadTreeSearcher
     {
-        /// <summary>
-        /// A lookup that can be used to find the cell position in the _grid list.
-        /// </summary>
-        private readonly Dictionary<string, (int X, int Y)> _lookup = new();
+        public int CellCount { get; }
 
-        /// <summary>
-        /// A 2D list that contains a compressed (no holes) representation of the
-        /// cache cells.
-        /// Each row contains a list of all columns in this row, and each column contains
-        /// a list of all items in this cell.
-        /// </summary>
-        private List<GridRow> _grid = new();
+        private BoundingBox2D _bounds;
 
-        private static BoundingBox2D _bounds;
+        public QuadCell Root { get; private set; }
 
-        /// <summary>
-        /// The size (width and height) of each cells in this boundary lookup.
-        /// </summary>
-        public int CellSize { get; }
-
-        private QuadTreeSearcher(int cellSize)
+        private QuadTreeSearcher(int cellCount)
         {
-            CellSize = cellSize;
+            CellCount = cellCount;
         }
 
-        public static QuadTreeSearcher<T> FromBounds(IEnumerable<T> items, Func<T, BoundingBox2D> bounds, int cellSize)
+        public static QuadTreeSearcher FromBounds(IEnumerable<IQuadTreeItem> items, int cellCount, int minSize)
         {
-            var cache = new QuadTreeSearcher<T>(cellSize);
-            var lookup = new Dictionary<(int X, int Y), List<GridCell>>();
-            _bounds = BoundingBox2D.Empty();
+            var cache = new QuadTreeSearcher(cellCount);
+            cache._bounds = BoundingBox2D.Empty();
 
             foreach (var item in items)
             {
-                var b = bounds(item);
-
-                var (minX, minY) = cache.GetCellCoordinates(b.Xmin, b.Ymin);
-                var (maxX, maxY) = cache.GetCellCoordinates(b.Xmax, b.Ymax);
-
-                // If the bounds are exactly on the borders between cells, extend them
-                // so that the neighboring cells also contain these items.
-                if (b.Xmin - minX == 0) minX -= cellSize;
-                if (b.Ymin - minY == 0) minY -= cellSize;
-                if (b.Xmax - maxX == 0) maxX += cellSize;
-                if (b.Ymax - maxY == 0) maxY += cellSize;
-
-                _bounds.ExtendSelf(b);
-
-                for (var x = minX; x <= maxX; x += cellSize)
-                    for (var y = minY; y <= maxY; y += cellSize)
-                    {
-                        var key = (x, y);
-                        if (lookup.TryGetValue(key, out var list))
-                            list.Add(new GridCell(item, b));
-                        else
-                            lookup.Add(key, new List<GridCell>() { new(item, b) });
-                    }
+                cache._bounds.ExtendSelf(item.Bounds);
             }
 
-            var rows = lookup.GroupBy(p => p.Key.Y).OrderBy(p => p.Key);
-            foreach (var row in rows)
-            {
-                var columns = row
-                    .Select(p => (p.Key.X, p.Value))
-                    .OrderBy(p => p.X)
-                    .ToList();
+            // Get the largest dimension size (max of width and height)
+            var largestDimension = Math.Max(cache._bounds.Xmax - cache._bounds.Xmin, cache._bounds.Ymax - cache._bounds.Ymin);
 
-                cache._grid.Add(new GridRow(row.Key, cellSize, columns));
+            // Make it recursively dividable until minSize
+            var dividableSize = minSize;
+            while (dividableSize < largestDimension)
+                dividableSize *= cellCount;
 
-                // Create a lookup from the nearby key to each cell's position
-                // within the _grid.
-                for (var i = 0; i < columns.Count; i++)
-                {
-                    cache._lookup.Add(columns[i].X + "_" + row.Key, (i, cache._grid.Count - 1));
-                }
-            }
+            // Set the maxes to use this new size
+            cache._bounds.Xmax = cache._bounds.Xmin + dividableSize;
+            cache._bounds.Ymax = cache._bounds.Ymin + dividableSize;
+
+            cache.Root = new QuadCell(null, (int)cache._bounds.Xmin, (int)cache._bounds.Ymin, (int)(dividableSize / cellCount), cellCount, 0, minSize, items);
 
             return cache;
         }
 
-        private string GetNearbyKey(Point3D point)
+        public IEnumerable<IQuadTreeItem> Find(Point3D point)
         {
-            return GetNearbyKey(point.X, point.Y);
+            return Find(point.X, point.Y);
         }
 
-        private (int, int) GetCellCoordinates(double x, double y)
+        public IEnumerable<IQuadTreeItem> Find(double x, double y)
         {
-            var ix = (int)(x / CellSize) * CellSize;
-            var iy = (int)(y / CellSize) * CellSize;
-            if (x < 0) ix -= CellSize;
-            if (y < 0) iy -= CellSize;
-            return (ix, iy);
+            if (!Root.Bounds.Contains(x, y)) yield break;
+            foreach (var item in Root.Find(x, y))
+                yield return item;
         }
 
-        private string GetNearbyKey(double x, double y)
+        public (QuadCell Cell, IEnumerable<IQuadTreeItem> Items) FindCell(QuadCell previous, double x, double y, TreeNavigationStatistics stats = null)
         {
-            var (ix, iy) = GetCellCoordinates(x, y);
-            return ix + "_" + iy;
+            if (previous == null) return FindCell(x, y, stats);
+            return previous.FindCell(x, y, stats);
         }
 
-        public IEnumerable<T> GetNearbyItems(Point3D point, int searchRadius = 0)
+        public (QuadCell Cell, IEnumerable<IQuadTreeItem> Items) FindCell(double x, double y, TreeNavigationStatistics stats = null)
         {
-            return GetNearbyItems(point.X, point.Y, searchRadius);
+            return Root.FindCell(x, y, stats);
         }
 
-        public IEnumerable<T> GetNearbyItems(double x, double y, int searchRadius = 0)
+        public IEnumerable<IQuadTreeItem> FindNearby(int x, int y, int searchRadius)
         {
-            HashSet<BoundingBox2D> returned = new();
-            var r = (int)Math.Ceiling(searchRadius / (double)CellSize) * CellSize;
-
-            foreach (var row in GetNearby(_grid, y, searchRadius))
-                foreach (var col in GetNearby(row.Columns, x, searchRadius))
-                    foreach (var item in col.GetItemsAt(x, y))
-                        if (!returned.Contains(item.Bounds))
-                            if (item.Bounds.Contains(x, y, searchRadius))
-                            {
-                                yield return item.Item;
-                                returned.Add(item.Bounds);
-                            }
+            throw new NotImplementedException();
         }
 
-        private IEnumerable<T> GetNearby<T>(IList<T> items, double value, double radius) where T : IsWithinnable
+        public void SaveAsGeoJson(string path, CoordinateConverter converter = null, Func<IQuadTreeItem, GeoJsonFeature> itemSerializer = null)
         {
-            var ix = items.Count / 2;
-            var binaryWidth = ix / 2;
-            var maxSearches = (int)Math.Ceiling(Math.Log2(items.Count));
-            var searches = 0;
-            while (true)
-            {
-                if (searches > maxSearches + 1 || ix < 0 || ix >= items.Count)
-                    yield break;
-                if (items[ix].IsAfter(value, radius))
-                    ix -= binaryWidth;
-                else if (items[ix].IsBefore(value, radius))
-                    ix += binaryWidth;
-                else
-                    break;
-                binaryWidth = Math.Max(1, binaryWidth / 2);
-                searches++;
-            }
+            var cells = Root.RecursiveCells();
 
-            for (var i = ix; i < items.Count; i++)
-            {
-                if (items[i].IsWithin(value, radius)) yield return items[i];
-                else break;
-            }
-
-            for (var i = ix - 1; i >= 0; i--)
-            {
-                if (items[i].IsWithin(value, radius)) yield return items[i];
-                else break;
-            }
-        }
-
-        public IEnumerable<T> GetItemsInCell(Point3D point)
-        {
-            return GetNearbyItems(point.X, point.Y);
-        }
-
-        private interface IsWithinnable
-        {
-            public bool IsWithin(double value, double radius);
-            public bool IsBefore(double value, double radius);
-            public bool IsAfter(double value, double radius);
-        }
-
-        private class GridRow : IsWithinnable
-        {
-            private readonly BoundingBox2D _bounds;
-            public int MinY { get; set; }
-            public int MaxY { get; set; }
-            public List<GridColumn> Columns { get; set; }
-
-            public GridRow(int minY, int cellSize, List<(int X, List<GridCell> Items)> columns)
-            {
-                MinY = minY;
-                MaxY = minY + cellSize;
-                _bounds = new BoundingBox2D(-1, 1, MinY, MaxY);
-                Columns = columns.Select(p => new GridColumn(p.X, minY, cellSize, p.Items)).ToList();
-            }
-
-            public bool IsWithin(double y, double radius)
-            {
-                return _bounds.Contains(0, y, (int)radius);
-            }
-
-            /// <summary>
-            /// Returns true if this item is sorted before an item that would return
-            /// true on IsWithin in a list.
-            /// </summary>
-            /// <param name="y"></param>
-            /// <param name="radius"></param>
-            /// <returns></returns>
-            public bool IsBefore(double y, double radius)
-            {
-                return MaxY + radius < y;
-            }
-
-            /// <summary>
-            /// Returns true if this item is sorted after an item that would return
-            /// true on IsWithin in a list.
-            /// </summary>
-            /// <param name="y"></param>
-            /// <param name="radius"></param>
-            /// <returns></returns>
-            public bool IsAfter(double y, double radius)
-            {
-                return MinY - radius > y;
-            }
-
-            public override string ToString()
-            {
-                return $"Y {MinY} to {MaxY}, {Columns.Count} columns";
-            }
-        }
-
-        private class GridColumn : IsWithinnable
-        {
-            private readonly BoundingBox2D _bounds;
-            public int MinX { get; set; }
-            public int MinY { get; set; }
-            public int MaxX { get; set; }
-
-            private Octree _tree;
-
-            private int _totalChildCount;
-            private readonly int _cellSize;
-
-            public GridColumn(int minX, int minY, int cellSize, List<GridCell> items)
-            {
-                MinX = minX;
-                MaxX = minX + cellSize;
-                MinY = minY;
-                _cellSize = cellSize;
-                _bounds = new BoundingBox2D(MinX, MaxX, -1, 1);
-                _tree = Octree.Create(minX, minY, cellSize, items);
-                _totalChildCount = items.Count;
-            }
-
-            public bool IsWithin(double x, double radius)
-            {
-                return _bounds.Contains(x, 0, (int)radius);
-            }
-
-            public override string ToString()
-            {
-                return $"X {MinX} to {MaxX}, {_totalChildCount} items";
-            }
-
-            /// <summary>
-            /// Returns true if this item is sorted before an item that would return
-            /// true on IsWithin in a list.
-            /// </summary>
-            /// <param name="x"></param>
-            /// <param name="radius"></param>
-            /// <returns></returns>
-            public bool IsBefore(double x, double radius)
-            {
-                return MaxX + radius < x;
-            }
-
-            /// <summary>
-            /// Returns true if this item is sorted after an item that would return
-            /// true on IsWithin in a list.
-            /// </summary>
-            /// <param name="x"></param>
-            /// <param name="radius"></param>
-            /// <returns></returns>
-            public bool IsAfter(double x, double radius)
-            {
-                return MinX - radius > x;
-            }
-
-            public IEnumerable<GridCell> GetItemsAt(double x, double y)
-            {
-                return _tree.GetItemsAt(x, y);
-            }
-        }
-
-        private class Octree
-        {
-            public BoundingBox2D _bounds;
-            public int _cellSize;
-            public List<GridCell> Cells { get; set; }
-            public Octree[,] Children { get; set; }
-
-            private Octree(){}
-
-            public static Octree[,] Build(List<GridCell> items, double minX, double minY, int cellSize)
-            {
-                var children = new Octree[3, 3];
-                
-                var cs = cellSize / 3;
-                
-                children[0, 0] = Create(minX, minY, cs, items);
-                children[0, 1] = Create(minX, minY + cs, cs, items);
-                children[0, 2] = Create(minX, minY + 2 * cs, cs, items);
-                children[1, 0] = Create(minX + cs, minY, cs, items);
-                children[1, 1] = Create(minX + cs, minY + cs, cs, items);
-                children[1, 2] = Create(minX + cs, minY + 2 * cs, cs, items);
-                children[2, 0] = Create(minX + 2 * cs, minY, cs, items);
-                children[2, 1] = Create(minX + 2 * cs, minY + cs, cs, items);
-                children[2, 2] = Create(minX + 2 * cs, minY + 2 * cs, cs, items);
-
-                return children;
-            }
-
-            public static Octree Create(double minX, double minY, int cellSize, List<GridCell> items)
-            {
-                var bounds = new BoundingBox2D(minX, minX + cellSize, minY, minY + cellSize);
-                var tree = new Octree()
+            var features = itemSerializer == null
+                ? cells.Select(p => p.ToGeoJsonFeature(converter))
+                : cells.SelectMany(p =>
                 {
-                    _bounds = bounds,
-                    _cellSize = cellSize,
-                    Cells = items.Where(p => p.Bounds.Overlaps(bounds)).ToList()
-                };
-                if (tree.Cells.Count > 1 && cellSize > 100)
+                    if (p.Items == null) return new[] { p.ToGeoJsonFeature(converter) };
+                    return p.Items.Where(c => !c.FillsCell).Select(c => itemSerializer(c.Item)).Concat(new[] { p.ToGeoJsonFeature(converter) });
+                });
+
+            GeoJsonCollection
+                .From(features)
+                .WriteTo(path);
+        }
+
+        public (int Total, int NonEmpty, int MaxDepth) CountCells()
+        {
+            var total = 0;
+            var nonEmpty = 0;
+            var maxDepth = 0;
+            foreach (var cell in Root.RecursiveCells())
+            {
+                total++;
+                if (cell.Depth > maxDepth) maxDepth = cell.Depth;
+                if (!cell.IsEmpty)
                 {
-                    tree.Children = Build(tree.Cells, minX, minY, cellSize);
+                    nonEmpty++;
                 }
-
-                return tree;
             }
 
-            public IEnumerable<GridCell> GetItemsAt(double x, double y)
-            {
-                if (Children == null || Cells.Count < 2) return Cells;
-                var dx = x - _bounds.Xmin;
-                var dy = y - _bounds.Ymin;
-                var xi = (int)(dx / _cellSize);
-                var yi = (int)(dy / _cellSize);
-                return Children[xi, yi].GetItemsAt(x, y);
-            }
-        }
-
-        private class GridCell
-        {
-            public T Item { get; set; }
-            public BoundingBox2D Bounds { get; set; }
-            public GridCell(T item, BoundingBox2D bounds)
-            {
-                Item = item;
-                Bounds = bounds;
-            }
-
-            public override string ToString()
-            {
-                return Bounds.ToString();
-            }
+            return (total, nonEmpty, maxDepth);
         }
     }
 }

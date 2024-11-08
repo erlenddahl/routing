@@ -14,11 +14,51 @@ using RoadNetworkRouting.Geometry;
 
 namespace RoadNetworkRouting.Network;
 
-public class RoadLink : ILinkPartGenerator
+public abstract class GeometryLink : ILinkPartGenerator
+{
+    private double? _length;
+    private CachedLineTools _pointCache;
+    private Point3D[] _geometry;
+
+    protected CachedLineTools PointCache => _pointCache ??= new CachedLineTools(Geometry);
+
+    /// <summary>
+    /// The 3D length of the road link, calculated (on the first call) from its Geometry.
+    /// </summary>
+    public double Length => _length ??= PointCache.Length;
+
+    public Point3D[] Geometry
+    {
+        get => _geometry;
+        set
+        {
+            _geometry = value;
+            _pointCache = null;
+            _length = null;
+        }
+    }
+
+    public abstract LinkPart[] GenerateLinkParts(double segmentLength = 20);
+
+    public PointInfo GetGeometricData(double metersFromA)
+    {
+        if (_pointCache == null)
+            _pointCache = new CachedLineTools(Geometry);
+        return _pointCache.QueryPointInfo(metersFromA);
+    }
+
+    public abstract GeometryLink Clone(Point3D[] newGeometry = null);
+
+    public virtual GeometryLink ConvertCoordinates(CoordinateConverter converter)
+    {
+        var link = Clone(Geometry.Select(converter.Forward).ToArray());
+        return link;
+    }
+}
+
+public class RoadLink : GeometryLink
 {
     private LinkReference _reference;
-    private CachedLineTools _pointCache;
-    private double? _length;
     private double _fromRelativeLength;
     private double _toRelativeLength;
     private RoadLinkDirection _direction;
@@ -61,7 +101,6 @@ public class RoadLink : ILinkPartGenerator
     public int ToNodeId { get; set; }
     public byte SpeedLimit { get; set; }
     public byte SpeedLimitReversed { get; set; }
-    public Point3D[] Geometry { get; set; }
     public string LaneCode { get; set; } = "";
     public float Cost { get; set; }
     public float ReverseCost { get; set; }
@@ -84,12 +123,7 @@ public class RoadLink : ILinkPartGenerator
     /// </summary>
     public int NetworkGroup { get; set; } = -1;
 
-    /// <summary>
-    /// The 3D length of the road link, calculated (on the first call) from its Geometry.
-    /// </summary>
-    public double Length => _length ??= LineTools.CalculateLength(Geometry);
-
-    public RoadLink Clone(Point3D[] newGeometry = null)
+    public override RoadLink Clone(Point3D[] newGeometry = null)
     {
         return new RoadLink()
         {
@@ -119,14 +153,7 @@ public class RoadLink : ILinkPartGenerator
         return $"Id={LinkId}, Cost={c} / {rc}";
     }
 
-    public PointInfo GetGeometricData(double metersFromA)
-    {
-        if (_pointCache == null)
-            _pointCache = new CachedLineTools(Geometry);
-        return _pointCache.QueryPointInfo(metersFromA);
-    }
-
-    public LinkPart[] GenerateLinkParts(double segmentLength = TransportLink.StandardSegmentLength)
+    public override LinkPart[] GenerateLinkParts(double segmentLength = TransportLink.StandardSegmentLength)
     {
         var partIndex = 0;
 
@@ -269,7 +296,7 @@ public class RoadLink : ILinkPartGenerator
         return 1 + 1 + 8 + 8 + 4 + 4 + 4 + 1 + 1 + 4 + 4 + 4 + pointCount * (8 + 8 + 8);
     }
 
-    public RoadLink ConvertCoordinates(CoordinateConverter converter)
+    public override RoadLink ConvertCoordinates(CoordinateConverter converter)
     {
         var link = Clone(Geometry.Select(converter.Forward).ToArray());
         link.Bounds = null;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using EnergyModule.Exceptions;
 using EnergyModule.Geometry.SimpleStructures;
 using Extensions.IEnumerableExtensions;
@@ -14,6 +15,9 @@ namespace RoadNetworkRouting.Service;
 
 public abstract class IRoutingService
 {
+    public string Name { get; protected set; }
+    public string Version { get; protected set; }
+
     public InternalRoutingResponse FromRequest(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
     {
         return FromUtm(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
@@ -25,6 +29,18 @@ public abstract class IRoutingService
     }
 
     public abstract InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null);
+
+    public Task<InternalRoutingResponse> FromRequestAsync(IList<Point3D> coordinates, RoutingConfig config, CoordinateConverter converter, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
+    {
+        return FromUtmAsync(coordinates.Select(p => converter?.Forward(p) ?? p).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
+    }
+
+    public Task<InternalRoutingResponse> FromUtmAsync(Point3D[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
+    {
+        return FromUtmAsync(coordinates.Select(p => new RoutingPoint(p)).ToArray(), config, includeCoordinates, includeLinkReferences, timer, id);
+    }
+
+    public abstract Task<InternalRoutingResponse> FromUtmAsync(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null);
 }
 
 public class RoutingService : IRoutingService
@@ -51,6 +67,8 @@ public class RoutingService : IRoutingService
 
     public override InternalRoutingResponse FromUtm(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
     {
+        config ??= new RoutingConfig();
+
         if (MaxRouteLengthKm.HasValue)
         {
             var dist = coordinates.Pairwise().Sum(p => p.A.SearchPoint.DistanceTo(p.B.SearchPoint)) / 1000d;
@@ -60,6 +78,7 @@ public class RoutingService : IRoutingService
 
         var rs = new InternalRoutingResponse()
         {
+            RoutingSource = new RoutingSourceInfo("Built-in router, " + config.Algorithm, Version),
             RequestedWaypoints = new(),
             LinkReferences = includeLinkReferences ? new List<string>() : null,
             Timings = timer ?? new(),
@@ -123,14 +142,21 @@ public class RoutingService : IRoutingService
         return rs;
     }
 
+    public override Task<InternalRoutingResponse> FromUtmAsync(RoutingPoint[] coordinates, RoutingConfig config, bool includeCoordinates, bool includeLinkReferences, TaskTimer timer = null, string id = null)
+    {
+        return Task.FromResult(FromUtm(coordinates, config, includeCoordinates, includeLinkReferences, timer, id));
+    }
+
     public IEnumerable<RoadLink> GetLinksFromReferences(IEnumerable<string> linkReferences)
     {
         return Router.GetLinksFromReferences(linkReferences);
     }
 
-    public static RoutingService Create(string networkFile)
+    public static RoutingService Create(string networkFile, string version = null)
     {
         var rs = new RoutingService();
+        rs.Version = version;
+
         rs.StartedAt = DateTime.Now;
         rs.Timings = new TaskTimer();
 

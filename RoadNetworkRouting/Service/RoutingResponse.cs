@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using EnergyModule.Geometry;
+using EnergyModule.Geometry.SimpleStructures;
 using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Geometry;
 
@@ -49,18 +51,20 @@ public class RoutingResponse : InternalRoutingResponse
         var r = request.Response ?? new RoutingResponseDefinition() { Coordinates = true };
         var converter = CoordinateConverter.FromUtm33(request.OutputSrid);
 
-        var returnedCoordinates = (r.Coordinates || r.CompressedCoordinates) ? result.Coordinates.Select(converter.Forward).ToList() : null;
+        var returnedCoordinates = GetCoordinatesIfNeeded(r, result, converter);
 
         DistanceM = result.Links.Sum(p => p.Length);
         SourceSrid = request.SourceSrid;
         OutputSrid = request.OutputSrid;
+
+        RoutingSource = result.RoutingSource;
 
         if (r.RoutingConfig)
             RoutingConfig = request.RoutingConfig ?? new RoutingConfig();
         if (r.Coordinates)
             Coordinates = returnedCoordinates;
         if (r.CompressedCoordinates)
-            CompressedCoordinates = returnedCoordinates.Select(p => new[] { Math.Round(p.X, r.CompressedCoordinatesNumberOfDecimals), Math.Round(p.Y, r.CompressedCoordinatesNumberOfDecimals) }).ToArray();
+            CompressedCoordinates = returnedCoordinates?.Select(p => new[] { Math.Round(p.X, r.CompressedCoordinatesNumberOfDecimals), Math.Round(p.Y, r.CompressedCoordinatesNumberOfDecimals) }).ToArray();
         if (r.LinkReferences)
             LinkReferences = result.LinkReferences;
         if (r.Links)
@@ -69,6 +73,13 @@ public class RoutingResponse : InternalRoutingResponse
             RequestedWaypoints = result.RequestedWaypoints.Select(p => p.ConvertCoordinates(converter)).ToList();
         if (r.Timings)
             Timings = result.Timings;
+    }
+
+    private List<Point3D> GetCoordinatesIfNeeded(RoutingResponseDefinition r, InternalRoutingResponse result, CoordinateConverter converter)
+    {
+        if (!r.Coordinates && !r.CompressedCoordinates) return null;
+
+        return (result.Coordinates ?? result.Links.SelectMany(p => p.Geometry))?.Select(converter.Forward).ToList();
     }
 
     public RoutingResponse(Exception ex)

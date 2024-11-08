@@ -191,55 +191,75 @@ namespace RoadNetworkRouting
         /// </summary>
         /// <param name="file"></param>
         /// <param name="wgs84ToUtm33"></param>
+        /// <param name="extractor"></param>
         /// <returns></returns>
-        public static RoadNetworkRouter BuildFromGeoJsonLines(string file, Func<double, double, (double X, double Y)> wgs84ToUtm33)
+        public static RoadNetworkRouter BuildFromGeoJsonLines(string file, Func<double, double, (double X, double Y)> wgs84ToUtm33, GeoJsonValueExtractor extractor = null)
         {
+            extractor ??= new NvdbRoutingNetworkExtractor();
+
             return Build(File.ReadLines(file).Select(line =>
             {
-                var feature = JObject.Parse(line);
-                var properties = feature["properties"];
-
-                var fromNodeId = properties["fromnode"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("fromnode")) ? int.MinValue : properties.Value<int>("fromnode");
-                var toNodeId = properties["tonode"] == null || string.IsNullOrWhiteSpace(properties.Value<string>("tonode")) ? int.MinValue : properties.Value<int>("tonode");
-
-                var geometry = feature["geometry"];
-                if (geometry == null) throw new Exception("Invalid GeoJSON (feature missing geometry).");
-
-                var geometryType = geometry.Value<string>("type");
-                if (geometryType != "LineString") throw new Exception("Invalid GeoJSON (geometry type must be MultiLineString).");
-
-                var coordinates = geometry["coordinates"].ToObject<double[][]>();
-
-                //{ "type": "Feature", "properties": { "OBJECTID": 1, "linkid": "1", "fromnode": "0", "tonode": "1", "formofway": "1", "funcroadclass": "7", "routeid": "1008609", "from_measure": 0.0, "to_measure": 1.0, "roadnumber": "97911", "oneway": "B", "speedfw": "30", "speedbw": "30", "isferry": "0", "isbridge": "0", "istunnel": "0", "maxweight": null, "maxheight": null, "roadid": "{P97911}", "roadclass": "7", "attributes": null, "bruksklasse": null, "bruksklasse_vi": null, "drivetime_fw": 0.040456461793697801, "drivetime_bw": 0.040456461793697801 }, "geometry": { "type": "LineString", "coordinates": [ [ 10.598823, 60.9589035, 175.396 ], [ 10.5988832, 60.9590235, 175.146 ] ] } }
-                var data = new RoadLink
+                try
                 {
-                    LinkId = properties.Value<int>("linkid"),
-                    FromNodeId = fromNodeId,
-                    ToNodeId = toNodeId,
-                    //RoadType = properties.Value<string>("VEGTYPE"),
-                    SpeedLimit = properties.Value<byte>("speedfw"),
-                    SpeedLimitReversed = properties.Value<byte>("speedbw"),
-                    Cost = properties.Value<float>("drivetime_fw"),
-                    ReverseCost = properties.Value<float>("drivetime_bw"),
-                    FromRelativeLength = properties.Value<float>("from_measure"),
-                    ToRelativeLength = properties.Value<float>("to_measure"),
-                    Geometry = new PolyLineZ(coordinates.Select(p => new { Utm = wgs84ToUtm33(p[0], p[1]), Z = p[2] }).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)), true).Points,
-                    RoadClass = properties.Value<byte>("roadclass")
-                };
-                
-                data.Direction = RoadLink.DirectionFromString(properties.Value<string>("oneway"));
+                    var feature = JObject.Parse(line);
+                    var properties = feature["properties"];
+                    if (properties == null) throw new Exception("Invalid GeoJSON (feature missing geometry).");
 
-                if (data.Direction != RoadLinkDirection.BothWays)
-                {
-                    if (data.Direction == RoadLinkDirection.AlongGeometry) data.ReverseCost = float.MaxValue;
-                    else if (data.Direction == RoadLinkDirection.AgainstGeometry) data.Cost = float.MaxValue;
-                    else if (data.Direction == RoadLinkDirection.None) data.ReverseCost = data.Cost = float.MaxValue;
+                    if (extractor.IgnoreLink(properties)) return null;
+
+                    var geometry = feature["geometry"];
+                    if (geometry == null) throw new Exception("Invalid GeoJSON (feature missing geometry).");
+
+                    var geometryType = geometry.Value<string>("type");
+                    if (geometryType != "LineString") throw new Exception("Invalid GeoJSON (geometry type must be MultiLineString).");
+
+                    var fromNodeId = extractor.GetFromNodeId(properties);
+                    var toNodeId = extractor.GetToNodeId(properties);
+
+                    var coordinateContainer = geometry["coordinates"];
+                    if (coordinateContainer == null) throw new Exception("Invalid GeoJSON (feature missing geometry.coordinates).");
+                    var coordinates = coordinateContainer.ToObject<double[][]>();
+
+                    var data = new RoadLink
+                    {
+                        LinkId = extractor.GetLinkId(properties),
+                        FromNodeId = fromNodeId,
+                        ToNodeId = toNodeId,
+                        //RoadType = properties.Value<string>("VEGTYPE"),
+                        SpeedLimit = extractor.GetSpeedLimitForward(properties),
+                        SpeedLimitReversed = extractor.GetSpeedLimitBackwards(properties),
+                        Cost = extractor.GetCostForward(properties),
+                        ReverseCost = extractor.GetCostBackwards(properties),
+                        FromRelativeLength = extractor.GetFromRelativeLength(properties),
+                        ToRelativeLength = extractor.GetToRelativeLength(properties),
+                        Geometry = new PolyLineZ(coordinates.Select(p => new { Utm = wgs84ToUtm33(p[0], p[1]), Z = p[2] }).Select(p => new Point3D(p.Utm.X, p.Utm.Y, p.Z)), true).Points,
+                        RoadClass = extractor.GetRoadClass(properties),
+                        LaneCode = extractor.GetLaneCode(properties),
+                        RoadWidth = extractor.GetRoadWidth(properties),
+                        IsFerry = extractor.IsFerry(properties),
+                        IsRoundabout = extractor.IsRoundabout(properties),
+                        IsBridge = extractor.IsBridge(properties),
+                        IsTunnel = extractor.IsTunnel(properties)
+                    };
+
+                    data.Direction = extractor.GetDirection(properties);
+
+                    if (data.Direction != RoadLinkDirection.BothWays)
+                    {
+                        if (data.Direction == RoadLinkDirection.AlongGeometry) data.ReverseCost = float.MaxValue;
+                        else if (data.Direction == RoadLinkDirection.AgainstGeometry) data.Cost = float.MaxValue;
+                        else if (data.Direction == RoadLinkDirection.None) data.ReverseCost = data.Cost = float.MaxValue;
+                    }
+
+                    data.Direction = data.Direction;
+
+                    return data;
                 }
-
-                data.Direction = data.Direction;
-
-                return data;
-            }));
+                catch (Exception ex)
+                {
+                    throw new Exception("Failed to parse line '" + line + "': " + ex.Message, ex);
+                }
+            }).Where(p => p != null));
         }
 
         /// <summary>
@@ -263,7 +283,7 @@ namespace RoadNetworkRouting
         {
             using var reader = new BinaryReader(stream);
 
-            var formatVersion = reader.ReadInt32(); // Currently at 3
+            var formatVersion = reader.ReadInt32(); // Currently at 4
 
             var router = new RoadNetworkRouter();
 
@@ -274,14 +294,14 @@ namespace RoadNetworkRouting
             var linkCount = reader.ReadInt32();
             router.Links = new Dictionary<int, RoadLink>(linkCount);
 
-            var buffer = new byte[RoadLink.CalculateItemSize(maxPointCount)];
+            var buffer = new byte[RoadLink.CalculateItemSize(maxPointCount, formatVersion)];
 
             router._graph = new Graph<RoadLink>();
             router._vertices = new Dictionary<int, Node>();
             for (var i = 0; i < linkCount; i++)
             {
                 var link = new RoadLink();
-                link.ReadFrom(reader, _binaryStrings, buffer: buffer);
+                link.ReadFrom(reader, _binaryStrings, buffer, formatVersion);
                 router.Links.Add(link.LinkId, link);
                 progress?.Invoke(i, linkCount);
                 router._graph.CreateEdge(link, link.FromNodeId, link.ToNodeId, link.Cost, link.ReverseCost);
@@ -332,7 +352,7 @@ namespace RoadNetworkRouting
 
             using var writer = new BinaryWriter(File.Create(file));
 
-            var strings = WriteHeader(writer, 3);
+            var strings = WriteHeader(writer, 4);
 
             writer.Write(Links.Count);
             foreach (var link in Links.Values)
@@ -937,5 +957,117 @@ namespace RoadNetworkRouting
                     .Select(p =>p.ToGeoJsonFeature()))
                 .WriteTo(edgeFile);
         }
+    }
+
+    public class NvdbRoutingNetworkExtractor : GeoJsonValueExtractor
+    {
+        //{ "type": "Feature", "properties": { "OBJECTID": 1, "linkid": "1", "fromnode": "0", "tonode": "1", "formofway": "1", "funcroadclass": "7", "routeid": "1008609", "from_measure": 0.0, "to_measure": 1.0, "roadnumber": "97911", "oneway": "B", "speedfw": "30", "speedbw": "30", "isferry": "0", "isbridge": "0", "istunnel": "0", "maxweight": null, "maxheight": null, "roadid": "{P97911}", "roadclass": "7", "attributes": null, "bruksklasse": null, "bruksklasse_vi": null, "drivetime_fw": 0.040456461793697801, "drivetime_bw": 0.040456461793697801 }, "geometry": { "type": "LineString", "coordinates": [ [ 10.598823, 60.9589035, 175.396 ], [ 10.5988832, 60.9590235, 175.146 ] ] } }
+
+        public override int GetFromNodeId(JToken properties) => GetSafeInt(properties, "fromnode");
+        public override int GetToNodeId(JToken properties) => GetSafeInt(properties, "tonode");
+        public override int GetLinkId(JToken properties) => properties.Value<int>("linkid");
+        public override byte GetSpeedLimitForward(JToken properties) => properties.Value<byte>("speedfw");
+        public override byte GetSpeedLimitBackwards(JToken properties) => properties.Value<byte>("speedbw");
+        public override float GetCostForward(JToken properties) => properties.Value<float>("drivetime_fw");
+        public override float GetCostBackwards(JToken properties) => properties.Value<float>("drivetime_bw");
+        public override double GetFromRelativeLength(JToken properties) => properties.Value<float>("from_measure");
+        public override double GetToRelativeLength(JToken properties) => properties.Value<float>("to_measure");
+        public override byte GetRoadClass(JToken properties) => properties.Value<byte>("roadclass");
+        public override RoadLinkDirection GetDirection(JToken properties) => RoadLink.DirectionFromString(properties.Value<string>("oneway"));
+        public override string GetLaneCode(JToken properties) => null;
+        public override float GetRoadWidth(JToken properties) => 8;
+        public override bool IsFerry(JToken properties) => properties.Value<byte>("isferry") == 1;
+        public override bool IsRoundabout(JToken properties) => false;
+        public override bool IsBridge(JToken properties) => properties.Value<byte>("isbridge") == 1;
+        public override bool IsTunnel(JToken properties) => properties.Value<byte>("istunnel") == 1;
+        public override bool IgnoreLink(JToken properties) => false;
+    }
+
+    /// <summary>
+    /// Extracts GeoJSON values from the Norwegian Mapping Authority dataset (https://kartkatalog.geonorge.no/metadata/nvdb-rutedatasett/19ee16b4-ebe3-4e9d-8d86-0dc6b31f5c99)
+    /// </summary>
+    public class NmaRoutingNetworkExtractor : GeoJsonValueExtractor
+    {
+        public override int GetFromNodeId(JToken properties) => int.MinValue;
+        public override int GetToNodeId(JToken properties) => int.MinValue;
+        public override int GetLinkId(JToken properties) => properties.Value<int>("veglenkeid");
+        public override byte GetSpeedLimitForward(JToken properties) => GetSafeByte(properties, "fartsgrense", 50);
+        public override byte GetSpeedLimitBackwards(JToken properties) => GetSafeByte(properties, "fartsgrense", 50);
+        public override float GetCostForward(JToken properties) => properties.Value<float>("geometrilengde") / (GetSafeByte(properties, "fartsgrense", 50) / 3.6f); 
+        public override float GetCostBackwards(JToken properties) => properties.Value<float>("geometrilengde") / (GetSafeByte(properties, "fartsgrense", 50) / 3.6f);
+        public override double GetFromRelativeLength(JToken properties) => properties.Value<float>("fra_posisjon");
+        public override double GetToRelativeLength(JToken properties) => properties.Value<float>("til_posisjon");
+        public override byte GetRoadClass(JToken properties) => GetSafeByte(properties, "funksjonellvegklasse", 0);
+        public override RoadLinkDirection GetDirection(JToken properties) => DirectionFromString(properties.Value<string>("kjoreretning"));
+        public override string GetLaneCode(JToken properties) => properties.Value<string>("feltoversikt");
+        public override float GetRoadWidth(JToken properties) => properties.Value<string>("feltoversikt").Split('#').Length * 3.5f;
+        public override bool IsFerry(JToken properties) => properties.Value<string>("typeveg") == "Bilferje";
+        public override bool IsRoundabout(JToken properties) => properties.Value<string>("typeveg").StartsWith("Rundkj");
+
+        public override bool IsBridge(JToken properties) => properties.Value<string>("medium") == "L";
+        public override bool IsTunnel(JToken properties) => properties.Value<string>("medium") == "U";
+        public override bool IgnoreLink(JToken properties)
+        {
+            var t = properties.Value<string>("typeveg");
+            if (t == "Gangveg") return true;
+            if (t == "Gangfelt") return true;
+            if (t == "Gågate" || t == "GÃ¥gate") return true;
+            if (t == "Gang- og sykkelveg") return true;
+            if (t == "Fortau") return true;
+            if (t == "Trapp") return true;
+            if (t == "Sykkelveg") return true;
+
+            return false;
+        }
+
+        private RoadLinkDirection DirectionFromString(string direction)
+        {
+            switch (direction.ToLower())
+            {
+                case "begge":
+                    return RoadLinkDirection.BothWays;
+                case "med":
+                    return RoadLinkDirection.AlongGeometry;
+                case "mot":
+                    return RoadLinkDirection.AgainstGeometry;
+                default:
+                    throw new Exception("Ukjent kjøreretning: '" + direction + "'");
+            }
+
+            throw new Exception("Unknown road link direction: '" + direction + "' (must be B, FT, TF, or N).");
+        }
+    }
+
+    public abstract class GeoJsonValueExtractor
+    {
+        public abstract int GetFromNodeId(JToken properties);
+        public abstract int GetToNodeId(JToken properties);
+
+        protected int GetSafeInt(JToken properties, string key, int defaultValue = int.MinValue)
+        {
+            return properties[key] == null || string.IsNullOrWhiteSpace(properties.Value<string>(key)) ? defaultValue : properties.Value<int>(key);
+        }
+
+        protected byte GetSafeByte(JToken properties, string key, byte defaultValue = byte.MinValue)
+        {
+            return properties[key] == null || string.IsNullOrWhiteSpace(properties.Value<string>(key)) ? defaultValue : properties.Value<byte>(key);
+        }
+
+        public abstract int GetLinkId(JToken properties);
+        public abstract byte GetSpeedLimitForward(JToken properties);
+        public abstract byte GetSpeedLimitBackwards(JToken properties);
+        public abstract float GetCostForward(JToken properties);
+        public abstract float GetCostBackwards(JToken properties);
+        public abstract double GetFromRelativeLength(JToken properties);
+        public abstract double GetToRelativeLength(JToken properties);
+        public abstract byte GetRoadClass(JToken properties);
+        public abstract RoadLinkDirection GetDirection(JToken properties);
+        public abstract string GetLaneCode(JToken properties);
+        public abstract float GetRoadWidth(JToken properties);
+        public abstract bool IsFerry(JToken properties);
+        public abstract bool IsRoundabout(JToken properties);
+        public abstract bool IsBridge(JToken properties);
+        public abstract bool IsTunnel(JToken properties);
+        public abstract bool IgnoreLink(JToken properties);
     }
 }

@@ -104,6 +104,11 @@ public class RoadLink : GeometryLink
     public string LaneCode { get; set; } = "";
     public float Cost { get; set; }
     public float ReverseCost { get; set; }
+    public float RoadWidth { get; set; }
+    public bool IsFerry { get; set; }
+    public bool IsRoundabout { get; set; }
+    public bool IsBridge { get; set; }
+    public bool IsTunnel { get; set; }
 
     public RoadLinkDirection Direction
 
@@ -142,7 +147,10 @@ public class RoadLink : GeometryLink
             ReverseCost = ReverseCost,
             Bounds = Bounds,
             NetworkGroup =  NetworkGroup,
-            _reference = _reference
+            _reference = _reference,
+            IsFerry = IsFerry,
+            IsRoundabout = IsRoundabout,
+            RoadWidth = RoadWidth
         };
     }
 
@@ -160,20 +168,20 @@ public class RoadLink : GeometryLink
         // Tangent at start of segment:
         var start = GetGeometricData(0);
         var lastKnownHeight = 0.0;
-        var linkParts = new LinkPart[(int)Math.Ceiling(_pointCache.Length / segmentLength)];
+        var linkParts = new LinkPart[(int)Math.Ceiling(PointCache.Length / segmentLength)];
 
-        for (var posStart = 0d; posStart < _pointCache.Length; posStart += segmentLength)
+        for (var posStart = 0d; posStart < PointCache.Length; posStart += segmentLength)
         {
             //Create the new TransportLinkPart
             var tlp = new LinkPart
             {
                 LinkId = LinkId,
-                Width = 8, //TODO: Fix!
+                Width = RoadWidth,
                 LaneInfo = LaneReader.Parse("1#2"), //TODO: Fix!
                 NodeA = FromNodeId,
                 NodeB = ToNodeId,
-                IsFerry = false, //TODO: Fix!
-                IsRoundabout = false, //TODO: Fix!
+                IsFerry = IsFerry,
+                IsRoundabout = IsRoundabout,
                 SpeedLimitKmH = SpeedLimit,
                 VehiclesPerHour = 0,
                 RoadType = 'r', //TODO: Fix!
@@ -181,7 +189,7 @@ public class RoadLink : GeometryLink
             };
 
             // Calculate how far into the TransportLink this part will end
-            var posEnd = Math.Min(posStart + segmentLength, _pointCache.Length);
+            var posEnd = Math.Min(posStart + segmentLength, PointCache.Length);
             var end = GetGeometricData(posEnd);
 
             // Check height values
@@ -244,6 +252,14 @@ public class RoadLink : GeometryLink
         writer.Write(Cost);
         writer.Write(ReverseCost);
         writer.Write(strings[LaneCode ?? ""]);
+        writer.Write(RoadWidth);
+
+        byte flags = 0;
+        flags |= (byte)((IsFerry ? 1 : 0) << 0);       // Set bit 0 for IsFerry
+        flags |= (byte)((IsRoundabout ? 1 : 0) << 1);  // Set bit 1 for IsRoundabout
+        flags |= (byte)((IsBridge ? 1 : 0) << 2);      // Set bit 2 for IsBridge
+        flags |= (byte)((IsTunnel ? 1 : 0) << 3);      // Set bit 3 for IsTunnel
+        writer.Write(flags);
 
         if (!writePoints) return;
         foreach (var p in Geometry)
@@ -254,14 +270,14 @@ public class RoadLink : GeometryLink
         }
     }
 
-    public void ReadFrom(BinaryReader reader, Dictionary<int, string> strings, byte[] buffer)
+    public void ReadFrom(BinaryReader reader, Dictionary<int, string> strings, byte[] buffer, int formatVersion)
     {
         LinkId = reader.ReadInt32();
 
         // Fetch the point count, and calculate the length of the rest of this link object, and read it all in at the same time
         var pointCount = reader.ReadInt32();
 
-        var itemSize = CalculateItemSize(pointCount);
+        var itemSize = CalculateItemSize(pointCount, formatVersion);
 
         reader.Read(buffer, 0, itemSize);
 
@@ -280,6 +296,21 @@ public class RoadLink : GeometryLink
 
         // Update the position to the end of the normal properties, and read all points
         var pos = 44;
+
+        if (formatVersion >= 4)
+        {
+            RoadWidth = BitConverter.ToSingle(buffer, 44);
+
+            var flags = buffer[45];
+
+            IsFerry = (flags & (1 << 0)) != 0;       // Read bit 0 for IsFerry
+            IsRoundabout = (flags & (1 << 1)) != 0;  // Read bit 1 for IsRoundabout
+            IsBridge = (flags & (1 << 2)) != 0;      // Read bit 2 for IsBridge
+            IsTunnel = (flags & (1 << 3)) != 0;      // Read bit 3 for IsTunnel
+
+            pos += 5;
+        }
+
         Geometry = new Point3D[pointCount];
         Bounds = BoundingBox2D.Empty();
         for (var j = 0; j < pointCount; j++)
@@ -291,9 +322,15 @@ public class RoadLink : GeometryLink
         }
     }
 
-    public static int CalculateItemSize(int pointCount)
+    public static int CalculateItemSize(int pointCount, int formatVersion)
     {
-        return 1 + 1 + 8 + 8 + 4 + 4 + 4 + 1 + 1 + 4 + 4 + 4 + pointCount * (8 + 8 + 8);
+        var size = 1 + 1 + 8 + 8 + 4 + 4 + 4 + 1 + 1 + 4 + 4 + 4 + pointCount * (8 + 8 + 8);
+        if (formatVersion >= 4)
+        {
+            size += 4 + 1;
+        }
+
+        return size;
     }
 
     public override RoadLink ConvertCoordinates(CoordinateConverter converter)

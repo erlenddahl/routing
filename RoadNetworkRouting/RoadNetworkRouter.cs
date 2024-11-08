@@ -58,7 +58,7 @@ namespace RoadNetworkRouting
         /// How many missing node IDs that were fixed (mapped to existing nodes nearer than 1 meter,
         /// or to newly created nodes) when building the network.
         /// </summary>
-        public int FixedMissingNodeIdCount { get; set; }
+        public FixMissingNodeResult FixedMissingNodeIds { get; set; }
 
         public Graph<RoadLink> CreateGraph()
         {
@@ -77,7 +77,7 @@ namespace RoadNetworkRouting
         {
             var router = new RoadNetworkRouter(links);
 
-            router.FixedMissingNodeIdCount = RoadNetworkUtilities.FixMissingNodeIds(router, maxDistance);
+            router.FixedMissingNodeIds = RoadNetworkUtilities.FixMissingNodeIds(router, maxDistance);
 
             return router;
         }

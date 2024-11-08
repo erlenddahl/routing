@@ -20,9 +20,11 @@ namespace RoadNetworkRouting.Utils
             }
         }
 
-        public static int FixMissingNodeIds(RoadNetworkRouter router, double maxDistance = 1)
+        public static FixMissingNodeResult FixMissingNodeIds(RoadNetworkRouter router, double maxDistance = 1)
         {
-            var manhattanMaxDistance = 2 * maxDistance;
+            // Keep track of how many we fixed
+            var res = new FixMissingNodeResult();
+            res.ManhattanMaxDistance = 2 * maxDistance;
 
             // Create a list containing all nodes with their IDs and locations, then store it as a
             // Y-separated dictionary of lists.
@@ -35,6 +37,9 @@ namespace RoadNetworkRouting.Utils
                 .Where(p => p.Id > int.MinValue)
                 .GroupBy(p => (int)p.Location.Y)
                 .ToDictionary(k => k.Key, v => v.ToList());
+
+            res.NodesByYGroups = nodesByY.Count;
+            res.ExistingValidNodes = nodesByY.Sum(p => p.Value.Count);
 
             // Locate the max node ID, so that we can continue creating nodes with IDs higher than this.
             var id = (int)nodesByY.SelectMany(p => p.Value).SafeMax(p => p.Id, -1) + 1;
@@ -56,19 +61,17 @@ namespace RoadNetworkRouting.Utils
                 list.Add(node);
             }
 
-            // Keep track of how many we fixed
-            var fixedNodes = 0;
-
             Node FindMatchingNode(Point3D location, string source)
             {
                 // Next, retrieve any nodes that could be relevant by doing a simple dictionary lookup.
                 var relevantNodes = FindRelevant(location);
+                res.RelevantNodesFound += relevantNodes.Count;
 
                 // Finally, find any nodes within 1 meter from this location.
                 // (Using ManhattanDistance as a filter first, as the Sqrt calculation in the actual calculation is expensive.)
-                var match = relevantNodes.FirstOrDefault(p => p.Location.ManhattanDistanceTo2D(location) < manhattanMaxDistance && p.Location.DistanceTo2D(location) <= maxDistance);
+                var match = relevantNodes.FirstOrDefault(p => p.Location.ManhattanDistanceTo2D(location) < res.ManhattanMaxDistance && p.Location.DistanceTo2D(location) <= maxDistance);
                 //Debug.WriteLine($"{source}: Found matching node at {match.Location}");
-
+                
                 // If there was no match (only the Location object will be null because it's a struct),
                 // create a new node at this location. Make sure to increment the next available ID,
                 // as well as adding the new node to the list of nodes.
@@ -77,9 +80,14 @@ namespace RoadNetworkRouting.Utils
                     match = new Node(location, id++);
                     AddNode(match);
                     //Debug.WriteLine($"{source}: Created new node {match.Id} at {match.Location}");
+                    res.NewNodesCreated++;
+                }
+                else
+                {
+                    res.MatchingNodesFound++;
                 }
 
-                fixedNodes++;
+                res.FixedNodes++;
 
                 return match;
             }
@@ -97,6 +105,11 @@ namespace RoadNetworkRouting.Utils
 
                     // Set FromNodeId to the matching node (either one we found, or one we created).
                     link.FromNodeId = FindMatchingNode(location, "FromNodeId, link " + link.LinkId).Id;
+                    res.FromNodesFixed++;
+                }
+                else
+                {
+                    res.FromNodesAlreadyOk++;
                 }
 
                 // Repeat for ToNodeId
@@ -107,10 +120,30 @@ namespace RoadNetworkRouting.Utils
 
                     // Set FromNodeId to the matching node (either one we found, or one we created).
                     link.ToNodeId = FindMatchingNode(location, "ToNodeId, link " + link.LinkId).Id;
+                    res.ToNodesFixed++;
+                }
+                else
+                {
+                    res.ToNodesAlreadyOk++;
                 }
             }
 
-            return fixedNodes;
+            return res;
         }
+    }
+
+    public class FixMissingNodeResult
+    {
+        public int FixedNodes { get; set; }
+        public double ManhattanMaxDistance { get; set; }
+        public int NodesByYGroups { get; set; }
+        public int ExistingValidNodes { get; set; }
+        public int RelevantNodesFound { get; set; }
+        public int MatchingNodesFound { get; set; }
+        public int NewNodesCreated { get; set; }
+        public int FromNodesAlreadyOk { get; set; }
+        public int ToNodesAlreadyOk { get; set; }
+        public int FromNodesFixed { get; set; }
+        public int ToNodesFixed { get; set; }
     }
 }

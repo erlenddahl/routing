@@ -22,8 +22,8 @@ namespace RoadNetworkRouting.Geometry
         {
             FromSrid = fromSrid;
             ToSrid = toSrid;
-            var source = ProjNet.SRID.SRIDReader.GetCSbyID(fromSrid);
-            var target = ProjNet.SRID.SRIDReader.GetCSbyID(toSrid);
+            var source = ProjNet.SRID.Core.SRIDReader.GetCSbyID(fromSrid);
+            var target = ProjNet.SRID.Core.SRIDReader.GetCSbyID(toSrid);
             _sourceToTarget = _ctfac.CreateFromCoordinateSystems(source, target);
             _targetToSource = _ctfac.CreateFromCoordinateSystems(target, source);
         }

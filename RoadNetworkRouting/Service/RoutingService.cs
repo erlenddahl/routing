@@ -152,10 +152,11 @@ public class RoutingService : IRoutingService
         return Router.GetLinksFromReferences(linkReferences);
     }
 
-    public static RoutingService Create(string networkFile, string version = null)
+    public static RoutingService Create(string networkFile, string version = null, string name = null)
     {
         var rs = new RoutingService();
         rs.Version = version;
+        rs.Name = name;
 
         rs.StartedAt = DateTime.Now;
         rs.Timings = new TaskTimer();

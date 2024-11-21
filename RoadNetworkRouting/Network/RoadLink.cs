@@ -301,7 +301,7 @@ public class RoadLink : GeometryLink
         {
             RoadWidth = BitConverter.ToSingle(buffer, 44);
 
-            var flags = buffer[45];
+            var flags = buffer[pos + 4];
 
             IsFerry = (flags & (1 << 0)) != 0;       // Read bit 0 for IsFerry
             IsRoundabout = (flags & (1 << 1)) != 0;  // Read bit 1 for IsRoundabout

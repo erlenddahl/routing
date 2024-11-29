@@ -176,12 +176,14 @@ public class RoadLink : GeometryLink
             var tlp = new LinkPart
             {
                 LinkId = LinkId,
-                Width = RoadWidth,
-                LaneInfo = LaneReader.Parse("1#2"), //TODO: Fix!
+                WidthM = RoadWidth,
+                LaneInfo = LaneReader.Parse(LaneCode),
                 NodeA = FromNodeId,
                 NodeB = ToNodeId,
                 IsFerry = IsFerry,
                 IsRoundabout = IsRoundabout,
+                IsTunnel = IsTunnel,
+                IsBridge = IsBridge,
                 SpeedLimitKmH = SpeedLimit,
                 VehiclesPerHour = 0,
                 RoadType = 'r', //TODO: Fix!

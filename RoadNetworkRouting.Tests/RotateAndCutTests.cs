@@ -18,7 +18,7 @@ public class RotateAndCutTests : RoadNetworkRouter
     {
         Assert.AreEqual(from, link.FromNodeId);
         Assert.AreEqual(to, link.ToNodeId);
-        Assert.AreEqual(length, link.Length, 0.5);
+        Assert.AreEqual(length, link.LengthM, 0.5);
     }
 
     private static void AssertXCoordinates(RoadLink link, params double[] xs)
@@ -335,7 +335,7 @@ public class RotateAndCutTests : RoadNetworkRouter
         AssertNodeIdsAndLength(links[2], 807, 808, 51);
         AssertXCoordinates(links[2], 271190.8, 271157.2);
 
-        Assert.AreEqual(156, links.Sum(p => p.Length), 1);
+        Assert.AreEqual(156, links.Sum(p => p.LengthM), 1);
         Assert.AreEqual(156, LineTools.CalculateLength(links.SelectMany(p => p.Geometry).ToArray()), 1);
     }
 
@@ -392,7 +392,7 @@ public class RotateAndCutTests : RoadNetworkRouter
         AssertNodeIdsAndLength(links[2], 807, 808, 15);
         AssertXCoordinates(links[2], 271190.8, 271181);
 
-        Assert.AreEqual(62, links.Sum(p => p.Length), 1);
+        Assert.AreEqual(62, links.Sum(p => p.LengthM), 1);
         Assert.AreEqual(62, LineTools.CalculateLength(links.SelectMany(p => p.Geometry).ToArray()), 1);
     }
 }

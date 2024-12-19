@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
 using EnergyModule.Road;
@@ -13,48 +12,6 @@ using RoadNetworkRouting.GeoJson;
 using RoadNetworkRouting.Geometry;
 
 namespace RoadNetworkRouting.Network;
-
-public abstract class GeometryLink : ILinkPartGenerator
-{
-    private double? _length;
-    private CachedLineTools _pointCache;
-    private Point3D[] _geometry;
-
-    protected CachedLineTools PointCache => _pointCache ??= new CachedLineTools(Geometry);
-
-    /// <summary>
-    /// The 3D length of the road link, calculated (on the first call) from its Geometry.
-    /// </summary>
-    public double Length => _length ??= PointCache.Length;
-
-    public Point3D[] Geometry
-    {
-        get => _geometry;
-        set
-        {
-            _geometry = value;
-            _pointCache = null;
-            _length = null;
-        }
-    }
-
-    public abstract LinkPart[] GenerateLinkParts(double segmentLength = 20);
-
-    public PointInfo GetGeometricData(double metersFromA)
-    {
-        if (_pointCache == null)
-            _pointCache = new CachedLineTools(Geometry);
-        return _pointCache.QueryPointInfo(metersFromA);
-    }
-
-    public abstract GeometryLink Clone(Point3D[] newGeometry = null);
-
-    public virtual GeometryLink ConvertCoordinates(CoordinateConverter converter)
-    {
-        var link = Clone(Geometry.Select(converter.Forward).ToArray());
-        return link;
-    }
-}
 
 public class RoadLink : GeometryLink
 {
@@ -128,6 +85,13 @@ public class RoadLink : GeometryLink
     /// </summary>
     public int NetworkGroup { get; set; } = -1;
 
+    public RoadLink Clone(Point3D[] newGeometry, int newLinkId)
+    {
+        var clone = Clone(newGeometry);
+        clone.LinkId = newLinkId;
+        return clone;
+    }
+
     public override RoadLink Clone(Point3D[] newGeometry = null)
     {
         return new RoadLink()
@@ -168,9 +132,9 @@ public class RoadLink : GeometryLink
         // Tangent at start of segment:
         var start = GetGeometricData(0);
         var lastKnownHeight = 0.0;
-        var linkParts = new LinkPart[(int)Math.Ceiling(PointCache.Length / segmentLength)];
+        var linkParts = new LinkPart[(int)Math.Ceiling(LengthM / segmentLength)];
 
-        for (var posStart = 0d; posStart < PointCache.Length; posStart += segmentLength)
+        for (var posStart = 0d; posStart < LengthM; posStart += segmentLength)
         {
             //Create the new TransportLinkPart
             var tlp = new LinkPart
@@ -191,7 +155,7 @@ public class RoadLink : GeometryLink
             };
 
             // Calculate how far into the TransportLink this part will end
-            var posEnd = Math.Min(posStart + segmentLength, PointCache.Length);
+            var posEnd = Math.Min(posStart + segmentLength, LengthM);
             var end = GetGeometricData(posEnd);
 
             // Check height values
@@ -368,7 +332,7 @@ public class RoadLink : GeometryLink
         return GeoJsonFeature.LineString(Geometry, 32633, new
         {
             RoadClass,
-            Length,
+            Length = LengthM,
             Cost,
             ReverseCost,
             Direction,
@@ -378,7 +342,9 @@ public class RoadLink : GeometryLink
             ToRelativeLength,
             LinkId,
             Reference.Id,
-            NetworkGroup
+            NetworkGroup,
+            SpeedLimit,
+            SpeedLimitReversed
         });
     }
 

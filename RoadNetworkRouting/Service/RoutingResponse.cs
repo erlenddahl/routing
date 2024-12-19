@@ -53,7 +53,7 @@ public class RoutingResponse : InternalRoutingResponse
 
         var returnedCoordinates = GetCoordinatesIfNeeded(r, result, converter);
 
-        DistanceM = result.Links.Sum(p => p.Length);
+        DistanceM = result.Links.Sum(p => p.LengthM);
         SourceSrid = request.SourceSrid;
         OutputSrid = request.OutputSrid;
 

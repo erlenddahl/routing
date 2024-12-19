@@ -22,7 +22,7 @@ public class RoadNetworkRoutingResult
     public double DistanceToSourceVertex => Source.Nearest.DistanceFromLine;
     public double DistanceToTargetVertex => Target.Nearest.DistanceFromLine;
     public TaskTimer Timer { get; }
-    public double RouteDistance => _routeDistance ??= Links.Sum(p => p.Length);
+    public double RouteDistance => _routeDistance ??= Links.Sum(p => p.LengthM);
     public double TotalDistance => DistanceToSourceVertex + RouteDistance + DistanceToTargetVertex;
 
     public RoadNetworkRoutingResult(QuickGraphSearchResult<RoadLink> route, RoadLink[] links, RoutingPoint source, RoutingPoint target, TaskTimer timer)

@@ -73,7 +73,7 @@ public class RoutingService : IRoutingService
         {
             var dist = coordinates.Pairwise().Sum(p => p.A.SearchPoint.DistanceTo(p.B.SearchPoint)) / 1000d;
             if (dist > MaxRouteLengthKm)
-                throw new InvalidRouteException($"The requested route is too long (straight line distance is {dist:n2}, which is higher than the configured maximum of {MaxRouteLengthKm.Value:n2}).");
+                throw new InvalidRouteException($"The requested route is too long (straight line distance is {dist:n2} km, which is higher than the configured maximum of {MaxRouteLengthKm.Value:n2} km).");
         }
 
         var rs = new InternalRoutingResponse()

@@ -45,4 +45,9 @@ public class GeoJsonCollection : GeoJsonObject
     {
         System.IO.File.WriteAllText(path, ToString());
     }
+
+    public static void WriteLinesTo(string path, IEnumerable<GeoJsonFeature> features)
+    {
+        System.IO.File.WriteAllLines(path, features.Select(p => p.ToString()));
+    }
 }

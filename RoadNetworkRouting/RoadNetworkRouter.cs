@@ -60,6 +60,8 @@ namespace RoadNetworkRouting
         /// </summary>
         public FixMissingNodeResult FixedMissingNodeIds { get; set; }
 
+        public SplitLinksResult SplitLinksAtIntersections { get; set; }
+
         public Graph<RoadLink> CreateGraph()
         {
             var graph = new Graph<RoadLink>();
@@ -73,11 +75,19 @@ namespace RoadNetworkRouting
             return graph;
         }
 
-        public static RoadNetworkRouter Build(IEnumerable<RoadLink> links, double maxDistance = 1)
+        public static RoadNetworkRouter Build(IEnumerable<RoadLink> links, NetworkBuildConfig config = null)
         {
+            config ??= new NetworkBuildConfig();
             var router = new RoadNetworkRouter(links);
 
-            router.FixedMissingNodeIds = RoadNetworkUtilities.FixMissingNodeIds(router, maxDistance);
+            if (config.PerformLinkSplit)
+            {
+                router.SplitLinksAtIntersections = RoadNetworkUtilities.SplitLinksAtIntersections(router, config);
+            }
+
+            router.FixedMissingNodeIds = RoadNetworkUtilities.FixMissingNodeIds(router, config);
+
+            router._graph = null;
 
             return router;
         }
@@ -138,8 +148,9 @@ namespace RoadNetworkRouting
         /// Reads the road network from a regular GeoJSON file. Due to memory constraints, this is not usable for large networks.
         /// </summary>
         /// <param name="file"></param>
+        /// <param name="config"></param>
         /// <returns></returns>
-        public static RoadNetworkRouter BuildFromGeoJson(string file)
+        public static RoadNetworkRouter BuildFromGeoJson(string file, NetworkBuildConfig config = null)
         {
             var json = JObject.Parse(File.ReadAllText(file));
             var features = json["features"] as JArray;
@@ -182,7 +193,7 @@ namespace RoadNetworkRouting
                 }
 
                 return data;
-            }));
+            }), config);
         }
 
         /// <summary>
@@ -192,10 +203,19 @@ namespace RoadNetworkRouting
         /// <param name="file"></param>
         /// <param name="wgs84ToUtm33"></param>
         /// <param name="extractor"></param>
+        /// <param name="config"></param>
         /// <returns></returns>
-        public static RoadNetworkRouter BuildFromGeoJsonLines(string file, Func<double, double, (double X, double Y)> wgs84ToUtm33, GeoJsonValueExtractor extractor = null)
+        public static RoadNetworkRouter BuildFromGeoJsonLines(string file, Func<double, double, (double X, double Y)> wgs84ToUtm33, GeoJsonValueExtractor extractor = null, NetworkBuildConfig config = null)
         {
+            config ??= new NetworkBuildConfig();
             extractor ??= new NvdbRoutingNetworkExtractor();
+
+            config.StateReporter?.Invoke("BuildFromGeoJsonLines: " + file);
+            config.StateReporter?.Invoke("    > Counting lines ...");
+            var lineCount = File.ReadLines(file).Count();
+            var processed = 0;
+
+            config.StateReporter?.Invoke("    > Reading GeoJson...");
 
             return Build(File.ReadLines(file).Select(line =>
             {
@@ -253,13 +273,15 @@ namespace RoadNetworkRouting
 
                     data.Direction = data.Direction;
 
+                    config?.ProgressReporter?.Invoke((++processed) / (double)lineCount);
+
                     return data;
                 }
                 catch (Exception ex)
                 {
                     throw new Exception("Failed to parse line '" + line + "': " + ex.Message, ex);
                 }
-            }).Where(p => p != null));
+            }).Where(p => p != null), config);
         }
 
         /// <summary>
@@ -557,9 +579,9 @@ namespace RoadNetworkRouting
             config ??= new RoutingConfig();
             timer ??= new TaskTimer();
 
-            if (OutsideBounds(fromPoint, config) || OutsideBounds(toPoint, config)) throw new RoutingException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system.");
+            if (OutsideBounds(fromPoint, config) || OutsideBounds(toPoint, config)) throw new RoutingException("The given coordinates are outside of the defined road network area. Please check that you are using the correct source coordinate system, and that you have selected a network that covers the area you're requesting.");
 
-            if (config.SearchRadiusIncrement < 1) throw new NegativeSearchRadiusIncrementException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
+            if (config.SearchRadiusIncrement <= 1) throw new NegativeSearchRadiusIncrementException("SearchRadiusIncrement must be larger than 1 to avoid an infinite loop.");
 
             var source = GetNearestLink(fromPoint, config, timer: timer);
             var target = GetNearestLink(toPoint, config, timer: timer);
@@ -640,8 +662,8 @@ namespace RoadNetworkRouting
             // by the total length of the link. This is an estimation of how large part of the total edge cost
             // that should count for the "fake" edges from the links FromNode/ToNode to the fake overloaded
             // source node.
-            var costFactorSource = source.Nearest.Distance / source.Link.Length;
-            var costFactorTarget = target.Nearest.Distance / target.Link.Length;
+            var costFactorSource = source.Nearest.Distance / source.Link.LengthM;
+            var costFactorTarget = target.Nearest.Distance / target.Link.LengthM;
 
             // Configure the overloader
             sourceId = overloader.AddSourceOverload(sourceId, source.Link.FromNodeId, source.Link.ToNodeId, costFactorSource);
@@ -656,9 +678,9 @@ namespace RoadNetworkRouting
 
             // If the nearest points are somewhere within a road link, the search will have to take into account the length of this road link.
             // Make sure the estimate is at least the sum of the two involved links.
-            distanceEstimate = Math.Max(distanceEstimate, source.Link.Length + target.Link.Length);
+            distanceEstimate = Math.Max(distanceEstimate, source.Link.LengthM + target.Link.LengthM);
 
-            // Make the conservative assumption that the manhattan distance could be a third of the actual distance
+            // Make the conservative assumption that the manhattan distance could be a fifth of the actual distance
             distanceEstimate *= 3;
 
             var maxIterations = Math.Max((long)distanceEstimate, 250);
@@ -725,7 +747,7 @@ namespace RoadNetworkRouting
             var distanceAlongLast = GetDistanceAlong(target, links[^1]);
 
             var originalLinkCount = links.Length;
-            var originalLinkLength = links.Sum(p => p.Length);
+            var originalLinkLength = links.Sum(p => p.LengthM);
 
             RotateAndCut(links, nodeId, distanceAlongFirst, distanceAlongLast);
 
@@ -750,16 +772,32 @@ namespace RoadNetworkRouting
                 if (p.DistanceTo2D(link.Geometry[0]) < p.DistanceTo2D(link.Geometry[^1]))
                     distanceAlong = 0;
                 else
-                    distanceAlong = link.Length;
+                    distanceAlong = link.LengthM;
             }
             return distanceAlong;
         }
 
+        /// <summary>
+        /// Calculates a heuristic between points. Since the cost is based on varying data, this will probably
+        /// need to be changed somehow in the future. For now, make it right for the only huge network (NMA/NPRA
+        /// road network). This network has a cost that is measured in seconds (driving time).
+        /// Therefore, we make a heuristic that is measured in approximate minutes.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         private double Heuristic((double X, double Y) a, (double X, double Y) b)
         {
+            // Calculate the distance estimate (Manhattan distance) between the points
             var dx = a.X - b.X;
             var dy = a.Y - b.Y;
-            return ((Math.Abs(dx) + Math.Abs(dy)) / 15d) / 60d;
+            var manhattan = Math.Abs(dx) + Math.Abs(dy);
+
+            // Assume average driving speed of 15 m/s (~55 km/h) to
+            // get a relatively realistic estimate of driving time
+            var seconds = manhattan / 15d;
+
+            return seconds;
         }
 
         private void SaveDijkstraSearch(string path, QuickGraphSearchResult<RoadLink> route, Point3D fromPoint, Point3D toPoint)
@@ -797,11 +835,11 @@ namespace RoadNetworkRouting
         /// <param name="distanceAlongLast">How far along the last link the end point is. Everything after this will be cut away. For example, if distanceAlongLast is 5, meters 5-N of the last link will be cut away.</param>
         protected void RotateAndCut(RoadLink[] links, int nodeId, double distanceAlongFirst, double distanceAlongLast)
         {
-            var (cutStart, cutEnd) = (distanceAlongFirst, links[^1].Length - distanceAlongLast);
+            var (cutStart, cutEnd) = (distanceAlongFirst, links[^1].LengthM - distanceAlongLast);
             for (var i = 0; i < links.Length; i++)
             {
                 // Store the links geometry, and a flag for if it has been modified or not.
-                var (geometry, modified, swapNodes, originalLength) = (links[i].Geometry, false, false, links[i].Length);
+                var (geometry, modified, swapNodes, originalLength) = (links[i].Geometry, false, false, Length: links[i].LengthM);
 
                 // If the next link does not start with this nodeId, turn it around
                 // (because it presumably ends with this nodeId -- if not, we're out of luck).
@@ -811,8 +849,8 @@ namespace RoadNetworkRouting
                     swapNodes = true;
                     modified = true;
                     
-                    if (i == 0) cutStart = links[i].Length - cutStart;
-                    if (i == links.Length - 1) cutEnd = links[i].Length - cutEnd;
+                    if (i == 0) cutStart = links[i].LengthM - cutStart;
+                    if (i == links.Length - 1) cutEnd = links[i].LengthM - cutEnd;
                 }
 
                 // If this is the first link, remove points from the start if necessary (if
@@ -940,22 +978,17 @@ namespace RoadNetworkRouting
                 .ToDictionary(k => k.Key, v => v.First());
 
             var converter = CoordinateConverter.FromUtm33(srid);
+            
+            GeoJsonCollection.WriteLinesTo(vertexFile, graph.Vertices
+                .Select(p => vertexLocations[p.Key])
+                .Select(p =>
+                    GeoJsonFeature.Point(p.location, converter, new
+                    {
+                        p.id,
+                        p.group
+                    })));
 
-            GeoJsonCollection
-                .From(graph.Vertices
-                    .Select(p => vertexLocations[p.Key])
-                    .Select(p =>
-                        GeoJsonFeature.Point(p.location, converter, new
-                        {
-                            p.id,
-                            p.group
-                        })))
-                .WriteTo(vertexFile);
-
-            GeoJsonCollection
-                .From(Links.Values
-                    .Select(p =>p.ToGeoJsonFeature()))
-                .WriteTo(edgeFile);
+            GeoJsonCollection.WriteLinesTo(edgeFile, Links.Values.Select(p => p.ToGeoJsonFeature()));
         }
     }
 

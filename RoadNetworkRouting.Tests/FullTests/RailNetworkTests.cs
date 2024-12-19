@@ -36,7 +36,7 @@ namespace RoadNetworkRouting.Tests.FullTests
             //rail.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\train", routingConfig, timer);
             var route = rail.FromUtm(inputCoordinates, routingConfig,true, false);
 
-            Debug.WriteLine(route.Links.Sum(p => p.Length));
+            Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         }
 
         [TestMethod]
@@ -62,7 +62,7 @@ namespace RoadNetworkRouting.Tests.FullTests
 
             var route = rail.FromRequest(inputCoordinates, routingConfig, converter, true, false);
 
-            Debug.WriteLine(route.Links.Sum(p => p.Length));
+            Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         }
 
 
@@ -85,7 +85,7 @@ namespace RoadNetworkRouting.Tests.FullTests
 
             //rail.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2023-12-14 - Entur, validering av jernbanenett\search-debug", routingConfig);
             var route = rail.FromUtm(inputCoordinates, routingConfig, true, false);
-            Debug.WriteLine(route.Links.Sum(p => p.Length));
+            Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         }
     }
 }

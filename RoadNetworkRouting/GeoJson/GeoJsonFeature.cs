@@ -24,14 +24,29 @@ namespace RoadNetworkRouting.GeoJson
             return LineString(coordinates, CoordinateConverter.ToWgs84(sourceSrid), properties);
         }
 
+        public static GeoJsonFeature LineString3D(IEnumerable<Point3D> coordinates, int sourceSrid, object properties = null)
+        {
+            return LineString3D(coordinates, CoordinateConverter.ToWgs84(sourceSrid), properties);
+        }
+
         public static GeoJsonFeature LineString(IEnumerable<Point3D> coordinates, CoordinateConverter converter, object properties = null)
         {
             return LineString(coordinates.Select(converter.Forward), properties);
         }
 
+        public static GeoJsonFeature LineString3D(IEnumerable<Point3D> coordinates, CoordinateConverter converter, object properties = null)
+        {
+            return LineString3D(coordinates.Select(converter.Forward), properties);
+        }
+
         public static GeoJsonFeature LineString(IEnumerable<Point3D> coordinates, object properties = null)
         {
             return LineString(coordinates.Select(p => new[] { p.X, p.Y }), properties);
+        }
+
+        public static GeoJsonFeature LineString3D(IEnumerable<Point3D> coordinates, object properties = null)
+        {
+            return LineString(coordinates.Select(p => new[] { p.X, p.Y, p.Z }), properties);
         }
 
         public static GeoJsonFeature LineString(IEnumerable<double[]> coordinates, object properties = null)

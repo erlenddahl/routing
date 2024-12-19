@@ -198,9 +198,9 @@ public class VariousRoutingTests
 
         Assert.AreEqual(3, res.Links.Length);
 
-        Assert.AreEqual(50, res.Links[0].Length);
-        Assert.AreEqual(100, res.Links[1].Length);
-        Assert.AreEqual(50, res.Links[2].Length);
+        Assert.AreEqual(50, res.Links[0].LengthM);
+        Assert.AreEqual(100, res.Links[1].LengthM);
+        Assert.AreEqual(50, res.Links[2].LengthM);
 
         Assert.AreEqual(200, res.RouteDistance);
 
@@ -264,8 +264,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(50, res.Links[0].Length);
-        Assert.AreEqual(50, res.Links[1].Length);
+        Assert.AreEqual(50, res.Links[0].LengthM);
+        Assert.AreEqual(50, res.Links[1].LengthM);
 
         Assert.AreEqual(100, res.RouteDistance);
 
@@ -326,8 +326,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(30, res.Links[0].Length);
-        Assert.AreEqual(25, res.Links[1].Length);
+        Assert.AreEqual(30, res.Links[0].LengthM);
+        Assert.AreEqual(25, res.Links[1].LengthM);
 
         Assert.AreEqual(55, res.RouteDistance);
 
@@ -388,7 +388,7 @@ public class VariousRoutingTests
 
         Assert.AreEqual(1, res.Links.Length);
 
-        Assert.AreEqual(25, res.Links[0].Length);
+        Assert.AreEqual(25, res.Links[0].LengthM);
 
         Assert.AreEqual(25, res.RouteDistance);
 
@@ -459,7 +459,7 @@ public class VariousRoutingTests
 
         Assert.AreEqual(1, res.Links.Length);
 
-        Assert.AreEqual(30, res.Links[0].Length);
+        Assert.AreEqual(30, res.Links[0].LengthM);
 
         Assert.AreEqual(30, res.RouteDistance);
 
@@ -517,8 +517,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(0.01, res.Links[0].Length, 0.005);
-        Assert.AreEqual(25, res.Links[1].Length);
+        Assert.AreEqual(0.01, res.Links[0].LengthM, 0.005);
+        Assert.AreEqual(25, res.Links[1].LengthM);
 
         Assert.AreEqual(25.01, res.RouteDistance, 0.005);
 
@@ -579,8 +579,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(30, res.Links[0].Length);
-        Assert.AreEqual(0.01, res.Links[1].Length, 0.005);
+        Assert.AreEqual(30, res.Links[0].LengthM);
+        Assert.AreEqual(0.01, res.Links[1].LengthM, 0.005);
 
         Assert.AreEqual(30.01, res.RouteDistance, 0.005);
 
@@ -641,8 +641,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(1, res.Links[0].Length);
-        Assert.AreEqual(25, res.Links[1].Length);
+        Assert.AreEqual(1, res.Links[0].LengthM);
+        Assert.AreEqual(25, res.Links[1].LengthM);
 
         Assert.AreEqual(26, res.RouteDistance);
 
@@ -703,8 +703,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(30, res.Links[0].Length);
-        Assert.AreEqual(1, res.Links[1].Length);
+        Assert.AreEqual(30, res.Links[0].LengthM);
+        Assert.AreEqual(1, res.Links[1].LengthM);
 
         Assert.AreEqual(31, res.RouteDistance);
 
@@ -765,8 +765,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(30, res.Links[0].Length);
-        Assert.AreEqual(25, res.Links[1].Length);
+        Assert.AreEqual(30, res.Links[0].LengthM);
+        Assert.AreEqual(25, res.Links[1].LengthM);
 
         Assert.AreEqual(55, res.RouteDistance);
 
@@ -827,8 +827,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(30, res.Links[0].Length);
-        Assert.AreEqual(25, res.Links[1].Length);
+        Assert.AreEqual(30, res.Links[0].LengthM);
+        Assert.AreEqual(25, res.Links[1].LengthM);
 
         Assert.AreEqual(55, res.RouteDistance);
 
@@ -889,8 +889,8 @@ public class VariousRoutingTests
 
         Assert.AreEqual(2, res.Links.Length);
 
-        Assert.AreEqual(30, res.Links[0].Length);
-        Assert.AreEqual(25, res.Links[1].Length);
+        Assert.AreEqual(30, res.Links[0].LengthM);
+        Assert.AreEqual(25, res.Links[1].LengthM);
 
         Assert.AreEqual(55, res.RouteDistance);
 

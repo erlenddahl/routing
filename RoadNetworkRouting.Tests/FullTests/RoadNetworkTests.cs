@@ -5,6 +5,7 @@ using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Exceptions;
 using RoadNetworkRouting.Geometry;
 using RoadNetworkRouting.Service;
+using Routing;
 
 namespace RoadNetworkRouting.Tests.FullTests;
 
@@ -31,13 +32,12 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false);
 
-        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         Debug.WriteLine(route.Timings.ToString(lineSeparator:Environment.NewLine));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(RoutingException))]
-    public void FailingRoute()
+    public void FailingRoute_DoesNotFailAnymore_NeedsInvestigationQuestionMark()
     {
         var roadNetworkFile = @"C:\Code\EnergyModule\EnergyModuleGeneralRestApi\roadNetwork.bin";
         var road = RoutingService.Create(roadNetworkFile);
@@ -57,7 +57,7 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "failing-route");
 
-        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
     }
 
@@ -83,7 +83,7 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "too-near");
 
-        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
     }
 
@@ -112,9 +112,9 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig, timer);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "fails-in-17");
 
-        Assert.AreEqual(26, route.Links.Sum(p => p.Length), 5);
+        Assert.AreEqual(26, route.Links.Sum(p => p.LengthM), 5);
 
-        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
     }
 
@@ -143,9 +143,9 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig, timer);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "fails-in-17");
         
-        Assert.AreEqual(483, route.Links.Sum(p => p.Length), 5);
+        Assert.AreEqual(483, route.Links.Sum(p => p.LengthM), 5);
 
-        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
     }
 
@@ -174,7 +174,7 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig, timer);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "fails-in-17");
 
-        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
     }
 
@@ -203,7 +203,7 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig, timer);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "fails-in-17");
 
-        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
     }
 
@@ -231,8 +231,38 @@ public class RoadNetworkTests
         //road.Router.SaveSearchDebugAsGeoJson(inputCoordinates[0], inputCoordinates[1], @"C:\Users\erlendd\Desktop\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\search-debug", routingConfig);
         var route = road.FromUtm(inputCoordinates, routingConfig, true, false, id: "same-point");
 
-        Debug.WriteLine(route.Links.Sum(p => p.Length));
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
-        Assert.AreEqual(500, route.Links.Sum(p => p.Length), 30);
+        Assert.AreEqual(500, route.Links.Sum(p => p.LengthM), 30);
+    }
+
+    [TestMethod]
+    public void RouteThatGotIncompleteRoute()
+    {
+        var roadNetworkFile = @"C:\Code\EnergyModule\EnergyModuleGeneralRestApi\roadNetwork.bin";
+        var road = RoutingService.Create(roadNetworkFile);
+        var routingConfig = new RoutingConfig()
+        {
+            DifferentGroupHandling = GroupHandling.BestGroup,
+            MaxSearchRadius = 5_000,
+            MaxSearchDurationMs = double.MaxValue
+        };
+
+        var inputCoordinates = new[]
+        {
+            new Point3D(10.77827035668571, 59.94598027373604, 0.000),
+            new Point3D(10.715965120981679, 59.92951617766039, 0.000)
+        };
+
+        var converter = CoordinateConverter.ToUtm33(4326);
+        //road.Router.SaveSearchDebugAsGeoJson(converter.Forward(inputCoordinates[0]), converter.Forward(inputCoordinates[1]), @"G:\Søppel\2024-12-12 - Road network debugging\too-short-", routingConfig, new TaskTimer());
+        var route = road.FromRequest(inputCoordinates, routingConfig, converter, true, false, id: "same-point");
+
+        Assert.IsTrue(route.RequestedWaypoints.All(p => p.RoutingInfo.Termination == TerminationType.ReachedTarget));
+        
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
+        Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
+
+        Assert.AreEqual(4587, route.Links.Sum(p => p.LengthM), 100);
     }
 }

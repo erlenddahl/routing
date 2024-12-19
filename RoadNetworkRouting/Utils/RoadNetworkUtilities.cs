@@ -1,8 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using EnergyModule.Geometry;
 using EnergyModule.Geometry.SimpleStructures;
+using Extensions.DictionaryExtensions;
 using Extensions.IEnumerableExtensions;
+using RoadNetworkRouting.Network;
 
 namespace RoadNetworkRouting.Utils
 {
@@ -20,19 +24,137 @@ namespace RoadNetworkRouting.Utils
             }
         }
 
-        public static FixMissingNodeResult FixMissingNodeIds(RoadNetworkRouter router, double maxDistance = 1)
+        /// <summary>
+        /// If the end of one link hits another link (within the given tolerance),
+        /// the other link will be split at this point, creating a proper intersection.
+        /// </summary>
+        /// <param name="router"></param>
+        /// <param name="config"></param>
+        /// <returns></returns>
+        public static SplitLinksResult SplitLinksAtIntersections(RoadNetworkRouter router, NetworkBuildConfig config)
         {
+            config.StateReporter?.Invoke("SplitLinksAtIntersections");
+
+            var newLinks = new List<RoadLink>();
+            var res = new SplitLinksResult();
+
+            var maxLinkId = router.Links.Keys.Max() + 1;
+            var maxDistance = config.MaxDistanceLinkSplit;
+
+            config.StateReporter?.Invoke("    > Building nearby-link-lookup");
+            var lookup = NearbyBoundsCache<RoadLink>.FromBounds(router.Links.Values, p => p.Bounds, 1000);
+
+            config.StateReporter?.Invoke("    > Processing links");
+
+            // For each link ...
+            var processed = 0;
+            foreach (var link in router.Links.Values)
+            {
+                var partsOfThisLink = new List<Point3D[]>(new[] { link.Geometry });
+
+                var nearbyLinks = lookup.GetNearbyItems(link.Bounds.Center, (int)Math.Max(link.Bounds.Height, link.Bounds.Width)).ToArray();
+                res.NearbyLinksFound += nearbyLinks.Length;
+                res.LinkChecksSaved += router.Links.Count - 1 - nearbyLinks.Length;
+
+                // ... check if any other links "hit" it
+                foreach (var otherLink in nearbyLinks)
+                {
+                    if (link.LinkId == otherLink.LinkId) continue;
+
+                    if (!otherLink.Bounds.Overlaps(link.Bounds, maxDistance))
+                    {
+                        res.LinksSkippedByBounds++;
+                        continue;
+                    }
+
+                    var newParts = new List<Point3D[]>();
+                    foreach (var part in partsOfThisLink)
+                    {
+                        var nearestPointStart = LineTools.FindNearestPoint(part, otherLink.Geometry[0]);
+                        var nearestPointEnd = LineTools.FindNearestPoint(part, otherLink.Geometry[^1]);
+
+                        var partLength = LineTools.CalculateLength(part);
+
+                        var startInside = nearestPointStart.DistanceFromLine <= maxDistance && nearestPointStart.Distance > maxDistance && nearestPointStart.Distance < partLength - maxDistance;
+                        var endInside = nearestPointEnd.DistanceFromLine <= maxDistance && Math.Abs(nearestPointStart.Distance - nearestPointEnd.Distance) > maxDistance && nearestPointEnd.Distance < partLength - maxDistance && nearestPointEnd.Distance > maxDistance;
+
+                        if (startInside && endInside)
+                        {
+                            var firstSplit = LineTools.Split(part, nearestPointStart.Distance);
+
+                            var theOneToSplit = nearestPointEnd.Distance < nearestPointStart.Distance ? firstSplit.Before : firstSplit.After;
+                            var splitAt = nearestPointEnd.Distance < nearestPointStart.Distance ? nearestPointEnd.Distance : nearestPointEnd.Distance - nearestPointStart.Distance;
+                            var secondSplit = LineTools.Split(theOneToSplit, splitAt);
+
+                            var theOther = nearestPointEnd.Distance < nearestPointStart.Distance ? firstSplit.After : firstSplit.Before;
+
+                            res.SplitTwice++;
+                            newParts.Add(secondSplit.Before);
+                            newParts.Add(secondSplit.After);
+                            newParts.Add(theOther);
+                        }
+                        else if (startInside)
+                        {
+                            var (before, after) = LineTools.Split(part, nearestPointStart.Distance);
+
+                            res.SplitByStart++;
+                            newParts.Add(before);
+                            newParts.Add(after);
+                        }
+                        else if (endInside)
+                        {
+                            var (before, after) = LineTools.Split(part, nearestPointEnd.Distance);
+
+                            res.SplitByEnd++;
+                            newParts.Add(before);
+                            newParts.Add(after);
+                        }
+                        else
+                        {
+                            res.NotWithinTolerance++;
+                            newParts.Add(part);
+                        }
+                    }
+
+                    partsOfThisLink = newParts;
+
+                    res.LinksChecked++;
+                }
+
+                newLinks.Add(link.Clone(partsOfThisLink[0]));
+                newLinks.AddRange(partsOfThisLink.Skip(1).Select(p=>link.Clone(p,maxLinkId++)));
+                res.LinksSplitInto.Increment(partsOfThisLink.Count - 1);
+
+                config?.ProgressReporter?.Invoke((++processed) / (double)router.Links.Count);
+            }
+
+            router.Links = newLinks.ToDictionary(k => k.LinkId, v => v);
+            return res;
+        }
+
+        public static FixMissingNodeResult FixMissingNodeIds(RoadNetworkRouter router, NetworkBuildConfig config)
+        {
+            config.StateReporter?.Invoke("FixMissingNodeIds");
+
             // Keep track of how many we fixed
             var res = new FixMissingNodeResult();
+            var maxDistance = config.MaxDistanceNodeConnection;
             res.ManhattanMaxDistance = 2 * maxDistance;
+
+            config.StateReporter?.Invoke("    > Creating nodesByY");
 
             // Create a list containing all nodes with their IDs and locations, then store it as a
             // Y-separated dictionary of lists.
+            var processed = 0;
             var nodesByY = router.Links
-                .SelectMany(p => new[]
+                .SelectMany(p =>
                 {
-                    new Node(p.Value.Geometry.First(), p.Value.FromNodeId),
-                    new Node(p.Value.Geometry.Last(), p.Value.ToNodeId)
+                    config?.ProgressReporter?.Invoke((++processed) / (double)router.Links.Count);
+                    return new[]
+                    {
+                        new Node(p.Value.Geometry.First(), p.Value.FromNodeId),
+                        new Node(p.Value.Geometry.Last(), p.Value.ToNodeId)
+                    };
                 })
                 .Where(p => p.Id > int.MinValue)
                 .GroupBy(p => (int)p.Location.Y)
@@ -92,9 +214,12 @@ namespace RoadNetworkRouting.Utils
                 return match;
             }
 
+            config.StateReporter?.Invoke("    > Processing links");
+
             // Go through each link and find links with missing From/To node IDs.
             // (Missing is defined as equal to int.MinValue, and must be set as this
             // in the corresponding reader function.)
+            processed = 0;
             foreach (var link in router.Links.Values)
             {
                 // If FromNodeId is missing, fix it.
@@ -126,10 +251,25 @@ namespace RoadNetworkRouting.Utils
                 {
                     res.ToNodesAlreadyOk++;
                 }
+
+                config?.ProgressReporter?.Invoke((++processed) / (double)router.Links.Count);
             }
 
             return res;
         }
+    }
+
+    public class SplitLinksResult
+    {
+        public int LinksChecked { get; set; }
+        public int LinksSkippedByBounds { get; set; }
+        public Dictionary<int, int> LinksSplitInto { get; set; } = new();
+        public int NotWithinTolerance { get; set; }
+        public int SplitTwice { get; set; }
+        public int SplitByStart { get; set; }
+        public int SplitByEnd { get; set; }
+        public int NearbyLinksFound { get; set; }
+        public long LinkChecksSaved { get; set; }
     }
 
     public class FixMissingNodeResult

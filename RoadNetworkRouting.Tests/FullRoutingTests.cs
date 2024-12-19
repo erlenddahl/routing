@@ -360,11 +360,11 @@ public abstract class RoutingTests
         Assert.AreEqual(6, res.Links[4].Geometry.Length);
 
         // No cutting -- all links should be whole.
-        Assert.AreEqual(87, res.Links[0].Length, 1);
-        Assert.AreEqual(135, res.Links[1].Length, 1);
-        Assert.AreEqual(116, res.Links[2].Length, 1);
-        Assert.AreEqual(262, res.Links[3].Length, 1);
-        Assert.AreEqual(80, res.Links[4].Length, 1);
+        Assert.AreEqual(87, res.Links[0].LengthM, 1);
+        Assert.AreEqual(135, res.Links[1].LengthM, 1);
+        Assert.AreEqual(116, res.Links[2].LengthM, 1);
+        Assert.AreEqual(262, res.Links[3].LengthM, 1);
+        Assert.AreEqual(80, res.Links[4].LengthM, 1);
 
         Assert.AreEqual(680, res.RouteDistance, 1);
     }
@@ -390,11 +390,11 @@ public abstract class RoutingTests
         Assert.AreEqual(5, res.Links[4].Geometry.Length);
 
         // First and last links are cut.
-        Assert.AreEqual(57, res.Links[0].Length, 1);
-        Assert.AreEqual(135, res.Links[1].Length, 1);
-        Assert.AreEqual(116, res.Links[2].Length, 1);
-        Assert.AreEqual(262, res.Links[3].Length, 1);
-        Assert.AreEqual(43, res.Links[4].Length, 1);
+        Assert.AreEqual(57, res.Links[0].LengthM, 1);
+        Assert.AreEqual(135, res.Links[1].LengthM, 1);
+        Assert.AreEqual(116, res.Links[2].LengthM, 1);
+        Assert.AreEqual(262, res.Links[3].LengthM, 1);
+        Assert.AreEqual(43, res.Links[4].LengthM, 1);
 
         Assert.AreEqual(612, res.RouteDistance, 1);
     }
@@ -416,9 +416,9 @@ public abstract class RoutingTests
         Assert.AreEqual(490120, res.Links[2].LinkId);
 
         // First and last links are cut.
-        Assert.AreEqual(26, res.Links[0].Length, 1);
-        Assert.AreEqual(21, res.Links[1].Length, 1);
-        Assert.AreEqual(14, res.Links[2].Length, 1);
+        Assert.AreEqual(26, res.Links[0].LengthM, 1);
+        Assert.AreEqual(21, res.Links[1].LengthM, 1);
+        Assert.AreEqual(14, res.Links[2].LengthM, 1);
 
         Assert.AreEqual(62, res.RouteDistance, 1);
         Assert.AreEqual(62, LineTools.CalculateLength(res.Links.SelectMany(p => p.Geometry).ToArray()), 1);

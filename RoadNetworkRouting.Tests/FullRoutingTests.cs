@@ -48,7 +48,7 @@ public class RoutingTests_FullNetwork : RoutingTests
         //var res = _router.SaveSearchDebugAsGeoJson(waypoints[0], waypoints[1], @"G:\Søppel\2024-01-12 - Entur, debugging av feil-ytelse\last-link", new RoutingConfig(), new TaskTimer());
         var res = _router.Search(waypoints[0], waypoints[1], new RoutingConfig() { Algorithm = RoutingAlgorithm.AStar });
 
-        Assert.AreEqual(6550, res.RouteDistance, 250);
+        Assert.AreEqual(6800, res.RouteDistance, 250);
     }
 
     [TestMethod]

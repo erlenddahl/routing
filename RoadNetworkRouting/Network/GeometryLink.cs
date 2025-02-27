@@ -10,22 +10,20 @@ using EnergyModule;
 
 namespace RoadNetworkRouting.Network;
 
-public abstract class GeometryLink : ILinkPartGenerator
+public abstract class GeometryLink : ILinkPartGenerator, IQueryPointInfo
 {
     private IQueryPointInfo _pointInfoQuerier;
     private Point3D[] _geometry;
 
-    private IQueryPointInfo PointCache => _pointInfoQuerier ??= CreatePointInfoQuerier(Geometry);
+    private IQueryPointInfo PointCache => _pointInfoQuerier ??= new CachedLineTools(Geometry, ignoreFirstAndLastAngles: SpeedLimitKmH > 70);
 
-    public static IQueryPointInfo CreatePointInfoQuerier(Point3D[] geometry)
-    {
-        return new CachedLineTools(geometry);
-    }
-    
     /// <summary>
     /// The 3D length of the road link, calculated (on the first call) from its Geometry.
     /// </summary>
     public double LengthM => PointCache.LengthM;
+
+    /// <inheritdoc cref="TransportLink.SpeedLimitKmH"/>
+    public byte SpeedLimitKmH { get; set; }
 
     public Point3D[] Geometry
     {
@@ -37,11 +35,11 @@ public abstract class GeometryLink : ILinkPartGenerator
         }
     }
 
-    public abstract LinkPart[] GenerateLinkParts(double segmentLength = 20);
+    public abstract LinkData GenerateLinkParts(double segmentLength = 20);
 
-    public PointInfo GetGeometricData(double metersFromA)
+    public PointInfo QueryPointInfo(double atDistance)
     {
-        return PointCache.QueryPointInfo(metersFromA);
+        return PointCache.QueryPointInfo(atDistance);
     }
 
     public abstract GeometryLink Clone(Point3D[] newGeometry = null);

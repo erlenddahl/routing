@@ -8,6 +8,7 @@ using System.Text.Json;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
 using EnergyModule.Road;
+using EnergyModule.Utils;
 using RoadNetworkRouting.GeoJson;
 using RoadNetworkRouting.Geometry;
 
@@ -56,8 +57,7 @@ public class RoadLink : GeometryLink
 
     public int FromNodeId { get; set; }
     public int ToNodeId { get; set; }
-    public byte SpeedLimit { get; set; }
-    public byte SpeedLimitReversed { get; set; }
+    public byte SpeedLimitKmHReversed { get; set; }
     public string LaneCode { get; set; } = "";
     public float Cost { get; set; }
     public float ReverseCost { get; set; }
@@ -103,8 +103,8 @@ public class RoadLink : GeometryLink
             FromNodeId = FromNodeId,
             ToNodeId = ToNodeId,
             Direction = Direction,
-            SpeedLimit = SpeedLimit,
-            SpeedLimitReversed = SpeedLimitReversed,
+            SpeedLimitKmH = SpeedLimitKmH,
+            SpeedLimitKmHReversed = SpeedLimitKmHReversed,
             Geometry = newGeometry ?? Geometry,
             LaneCode = LaneCode,
             Cost = Cost,
@@ -125,62 +125,26 @@ public class RoadLink : GeometryLink
         return $"Id={LinkId}, Cost={c} / {rc}";
     }
 
-    public override LinkPart[] GenerateLinkParts(double segmentLength = TransportLink.StandardSegmentLength)
+    public override LinkData GenerateLinkParts(double segmentLength = TransportLink.StandardSegmentLength)
     {
-        var partIndex = 0;
-
-        // Tangent at start of segment:
-        var start = GetGeometricData(0);
-        var lastKnownHeight = 0.0;
-        var linkParts = new LinkPart[(int)Math.Ceiling(LengthM / segmentLength)];
-
-        for (var posStart = 0d; posStart < LengthM; posStart += segmentLength)
+        var data = new LinkData(LengthM, segmentLength);
+        data.Generate(this, new LinkPart
         {
-            //Create the new TransportLinkPart
-            var tlp = new LinkPart
-            {
-                LinkId = LinkId,
-                WidthM = RoadWidth,
-                LaneInfo = LaneReader.Parse(LaneCode),
-                NodeA = FromNodeId,
-                NodeB = ToNodeId,
-                IsFerry = IsFerry,
-                IsRoundabout = IsRoundabout,
-                IsTunnel = IsTunnel,
-                IsBridge = IsBridge,
-                SpeedLimitKmH = SpeedLimit,
-                VehiclesPerHour = 0,
-                RoadType = 'r', //TODO: Fix!
-                PartIndex = partIndex++
-            };
+            LinkId = LinkId,
+            WidthM = RoadWidth,
+            LaneInfo = LaneReader.TryOrGuess(LaneCode),
+            NodeA = FromNodeId,
+            NodeB = ToNodeId,
+            IsFerry = IsFerry,
+            IsRoundabout = IsRoundabout,
+            IsTunnel = IsTunnel,
+            IsBridge = IsBridge,
+            SpeedLimitKmH = SpeedLimitKmH,
+            VehiclesPerHour = 0,
+            RoadType = 'r' //TODO: Fix!
+        });
 
-            // Calculate how far into the TransportLink this part will end
-            var posEnd = Math.Min(posStart + segmentLength, LengthM);
-            var end = GetGeometricData(posEnd);
-
-            // Check height values
-            TransportLink.CheckHeightValue(tlp, start, ref lastKnownHeight);
-            TransportLink.CheckHeightValue(tlp, end, ref lastKnownHeight);
-
-            // Update and store list element:   
-            tlp.HorizontalRadius = TransportLink.FindRadius(segmentLength, start.Angle, end.Angle);
-            tlp.GradientPercent = 100 * (end.Z - start.Z) / segmentLength;
-            tlp.SegmentLengthM = posEnd - posStart;
-            tlp.Z1 = start.Z;
-            tlp.Z2 = end.Z;
-            tlp.X1 = start.X;
-            tlp.X2 = end.X;
-            tlp.Y1 = start.Y;
-            tlp.Y2 = end.Y;
-            tlp.EndsAt = posEnd; // Used locally. Will later be replaced by length out value relative entire route!
-
-            linkParts[tlp.PartIndex] = tlp;
-
-            // Prepare data for next linkPart:
-            start = end;
-        }
-
-        return linkParts;
+        return data;
     }
 
     public static RoadLinkDirection DirectionFromString(string direction)
@@ -213,8 +177,8 @@ public class RoadLink : GeometryLink
         writer.Write(FromNodeId);
         writer.Write(ToNodeId);
         writer.Write(NetworkGroup);
-        writer.Write(SpeedLimit);
-        writer.Write(SpeedLimitReversed);
+        writer.Write(SpeedLimitKmH);
+        writer.Write(SpeedLimitKmHReversed);
         writer.Write(Cost);
         writer.Write(ReverseCost);
         writer.Write(strings[LaneCode ?? ""]);
@@ -254,8 +218,8 @@ public class RoadLink : GeometryLink
         FromNodeId = BitConverter.ToInt32(buffer, 18);
         ToNodeId = BitConverter.ToInt32(buffer, 22);
         NetworkGroup = BitConverter.ToInt32(buffer, 26);
-        SpeedLimit = buffer[30];
-        SpeedLimitReversed = buffer[31];
+        SpeedLimitKmH = buffer[30];
+        SpeedLimitKmHReversed = buffer[31];
         Cost = BitConverter.ToSingle(buffer, 32);
         ReverseCost = BitConverter.ToSingle(buffer, 36);
         LaneCode = strings[BitConverter.ToInt32(buffer, 40)];
@@ -317,8 +281,8 @@ public class RoadLink : GeometryLink
             FromNodeId = " + FromNodeId + @",
             ToNodeId = " + ToNodeId + @",
             Direction = RoadLinkDirection." + Direction.ToString() + @",
-            SpeedLimit = " + SpeedLimit + @",
-            SpeedLimitReversed = " + SpeedLimitReversed + @",
+            SpeedLimit = " + SpeedLimitKmH + @",
+            SpeedLimitReversed = " + SpeedLimitKmHReversed + @",
             Geometry = new[]{" + string.Join(", ", Geometry.Select(ToCsharp)) + @"},
             LaneCode = """ + LaneCode + @""",
             Cost = " + Cost.ToString(CultureInfo.InvariantCulture) + @",
@@ -343,8 +307,8 @@ public class RoadLink : GeometryLink
             LinkId,
             Reference.Id,
             NetworkGroup,
-            SpeedLimit,
-            SpeedLimitReversed
+            SpeedLimit = SpeedLimitKmH,
+            SpeedLimitReversed = SpeedLimitKmHReversed
         });
     }
 

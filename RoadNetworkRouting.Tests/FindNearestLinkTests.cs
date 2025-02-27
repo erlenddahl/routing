@@ -58,7 +58,7 @@ public class FindNearestLinkTests
         Assert.AreEqual(335696, res.Link.LinkId);
         Assert.AreEqual(6, res.Link.Geometry.Length);
 
-        Assert.AreEqual(res.Link.GetGeometricData(double.MaxValue).Distance, res.Nearest.Distance);
+        Assert.AreEqual(res.Link.QueryPointInfo(double.MaxValue).Distance, res.Nearest.Distance);
 
         Assert.AreEqual(res.Nearest.X, res.Link.Geometry[^1].X);
         Assert.AreEqual(res.Nearest.Y, res.Link.Geometry[^1].Y);

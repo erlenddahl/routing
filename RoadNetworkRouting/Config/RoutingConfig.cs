@@ -46,10 +46,10 @@ public class RoutingConfig
     public bool IncludeElevation { get; set; } = true;
 
     /// <summary>
-    /// If set to false, the elevation cache will not be used. This means the request will take longer to complete, since elevation data
+    /// If set to true, the elevation cache will not be used. This means the request will take longer to complete, since elevation data
     /// has to be retrieved for all points.
     /// </summary>
-    public bool IgnoreElevationCache { get; set; } = true;
+    public bool IgnoreElevationCache { get; set; } = false;
 
     /// <summary>
     /// Defines the radius for a median filter for smoothing the elevation values. Set it to null for no smoothing.

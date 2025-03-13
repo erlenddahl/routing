@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Network;
+using EnergyModule.Results;
 using Extensions.Utilities;
 using RoadNetworkRouting.Network;
 
@@ -37,6 +38,9 @@ namespace RoadNetworkRouting.Service
         /// Contains timing data on the routing.
         /// </summary>
         public TaskTimer Timings { get; set; }
+
+        /// <inheritdoc cref="RouteWarningData"/>>
+        public RouteWarningData Warnings { get; set; }
     }
 
     public class RoutingSourceInfo

@@ -59,6 +59,8 @@ public class RoutingResponse : InternalRoutingResponse
 
         RoutingSource = result.RoutingSource;
 
+        Warnings = result.Warnings;
+
         if (r.RoutingConfig)
             RoutingConfig = request.RoutingConfig ?? new RoutingConfig();
         if (r.Coordinates)

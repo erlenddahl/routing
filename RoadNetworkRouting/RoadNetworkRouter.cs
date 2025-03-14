@@ -786,16 +786,19 @@ namespace RoadNetworkRouting
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        private double Heuristic((double X, double Y) a, (double X, double Y) b)
+        public static double Heuristic((double X, double Y) a, (double X, double Y) b)
         {
             // Calculate the distance estimate (Manhattan distance) between the points
             var dx = a.X - b.X;
             var dy = a.Y - b.Y;
             var manhattan = Math.Abs(dx) + Math.Abs(dy);
 
-            // Assume average driving speed of 15 m/s (~55 km/h) to
+            // Assume average driving speed of 25 m/s (~90 km/h) to
             // get a relatively realistic estimate of driving time
-            var seconds = manhattan / 15d;
+            // This is intentionally a quite high average, to ensure
+            // the heuristic under-estimates the true cost (otherwise
+            // we will get sub-optimal solutions).
+            var seconds = manhattan / 25d;
 
             return seconds;
         }
@@ -833,7 +836,7 @@ namespace RoadNetworkRouting
         /// <param name="nodeId"></param>
         /// <param name="distanceAlongFirst">How far along the first link the start point is. Everything before this will be cut away. For example, if distanceAlongFirst is 5, meters 0-5 of the first link will be cut away.</param>
         /// <param name="distanceAlongLast">How far along the last link the end point is. Everything after this will be cut away. For example, if distanceAlongLast is 5, meters 5-N of the last link will be cut away.</param>
-        protected void RotateAndCut(RoadLink[] links, int nodeId, double distanceAlongFirst, double distanceAlongLast)
+        public static void RotateAndCut(RoadLink[] links, int nodeId, double distanceAlongFirst, double distanceAlongLast)
         {
             var (cutStart, cutEnd) = (distanceAlongFirst, links[^1].LengthM - distanceAlongLast);
             for (var i = 0; i < links.Length; i++)
@@ -908,7 +911,7 @@ namespace RoadNetworkRouting
         /// <param name="fromPoint"></param>
         /// <param name="toPoint"></param>
         /// <returns></returns>
-        protected static int FindFirstNodeId(RoadLink[] links, int[] vertexIds, Point3D fromPoint, Point3D toPoint)
+        public static int FindFirstNodeId(RoadLink[] links, int[] vertexIds, Point3D fromPoint, Point3D toPoint)
         {
             // The list of traversed vertices will normally be something like -999, 1, 2, 3, -998, since the
             // first and last vertices are overloaded unless the search points are directly on a vertex.

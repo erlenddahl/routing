@@ -4,6 +4,7 @@ using Extensions.Utilities;
 using RoadNetworkRouting.Config;
 using RoadNetworkRouting.Exceptions;
 using RoadNetworkRouting.Geometry;
+using RoadNetworkRouting.Network;
 using RoadNetworkRouting.Service;
 using Routing;
 
@@ -264,5 +265,39 @@ public class RoadNetworkTests
         Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
 
         Assert.AreEqual(4587, route.Links.Sum(p => p.LengthM), 100);
+    }
+
+    [TestMethod]
+    public void RouteFromPorsgrunnToKristiansand_ShouldBe_170km_Not_200km()
+    {
+        // Because of A*, the default routing picked the longer route from Porsgrunn to Kristiansand.
+        // An adjustment to make the heuristic under-estimate instead of over-estimate solved this issue.
+
+        var roadNetworkFile = @"C:\Code\EnergyModule\EnergyModuleGeneralRestApi\roadNetwork.bin";
+        var road = RoutingService.Create(roadNetworkFile);
+        var routingConfig = new RoutingConfig()
+        {
+            DifferentGroupHandling = GroupHandling.BestGroup,
+            MaxSearchRadius = 5_000,
+            MaxSearchDurationMs = double.MaxValue
+        };
+
+        var inputCoordinates = new[]
+        {
+            new Point3D(9.6253089, 59.12808587, 0.000),
+            new Point3D(7.98988895, 58.17578836, 0.000)
+        };
+        var converter = CoordinateConverter.ToUtm33(4326);
+
+        var timer = new TaskTimer();
+        road.Router.SaveSearchDebugAsGeoJson(converter.Forward(inputCoordinates[0]), converter.Forward(inputCoordinates[1]), @"G:\Søppel\2025-03-14 - Road network debugging\wrong-route-", routingConfig, new TaskTimer());
+        var route = road.FromRequest(inputCoordinates, routingConfig, converter, true, false, id: "same-point");
+
+        Assert.IsTrue(route.RequestedWaypoints.All(p => p.RoutingInfo.Termination == TerminationType.ReachedTarget));
+
+        Debug.WriteLine(route.Links.Sum(p => p.LengthM));
+        Debug.WriteLine(route.Timings.ToString(lineSeparator: Environment.NewLine));
+
+        Assert.AreEqual(170_000, route.Links.Sum(p => p.LengthM), 5_000);
     }
 }

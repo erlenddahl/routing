@@ -7,6 +7,7 @@ using EnergyModule.Geometry.SimpleStructures;
 using EnergyModule.Road;
 using RoadNetworkRouting.Geometry;
 using EnergyModule;
+using EnergyModule.Results;
 
 namespace RoadNetworkRouting.Network;
 
@@ -35,7 +36,7 @@ public abstract class GeometryLink : ILinkPartGenerator, IQueryPointInfo
         }
     }
 
-    public abstract LinkData GenerateLinkParts(double segmentLength = 20);
+    public abstract LinkData GenerateLinkParts(double segmentLength = 20, SegmentGenerationWarningData continueWarnings = null);
 
     public PointInfo QueryPointInfo(double atDistance)
     {
